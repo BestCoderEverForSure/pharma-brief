@@ -129,8 +129,13 @@ def render_timeline(events: list[dict]) -> str:
     """Vertical, fully readable timeline (HTML) — no label overlap, color-coded."""
     if not events:
         return '<p class="muted">No dated catalysts on file yet.</p>'
+    # Only show the next ~5 months so it doesn't stretch out to next year.
+    today = dt.date.today()
+    horizon = today + dt.timedelta(days=150)
+    near = [e for e in events if e["date"] <= horizon] or events[:3]
+    beyond = len(events) - len(near)
     rows = []
-    for e in events:
+    for e in near:
         cat = _category(e["full"])
         d = e["date"].strftime("%-d %b %Y")
         rows.append(
@@ -140,7 +145,9 @@ def render_timeline(events: list[dict]) -> str:
     legend = ('<div class="vtl-legend">'
               + "".join(f'<span class="lg {k}">{v}</span>' for k, v in _CAT_NAMES.items())
               + "</div>")
-    return f'<ol class="vtl">{"".join(rows)}</ol>{legend}'
+    more = (f'<p class="muted" style="margin-top:10px;font-size:12px">+ {beyond} further out (see <code>catalysts.md</code>)</p>'
+            if beyond > 0 else "")
+    return f'<ol class="vtl">{"".join(rows)}</ol>{legend}{more}'
 
 
 def render_catalyst_mix(events: list[dict]) -> str:
@@ -302,7 +309,7 @@ def build():
   {latest_html}
 </section>
 <section class="panel">
-  <h2>📅 Week Ahead</h2>
+  <h2>📅 Upcoming catalysts</h2>
   <div class="two-col"><div>{timeline}</div><div><h3>Catalyst mix</h3>{mix}</div></div>
 </section>
 {market_panel}
@@ -323,20 +330,24 @@ CSS = """
 :root{--bg:#f5f5f7;--card:#fff;--ink:#1d1d1f;--muted:#6e6e73;--line:#e3e3e8;
  --accent:#7c3aed;--claude:#d97706;--deepseek:#0ea5e9;}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);line-height:1.55;
- font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;}
-main{max-width:860px;margin:0 auto;padding:32px 22px 12px;}
-footer{max-width:860px;margin:0 auto;padding:24px 22px 48px;color:var(--muted);font-size:13px;}
-h1{font-size:30px;margin:.2em 0}h2{font-size:21px;margin:1.4em 0 .6em}h3{font-size:17px;margin:1.3em 0 .4em}
+body{margin:0;background:var(--bg);color:var(--ink);line-height:1.6;font-size:16px;letter-spacing:-.011em;
+ font-family:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+ -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+main{max-width:820px;margin:0 auto;padding:44px 22px 16px;}
+footer{max-width:820px;margin:0 auto;padding:28px 22px 56px;color:var(--muted);font-size:13px;}
+h1{font-size:32px;font-weight:700;letter-spacing:-.025em;margin:.1em 0}
+h2{font-size:20px;font-weight:600;letter-spacing:-.02em;margin:1.6em 0 .6em}
+h3{font-size:16px;font-weight:600;margin:1.3em 0 .4em}
 a{color:var(--accent);text-decoration:none}a:hover{text-decoration:underline}
 .muted{color:var(--muted)}
 .back{display:inline-block;margin-bottom:16px;font-size:14px}
-.hero{padding:8px 0 4px}
-.panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px 22px;margin:18px 0;}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px}
-.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:12px;
- padding:14px 16px;transition:.15s;color:var(--ink)}
-.card:hover{border-color:var(--accent);transform:translateY(-2px);text-decoration:none;box-shadow:0 6px 18px rgba(0,0,0,.06)}
+.hero{padding:12px 0 6px}
+.panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px 26px;margin:20px 0;
+ box-shadow:0 1px 2px rgba(0,0,0,.04),0 12px 32px rgba(0,0,0,.045);}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.card{display:block;background:var(--card);border:1px solid var(--line);border-radius:14px;
+ padding:15px 17px;transition:transform .18s ease,box-shadow .18s ease,border-color .18s ease;color:var(--ink)}
+.card:hover{border-color:var(--accent);transform:translateY(-3px);text-decoration:none;box-shadow:0 12px 30px rgba(0,0,0,.10)}
 .card-date{font-size:12px;color:var(--muted)}
 .card-title{font-weight:600;margin:4px 0 10px;font-size:15px}
 .badge{font-size:11px;padding:2px 8px;border-radius:999px;background:#eee;color:#555}
@@ -348,7 +359,7 @@ hr{border:none;border-top:1px solid var(--line);margin:1.4em 0}
 code{background:#f0f0f3;padding:1px 5px;border-radius:5px;font-size:.9em}
 ul{padding-left:1.2em}li{margin:.25em 0}
 /* brand + search */
-.brand{font-size:30px;font-weight:800;letter-spacing:-.02em}
+.brand{font-size:34px;font-weight:800;letter-spacing:-.03em}
 .search{width:100%;margin-top:14px;padding:11px 14px;border:1px solid var(--line);
  border-radius:12px;font-size:15px;background:var(--card);color:var(--ink)}
 .search:focus{outline:none;border-color:var(--accent)}

@@ -22,7 +22,7 @@ pick_edition(){  # -> EDITION
 workflow_state(){ gh api "repos/$REPO/actions/workflows" --jq ".workflows[]|select(.path==\".github/workflows/$WF\")|.state" 2>/dev/null; }
 
 while true; do
-  choice=$(osascript -e 'choose from list {"📰 Generate a digest now (this Mac)","☁️ Run the cloud digest now (emails + website)","⏰ Daily 7am cloud digest: turn ON / OFF","🌐 Open the website","📊 Status","✏️ Edit watchlist / sources / calendar","🔊 Make an audio brief","❓ Help / guide"} with prompt "PHARMA BRIEF — COMMAND CENTRE
+  choice=$(osascript -e 'choose from list {"📰 Generate a digest now (this Mac)","🌐 Open the website","☁️ Run the cloud digest now (emails + website)","⏰ Daily 7am cloud digest: turn ON / OFF","📊 Status","✏️ Edit watchlist / sources / calendar","🔊 Make an audio brief","❓ Help / guide"} with prompt "PHARMA BRIEF — COMMAND CENTRE
 
 What would you like to do?" default items {"📰 Generate a digest now (this Mac)"}' 2>/dev/null)
   [ "$choice" = "false" ] || [ -z "$choice" ] && exit 0
