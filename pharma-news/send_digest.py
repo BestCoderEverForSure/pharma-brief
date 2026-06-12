@@ -142,10 +142,11 @@ def main() -> int:
 
     secrets = load_secrets()
     api_key = secrets.get("RESEND_API_KEY")
-    to_addr = secrets.get("EMAIL_TO")
+    to_addr = secrets.get("EMAIL_TO", "")
+    recipients = [a.strip() for a in re.split(r"[,;]+", to_addr) if a.strip()]
     from_addr = secrets.get("EMAIL_FROM", "onboarding@resend.dev")
 
-    if not api_key or not to_addr:
+    if not api_key or not recipients:
         print("ERROR: missing RESEND_API_KEY or EMAIL_TO.\n"
               f"Set them as env vars or in {SECRETS_PATH}", file=sys.stderr)
         return 2
@@ -162,7 +163,7 @@ def main() -> int:
 
     payload = json.dumps({
         "from": from_addr,
-        "to": [to_addr],
+        "to": recipients,
         "subject": subject,
         "html": md_to_html(md),
         "text": md,
@@ -177,7 +178,7 @@ def main() -> int:
     try:
         with urllib.request.urlopen(req, timeout=30) as resp:
             body = resp.read().decode("utf-8")
-            print(f"Sent ✓  ({resp.status})  -> {to_addr}\n{body}")
+            print(f"Sent ✓  ({resp.status})  -> {', '.join(recipients)}\n{body}")
             return 0
     except urllib.error.HTTPError as e:
         print(f"ERROR {e.code}: {e.read().decode('utf-8', 'replace')}", file=sys.stderr)

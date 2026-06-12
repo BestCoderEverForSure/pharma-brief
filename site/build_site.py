@@ -328,6 +328,12 @@ def build():
   <h2>🗂️ Archive</h2>
   <div class="grid">{''.join(cards) if cards else '<p class="muted">No digests yet.</p>'}</div>
 </section>
+<section class="panel">
+  <h2>ℹ️ About this project</h2>
+  <p><strong>Pharma Morning Brief</strong> turns the day's pharmaceutical news into a fact-checked, 2–3 minute executive digest — built for someone entering pharma who needs to stay current without reading 20 outlets every morning.</p>
+  <p><strong>How it works:</strong> one shared "recipe" (what a good digest looks like) runs through <strong>two interchangeable AI engines</strong> — <em>Claude</em> (richest analysis, on-demand) and <em>DeepSeek</em> (cheap, runs automatically in the cloud every morning). The result is emailed to subscribers <em>and</em> published to this website. Every fact is grounded in a real, linked source; niche terms are glossed in plain language; each digest is labelled with the engine that wrote it.</p>
+  <p class="muted">Built with Claude Code for the MBA Vibe Coding workshop.</p>
+</section>
 <script src="search-data.js"></script>
 <script src="search.js"></script>"""
     (OUT / "index.html").write_text(page("Pharma Morning Brief", index_body, home_link=False), encoding="utf-8")
