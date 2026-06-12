@@ -47,9 +47,17 @@ def strip_lead(s: str) -> str:
     return _LEAD_EMOJI.sub("", s)
 
 
+def _mk_link(m):
+    label, url = m.group(1), m.group(2)
+    gnews = "news.google.com" in url
+    cls = "src gnews" if gnews else "src"
+    title = ' title="Opens via the Google News aggregator — may redirect or be region-blocked"' if gnews else ""
+    return f'<a href="{url}" target="_blank" rel="noopener" class="{cls}"{title}>{label}</a>'
+
+
 def md_inline(text: str) -> str:
     text = html.escape(text)
-    text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2" target="_blank" rel="noopener">\1</a>', text)
+    text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", _mk_link, text)
     text = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", text)
     text = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"<em>\1</em>", text)
     text = re.sub(r"`([^`]+)`", r"<code>\1</code>", text)
@@ -474,8 +482,11 @@ p{margin:.75em 0}
 .doc{padding:46px 0 24px}
 .doc a,.block-body p a,.point-b a{border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
 .doc a:hover,.block-body p a:hover{border-bottom-color:var(--accent)}
-h1 a,h2 a,h3 a{color:inherit !important;border-bottom:none !important}
+h1 a,h2 a,h3 a,h1 a:visited,h2 a:visited,h3 a:visited{color:inherit !important;border-bottom:none !important}
 h1 a:hover,h2 a:hover,h3 a:hover{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
+/* visited source links fade; aggregator (redirect-prone) links get a marker */
+a.src:visited{color:var(--muted)}
+a.gnews::after{content:"↗";font-size:.72em;color:var(--muted);margin-left:1px;vertical-align:super}
 .muted{color:var(--muted)}
 .meta{font-family:var(--mono);font-size:11.5px;letter-spacing:.02em;color:var(--muted);text-transform:none;margin:.4em 0 1.4em}
 strong{font-weight:700}
