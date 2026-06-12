@@ -1,10 +1,10 @@
-# 🔎 Evidence — it really runs (not a mock-up)
+# 🔎 Evidence - it really runs (not a mock-up)
 
 This project genuinely runs end-to-end in the cloud: it generates a digest, **emails it**, and **publishes a website** automatically. Here's how to verify that independently.
 
 ## 1. The website is live (proves the cloud build + deploy work)
 ➡️ **https://bestcodereverforsure.github.io/pharma-brief/**
-This page is built and published by GitHub Actions on every run — it's not hand-uploaded.
+This page is built and published by GitHub Actions on every run - it's not hand-uploaded.
 
 ## 2. The email actually sends (proof from the cloud run log)
 The automated GitHub Actions run executed the email step and got a success response from Resend (the email provider). Straight from the run log:
@@ -16,7 +16,7 @@ Sent ✓  (200)  -> ***
 ```
 
 - `Sent ✓ (200)` = Resend accepted and sent the email (HTTP 200).
-- `{"id":"f97d0a79-…"}` = the Resend message ID for that specific email.
+- `{"id":"f97d0a79-..."}` = the Resend message ID for that specific email.
 - `***` = GitHub automatically masks the recipient in the public log (it's simply your own inbox).
 - The same run then auto-committed the digest (`Digest 2026-06-12`) and deployed the site.
 
@@ -30,7 +30,7 @@ The `digests/` folder holds multiple dated digests produced by different runs/en
 - `2026-06-12-since-0605.md` (a week-window run)
 
 ## 4. The infrastructure that was set up
-- **GitHub repository** with a scheduled **GitHub Actions** workflow (`.github/workflows/pharma-digest.yml`) — runs daily at 07:00 Rome, no laptop needed.
+- **GitHub repository** with a scheduled **GitHub Actions** workflow (`.github/workflows/pharma-digest.yml`) - runs daily at 07:00 Rome, no laptop needed.
 - **Resend** (transactional email) wired in via a *send-only* API key, stored as an encrypted GitHub Secret.
 - **GitHub Pages** hosting the website, redeployed on every run.
 

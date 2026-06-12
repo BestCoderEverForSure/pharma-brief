@@ -44,29 +44,9 @@ act_read(){
   esac
 }
 
-act_subscribers(){
-  local c; c=$(menu "Manage who receives the morning email:" "See the current list" "Add someone (subscribe)" "Remove someone (unsubscribe)")
-  local cur; cur=$(recips)
-  case "$c" in
-    "See the current list") dlg "Current subscribers:\n\n${cur//,/\n}" ;;
-    "Add"*)
-      local new; new=$(ask "Email address to subscribe:" "")
-      if [ -n "$new" ] && [[ "$new" == *@*.* ]]; then
-        set_recips "$cur,$new"
-        dlg "✅ Subscribed: $new\n\nNote: until you verify a domain in Resend, only your own signup address actually receives — other addresses are rejected by Resend's free test mode."
-      elif [ -n "$new" ]; then dlg "That doesn't look like an email address."; fi ;;
-    "Remove"*)
-      local pick; pick=$(menu "Remove which subscriber?" ${cur//,/ })
-      if [ -n "$pick" ] && [ "$pick" != "false" ]; then
-        local out; out=$(echo "$cur" | tr ',' '\n' | grep -v -x "$pick" | paste -sd, -)
-        set_recips "$out"; dlg "🚫 Unsubscribed: $pick"
-      fi ;;
-  esac
-}
-
 act_cloud(){
   [ -z "$REPO" ] && { dlg "Cloud isn't connected (GitHub CLI not signed in)."; return; }
-  local c; c=$(menu "Cloud & email:" "Run the cloud digest now" "Daily auto-send: turn ON / OFF" "Manage who gets the email" "Status & last run")
+  local c; c=$(menu "Cloud & email:" "Run the cloud digest now" "Daily auto-send: turn ON / OFF" "Status & last run")
   case "$c" in
     "Run the cloud"*) pick_window || return; pick_edition || return
        gh workflow run "$WF" -f hours="$HOURS" -f edition="$EDITION" >/dev/null 2>&1 \
@@ -75,11 +55,10 @@ act_cloud(){
        local p; p=$(osascript -e "button returned of (display dialog \"Daily 7am cloud digest is currently: $cur\" buttons {\"Turn OFF\",\"Turn ON\",\"Cancel\"} default button \"Cancel\" with title \"Pharma Command Centre\")" 2>/dev/null)
        [ "$p" = "Turn ON" ]  && gh workflow enable  "$WF" >/dev/null 2>&1 && dlg "✅ Daily cloud digest ON."
        [ "$p" = "Turn OFF" ] && gh workflow disable "$WF" >/dev/null 2>&1 && dlg "🛑 Daily cloud digest OFF." ;;
-    "Manage who"*) act_subscribers ;;
     "Status"*) local last; last=$(python3 -c "import json;print(json.load(open('pharma-news/state.json')).get('last_run') or 'never')" 2>/dev/null)
        local st; st=$(wf_state); local cl="unknown"; [ "$st" = active ] && cl="ON (~7am Rome)"; [ "$st" = disabled_manually ] && cl="OFF"
        local lr; lr=$(gh run list -R "$REPO" --workflow "$WF" --limit 1 --json conclusion,createdAt --jq '.[0]|"\(.conclusion) (\(.createdAt[0:10]))"' 2>/dev/null)
-       dlg "📊 STATUS\n\nLocal last run: $last\nDaily cloud digest: $cl\nLast cloud run: ${lr:-none}\nSubscribers: $(recips)" ;;
+       dlg "📊 STATUS\n\nLocal last run: $last\nDaily cloud digest: $cl\nLast cloud run: ${lr:-none}\nEmail goes to: $(recips)" ;;
   esac
 }
 

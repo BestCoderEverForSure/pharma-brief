@@ -1,6 +1,6 @@
 # 🐋 DeepSeek standalone version
 
-Runs the digest **without Claude** — on the DeepSeek API, per-token (no subscription). Same methodology and Lilly focus, just a different brain and a different news source.
+Runs the digest **without Claude** - on the DeepSeek API, per-token (no subscription). Same methodology and Lilly focus, just a different brain and a different news source.
 
 ## How it differs from the Claude version
 
@@ -11,9 +11,9 @@ Runs the digest **without Claude** — on the DeepSeek API, per-token (no subscr
 | Cost | Your Claude plan | Per-token DeepSeek API |
 | Runs without the Claude app? | No | **Yes** (plain Python) |
 
-The trade-off: DeepSeek can only summarise the articles the RSS feeds supply — so coverage breadth depends on `feeds.txt`, not on adaptive searching. Quality of *analysis* is good; breadth of *discovery* is narrower. This is the honest cost of going subscription-free and self-hosted.
+The trade-off: DeepSeek can only summarise the articles the RSS feeds supply - so coverage breadth depends on `feeds.txt`, not on adaptive searching. Quality of *analysis* is good; breadth of *discovery* is narrower. This is the honest cost of going subscription-free and self-hosted.
 
-**Anti-hallucination:** DeepSeek is told to use *only* the fetched articles and never add facts from memory — grounded summarisation, which is the lowest-hallucination setup.
+**Anti-hallucination:** DeepSeek is told to use *only* the fetched articles and never add facts from memory - grounded summarisation, which is the lowest-hallucination setup.
 
 ## Setup (one-time)
 
@@ -34,4 +34,4 @@ Output saves to `digests/YYYY-MM-DD.md`, same as the Claude version.
 
 - **Add/remove sources:** edit `feeds.txt`.
 - **Switch model:** set `DEEPSEEK_MODEL=deepseek-reasoner` in secrets for the reasoning model.
-- **OpenWebUI route:** if you'd rather drive it from OpenWebUI, you can paste the system prompt (built from this project's files) and the article corpus into a DeepSeek chat — but this script automates the whole loop for you.
+- **OpenWebUI route:** if you'd rather drive it from OpenWebUI, you can paste the system prompt (built from this project's files) and the article corpus into a DeepSeek chat - but this script automates the whole loop for you.

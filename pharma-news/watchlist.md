@@ -1,9 +1,9 @@
 # 🔭 Watchlist
 
-The digest checks these every run, on top of its general sweep. Edit freely — add or remove anything you want tracked. (Eli Lilly already has its own dedicated 🎯 Lilly Watch block; this is for everything else you care about.)
+The digest checks these every run, on top of its general sweep. Edit freely - add or remove anything you want tracked. (Eli Lilly already has its own dedicated 🎯 Lilly Watch block; this is for everything else you care about.)
 
 ## Companies
-- Eli Lilly *(primary focus — see Lilly Watch)*
+- Eli Lilly *(primary focus - see Lilly Watch)*
 - Novo Nordisk
 - Amgen
 - Pfizer / Metsera
@@ -21,5 +21,5 @@ The digest checks these every run, on top of its general sweep. Edit freely — 
 ## Themes
 - AI in drug discovery & development
 - Drug pricing / MFN / tariffs
-- US–China pharma decoupling & supply chain
+- US-China pharma decoupling & supply chain
 - Patent cliffs & M&A
