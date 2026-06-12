@@ -261,11 +261,15 @@ def page(title: str, body: str, home_link: bool = True) -> str:
                   for i, n in [("latest", "Latest"), ("upcoming", "Catalysts"),
                                ("markets", "Markets"), ("archive", "Archive")])
     src = ", ".join(f'<a href="{u}" target="_blank" rel="noopener">{n}</a>' for n, u in SOURCES)
-    topbar = (f'<header class="topbar"><a class="wordmark" href="index.html">Pharma Morning Brief</a>'
-              f'<nav class="topnav">{nav}</nav></header>')
+    search = ('<a class="util" id="searchToggle" href="#">Search</a>' if not home_link
+              else '<a class="util" href="index.html">Search</a>')
+    util = f'{search}<a class="util" href="{base}#archive">Archive</a><a class="util" href="{base}#about">About</a>'
+    topbar = (f'<header class="topbar"><div class="bar">'
+              f'<a class="wordmark" href="index.html">Pharma Morning Brief</a>'
+              f'<nav class="util-nav">{util}</nav></div></header>')
     inner = f'<article class="doc">{body}</article>' if home_link else body
-    footer = (f'<footer><div class="foot-nav">{nav}</div>'
-              f'<div class="foot-src">Sources monitored &mdash; {src}</div></footer>')
+    footer = (f'<footer><div class="bar"><div class="foot-nav">{nav}</div>'
+              f'<div class="foot-src">Sources monitored &mdash; {src}</div></div></footer>')
     return f"""<!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
@@ -292,6 +296,8 @@ SEARCH_JS = """(function(){
   var input=document.getElementById('q'),
       results=document.getElementById('results'),
       archive=document.getElementById('archive');
+  var toggle=document.getElementById('searchToggle'), bar=document.getElementById('searchbar');
+  if(toggle&&bar){toggle.addEventListener('click',function(e){e.preventDefault();bar.hidden=!bar.hidden;if(!bar.hidden&&input)input.focus();});}
   if(!input) return;
   function row(d){return '<a class="arch-item" href="'+d.slug+'"><span class="arch-date">'+d.date+
     '</span><span class="arch-title">'+d.title+'</span><span class="arch-engine">'+d.engine+'</span></a>';}
@@ -338,11 +344,11 @@ def build():
     arch_html = "".join(arch_items) if arch_items else '<p class="muted">No digests yet.</p>'
 
     index_body = f"""
+<div id="searchbar" class="searchbar" hidden><input id="q" type="search" placeholder="Search the archive..." autocomplete="off"></div>
 <header class="masthead">
   <div class="kicker">Daily Pharmaceutical Intelligence</div>
   <h1 class="brand">Pharma Morning Brief</h1>
   <p class="tagline">Balanced, fact-checked &mdash; in the time it takes to drink a coffee.</p>
-  <input id="q" class="search" type="search" placeholder="Search the archive...">
 </header>
 <div id="results" style="display:none"></div>
 <section class="block" id="latest"><div class="block-label">Latest</div><div class="block-body">{latest_html}</div></section>
@@ -377,33 +383,33 @@ a{color:inherit;text-decoration:none}
 ::selection{background:var(--accent);color:#fff}
 
 /* top bar */
-.topbar{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;
- gap:20px;padding:13px clamp(20px,5vw,60px);background:color-mix(in srgb,var(--paper) 88%,transparent);
+.topbar{position:sticky;top:0;z-index:20;background:color-mix(in srgb,var(--paper) 90%,transparent);
  backdrop-filter:saturate(140%) blur(8px);border-bottom:1px solid var(--line)}
-.wordmark{font-family:var(--serif);font-weight:700;font-size:16px;letter-spacing:-.01em}
-.topnav{display:flex;gap:20px}
-.topnav a{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
-.topnav a:hover{color:var(--accent)}
+.bar{max-width:760px;margin:0 auto;padding:12px clamp(20px,5vw,40px);display:flex;justify-content:space-between;align-items:center;gap:20px}
+.wordmark{font-family:var(--serif);font-weight:700;font-size:15px;letter-spacing:-.01em}
+.util-nav{display:flex;gap:22px}
+.util{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.14em;color:var(--muted);cursor:pointer}
+.util:hover{color:var(--accent)}
+.searchbar{margin:14px 0 -8px;border-bottom:1px solid var(--line)}
+.searchbar input{width:100%;padding:12px 0;border:none;background:transparent;color:var(--ink);
+ font-family:var(--serif);font-style:italic;font-size:21px}
+.searchbar input:focus{outline:none}
+.searchbar input::placeholder{color:var(--muted)}
 
-main{max-width:1180px;margin:0 auto;padding:0 clamp(20px,5vw,60px)}
+main{max-width:760px;margin:0 auto;padding:0 clamp(20px,5vw,40px)}
 
 /* masthead */
-.masthead{padding:64px 0 30px;border-bottom:1px solid var(--ink)}
-.kicker{font-family:var(--mono);text-transform:uppercase;letter-spacing:.28em;font-size:11px;color:var(--accent);margin-bottom:18px}
-.brand{font-family:var(--serif);font-weight:700;font-size:clamp(46px,8vw,82px);line-height:.98;letter-spacing:-.02em;margin:0}
-.tagline{font-family:var(--serif);font-style:italic;color:var(--muted);font-size:clamp(17px,2.4vw,21px);margin:.55em 0 0;max-width:34ch}
-.search{margin-top:26px;width:min(360px,100%);padding:9px 2px;border:none;border-bottom:1px solid var(--line);
- background:transparent;color:var(--ink);font-family:var(--sans);font-size:15px}
-.search:focus{outline:none;border-bottom-color:var(--accent)}
-.search::placeholder{color:var(--muted)}
+.masthead{padding:58px 0 30px}
+.kicker{font-family:var(--mono);text-transform:uppercase;letter-spacing:.28em;font-size:11px;color:var(--accent);margin-bottom:16px}
+.brand{font-family:var(--serif);font-weight:700;font-size:clamp(44px,7.5vw,72px);line-height:1;letter-spacing:-.02em;margin:0}
+.tagline{font-family:var(--serif);font-style:italic;color:var(--muted);font-size:clamp(17px,2.4vw,21px);margin:.6em 0 0}
 
 /* editorial blocks: label gutter + content + breathing right margin */
-.block{display:grid;grid-template-columns:130px minmax(0,720px) 1fr;gap:44px;
- padding:54px 0;border-top:1px solid var(--line)}
-.block:first-of-type{border-top:none}
-.block-label{grid-column:1;font-family:var(--mono);text-transform:uppercase;letter-spacing:.16em;
- font-size:11px;color:var(--muted);padding-top:6px}
-.block-body{grid-column:2;min-width:0}
+.block{padding:50px 0;border-top:1px solid var(--line)}
+.block:first-of-type{border-top:none;padding-top:34px}
+.block-label{font-family:var(--mono);text-transform:uppercase;letter-spacing:.2em;
+ font-size:10.5px;color:var(--muted);margin-bottom:16px}
+.block-body{min-width:0}
 .sub-h{font-family:var(--mono);text-transform:uppercase;letter-spacing:.12em;font-size:10.5px;color:var(--muted);margin:0 0 8px}
 
 /* typography */
@@ -411,7 +417,7 @@ h1{font-family:var(--serif);font-weight:700;font-size:clamp(30px,4.6vw,44px);lin
 h2{font-family:var(--serif);font-weight:700;font-size:26px;line-height:1.15;margin:1.7em 0 .5em}
 h3{font-family:var(--serif);font-weight:700;font-size:20px;line-height:1.2;margin:1.5em 0 .35em}
 p{margin:.75em 0}
-.doc{max-width:720px;margin:0 auto;padding:56px 0 20px}
+.doc{padding:46px 0 24px}
 .doc a,.block-body p a,.point-b a{border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
 .doc a:hover,.block-body p a:hover{border-bottom-color:var(--accent)}
 .muted{color:var(--muted)}
@@ -422,7 +428,7 @@ hr{border:none;border-top:1px solid var(--line);margin:2.4em 0}
 code{font-family:var(--mono);font-size:.82em;color:var(--accent);background:transparent;padding:0}
 
 /* the lead "talking point" */
-.lede{margin:1.6em 0;padding:1.15em 0;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink)}
+.lede{margin:1.7em 0;padding:1.25em 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
 .lede p{margin:0;font-family:var(--serif);font-style:italic;font-size:clamp(20px,2.7vw,26px);line-height:1.4}
 
 /* TL;DR & quick-hit points: editorial flow, no bullets */
@@ -485,8 +491,9 @@ code{font-family:var(--mono);font-size:.82em;color:var(--accent);background:tran
 @media(max-width:560px){.mkt-name{flex-basis:120px}}
 
 /* footer */
-footer{max-width:1180px;margin:0 auto;padding:46px clamp(20px,5vw,60px) 70px;border-top:1px solid var(--ink)}
-.foot-nav{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:14px}
+footer{border-top:1px solid var(--line);margin-top:36px}
+footer .bar{flex-direction:column;align-items:flex-start;gap:14px;padding:40px clamp(20px,5vw,40px) 64px}
+.foot-nav{display:flex;gap:22px;flex-wrap:wrap}
 .foot-nav a{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
 .foot-nav a:hover{color:var(--accent)}
 .foot-src{font-size:13px;color:var(--muted)}
@@ -494,12 +501,10 @@ footer{max-width:1180px;margin:0 auto;padding:46px clamp(20px,5vw,60px) 70px;bor
 .foot-src a:hover{color:var(--accent);border-bottom-color:var(--accent)}
 
 /* responsive: drop the gutter, stack */
-@media(max-width:760px){
- .block{grid-template-columns:1fr;gap:14px;padding:38px 0}
- .block-label{grid-column:1}.block-body{grid-column:1}
+@media(max-width:680px){
+ .block{padding:38px 0}
  .arch-item{grid-template-columns:1fr auto;gap:4px 14px}
  .arch-date{grid-column:1/-1}
- .topnav{display:none}
 }
 
 /* dark — deep ink-black canvas, soft off-white text */
