@@ -96,6 +96,8 @@ Include a **Sources** section with the actual **named outlet + linked title** fo
 
 **Formatting rules:** the digest is Markdown only — **never use raw HTML tags** (no `<small>`, `<br>`, `<sub>`, etc.). In the header subtitle, set the engine to **Claude with your exact model id** — e.g. `Engine: Claude (claude-opus-4-8)`. Use whatever model you are actually running as, so the label is always accurate.
 
+**Plain-language glosses:** the reader has a biomedical background but is **new to pharma**. On first use, add a *brief* parenthetical gloss for **niche** industry/regulatory/scientific terms — e.g. *PDUFA (the FDA's target decision date)*, *CRL (a rejection letter)*, *ADC (antibody–drug conjugate)*, *TYK2 inhibitor (an oral anti-inflammatory mechanism)*, *skinny label*, *MFN pricing*, *bispecific*, *molecular glue*. Do **not** gloss obvious terms (FDA, EMA, Phase 3, oncology, biotech). Keep each gloss to a few words — clarify, don't clutter.
+
 ## Step 4.5 — Accuracy pass (anti-hallucination — DO NOT SKIP)
 
 A wrong fact here is worse than a missing one — the reader may repeat it at work. Before finalising, verify the digest against your actual search results:
