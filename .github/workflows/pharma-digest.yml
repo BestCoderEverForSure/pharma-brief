@@ -6,7 +6,10 @@ on:
   schedule:
     # GitHub cron is UTC. 05:00 UTC = 07:00 Rome (summer/CEST).
     # In winter (CET, UTC+1) this is 06:00 Rome — change to '0 6 * * *' if it matters.
-    - cron: "0 5 * * *"
+    # Mon–Sat: daily morning brief (24h window).
+    - cron: "0 5 * * 1-6"
+    # Sunday: deeper "Week in Review" — evening edition over the last 7 days.
+    - cron: "0 5 * * 0"
   workflow_dispatch:       # manual "Run workflow" button — lets you pick window + edition
     inputs:
       hours:
@@ -44,7 +47,15 @@ jobs:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           EMAIL_TO: ${{ secrets.EMAIL_TO }}
           EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
-        run: python3 deepseek/run_digest.py --email --hours "${{ github.event.inputs.hours || '24' }}" --edition "${{ github.event.inputs.edition || 'morning' }}"
+        run: |
+          # Manual run: use the chosen inputs. Scheduled run: weekly review on Sunday
+          # (deeper evening edition over 7 days), tight morning brief Mon–Sat.
+          HOURS="${{ github.event.inputs.hours }}"
+          EDITION="${{ github.event.inputs.edition }}"
+          if [ -z "$HOURS" ]; then
+            if [ "$(date -u +%u)" = "7" ]; then HOURS=168; EDITION=evening; else HOURS=24; EDITION=morning; fi
+          fi
+          python3 deepseek/run_digest.py --email --hours "$HOURS" --edition "$EDITION"
 
       - name: Archive the digest back to the repo
         run: |

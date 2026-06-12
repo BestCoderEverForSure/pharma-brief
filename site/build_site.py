@@ -144,26 +144,42 @@ def md_to_html(md: str) -> str:
 
 
 def renumber_sources(md: str) -> str:
-    """DeepSeek cites sources by their position in the fetched feed (gappy: 1,3,4,8...).
-    Renumber the Sources list to 1,2,3... and rewrite the inline [n] citations to match."""
+    """DeepSeek cites sources by their position in the fetched feed (gappy, out of order).
+    Renumber to 1,2,3… in the order the [n] citations first appear in the body, reorder the
+    Sources list to match, and rewrite the inline citations. Uncited sources are appended
+    after the cited ones, in their original order."""
     lines = md.splitlines()
     start = next((i for i, l in enumerate(lines) if l.strip().lower().startswith("## sources")), None)
     if start is None:
         return md
-    mapping, new_n = {}, 0
+    end, src, list_order = len(lines), {}, []
     for i in range(start + 1, len(lines)):
         m = re.match(r"^(\d+)\.(\s.*)$", lines[i])
         if m:
-            new_n += 1
-            mapping[m.group(1)] = str(new_n)
-            lines[i] = f"{new_n}.{m.group(2)}"
-        elif lines[i].startswith("#"):
+            src[m.group(1)] = m.group(2)
+            list_order.append(m.group(1))
+        elif lines[i].strip() == "":
+            continue
+        else:                       # first non-source line (e.g. footer rule) ends the list
+            end = i
             break
-    if not mapping:
+    if not src:
         return md
-    body = re.sub(r"\[(\d+)\]", lambda mm: "[" + mapping.get(mm.group(1), mm.group(1)) + "]",
-                  "\n".join(lines[:start]))
-    return body + "\n" + "\n".join(lines[start:])
+    body = "\n".join(lines[:start])
+    order, seen = [], set()
+    for n in re.findall(r"\[(\d+)\]", body):        # citation order of first appearance
+        if n in src and n not in seen:
+            order.append(n); seen.add(n)
+    for n in list_order:                            # then any uncited sources
+        if n not in seen:
+            order.append(n); seen.add(n)
+    mapping = {old: str(i + 1) for i, old in enumerate(order)}
+    body = re.sub(r"\[(\d+)\]", lambda mm: "[" + mapping.get(mm.group(1), mm.group(1)) + "]", body)
+    rebuilt = [lines[start]] + [f"{mapping[old]}.{src[old]}" for old in order]
+    tail = lines[end:]
+    if tail:
+        rebuilt += [""] + tail
+    return body + "\n" + "\n".join(rebuilt)
 
 
 def link_headings(md: str) -> str:
@@ -451,6 +467,24 @@ def page(title: str, body: str, home_link: bool = True, repo_url: str = "") -> s
 <script src="settings.js"></script></body></html>"""
 
 
+def published_line(date_str: str, hour_utc: int = 5) -> str:
+    """A 'Published' line whose time localizes to the viewer's timezone via JS.
+    The daily cloud run fires at 05:00 UTC (= 07:00 Rome summer), so we anchor the
+    publish instant there; the no-JS fallback shows the date."""
+    iso = f"{date_str}T{hour_utc:02d}:00:00Z"
+    return (f'<p class="meta pub">Published '
+            f'<time data-utc="{iso}">{date_str}</time> '
+            f'<span class="tz-note">· your local time</span></p>')
+
+
+def with_published(body_html: str, date_str: str, hour_utc: int = 5) -> str:
+    """Insert the localized 'Published' line right after the digest's H1."""
+    line = published_line(date_str, hour_utc)
+    if "</h1>" in body_html:
+        return body_html.replace("</h1>", "</h1>\n" + line, 1)
+    return line + body_html
+
+
 def meta_of(md: str) -> dict:
     title = next((l[2:].strip() for l in md.splitlines() if l.startswith("# ")), "Digest")
     sub = next((l for l in md.splitlines() if l.startswith("*Window")), "")
@@ -506,6 +540,13 @@ SETTINGS_JS = """(function(){
     b.onclick=function(){var t=b.getAttribute('data-theme');try{localStorage.setItem('theme',t);}catch(e){}apply(t);};});
   var os=document.getElementById('opensearch'),bar=document.getElementById('searchbar'),q=document.getElementById('q');
   if(os)os.onclick=function(){close();if(bar){bar.hidden=false;if(q)q.focus();}else{location.href='index.html';}};
+  // Localize any <time data-utc> to the viewer's own timezone.
+  [].forEach.call(document.querySelectorAll('time[data-utc]'),function(t){
+    var d=new Date(t.getAttribute('data-utc'));
+    if(isNaN(d.getTime()))return;
+    try{t.textContent=d.toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'});}
+    catch(e){t.textContent=d.toLocaleString();}
+  });
 })();"""
 
 
@@ -519,7 +560,10 @@ def build():
         md = p.read_text(encoding="utf-8")
         m = meta_of(md)
         slug = p.stem + ".html"
-        (OUT / slug).write_text(page(m["title"], render_digest(md), repo_url=repo_url), encoding="utf-8")
+        hour = 16 if "edition: evening" in md.lower() else 5
+        (OUT / slug).write_text(
+            page(m["title"], with_published(render_digest(md), p.stem, hour), repo_url=repo_url),
+            encoding="utf-8")
         engine = m["engine"]
         short_title = m["title"].split("—")[-1].strip()
         arch_items.append(
@@ -532,7 +576,9 @@ def build():
     events = parse_catalysts()
     timeline, mix = render_timeline(events), render_catalyst_mix(events)
     latest_md = files[0].read_text(encoding="utf-8") if files else ""
-    latest_html = render_digest(latest_md) if files else '<p class="muted">No digests yet.</p>'
+    latest_html = (with_published(render_digest(latest_md), files[0].stem,
+                                  16 if "edition: evening" in latest_md.lower() else 5)
+                   if files else '<p class="muted">No digests yet.</p>')
     _key = {"LLY": "lilly", "NVO": "novo", "PFE": "pfizer", "AZN": "astrazeneca", "MRK": "merck",
             "NVS": "novartis", "GSK": "gsk", "AMGN": "amgen", "ABBV": "abbvie", "JNJ": "j&j"}
     _dt = plain_text(latest_md).lower()
@@ -638,6 +684,7 @@ a.cite{border-bottom:none;color:var(--accent);font-weight:600;font-size:.82em;pa
 a.cite:hover{text-decoration:underline;text-underline-offset:2px}
 .muted{color:var(--muted)}
 .meta{font-family:var(--mono);font-size:11.5px;letter-spacing:.02em;color:var(--muted);text-transform:none;margin:.4em 0 1.4em}
+.meta.pub{margin:.2em 0 1em}.meta.pub time{color:var(--ink)}.tz-note{opacity:.7}
 strong{font-weight:700}
 em{font-style:italic}
 hr{border:none;border-top:1px solid var(--line);margin:2.4em 0}
