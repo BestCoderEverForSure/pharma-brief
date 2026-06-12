@@ -1,0 +1,56 @@
+name: Pharma Morning Digest (DeepSeek)
+
+# Generates the DeepSeek digest in the cloud, emails it, archives it to the repo,
+# and publishes the browsable website to GitHub Pages — all without your laptop.
+on:
+  schedule:
+    # GitHub cron is UTC. 05:00 UTC = 07:00 Rome (summer/CEST).
+    # In winter (CET, UTC+1) this is 06:00 Rome — change to '0 6 * * *' if it matters.
+    - cron: "0 5 * * *"
+  workflow_dispatch: {}   # manual "Run workflow" button
+
+permissions:
+  contents: write      # commit the archived digest back
+  pages: write         # publish to GitHub Pages
+  id-token: write
+
+jobs:
+  digest:
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deploy.outputs.page_url }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Generate and email the digest
+        env:
+          DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
+          DEEPSEEK_MODEL: ${{ secrets.DEEPSEEK_MODEL }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+        run: python3 deepseek/run_digest.py --email
+
+      - name: Archive the digest back to the repo
+        run: |
+          git config user.name "pharma-digest-bot"
+          git config user.email "bot@users.noreply.github.com"
+          git add digests/ || true
+          git commit -m "Digest $(date -u +%F)" || echo "nothing to commit"
+          git push || echo "push skipped"
+
+      - name: Build the website
+        run: python3 site/build_site.py
+
+      - uses: actions/configure-pages@v5
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: site/public
+      - name: Deploy to GitHub Pages
+        id: deploy
+        uses: actions/deploy-pages@v4
