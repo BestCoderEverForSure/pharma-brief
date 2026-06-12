@@ -6,6 +6,9 @@ https://www.biopharmadive.com/feeds/news/
 https://www.statnews.com/category/pharma/feed/
 https://www.labiotech.eu/feed/
 https://www.pharmaceutical-technology.com/feed/
+# Breadth layer: Google News aggregates ~100 recent pharma/biotech/FDA headlines from
+# MANY outlets (Reuters, BioSpace, PR Newswire, etc.) the curated feeds above can't pull directly.
+https://news.google.com/rss/search?q=%28pharmaceutical%20OR%20biotech%20OR%20FDA%20OR%20%22drug%20approval%22%29%20when%3A2d&hl=en-US&gl=US&ceid=US%3Aen
 # --- Sources that block automated fetching or aren't RSS (so not listed above) ---
 # endpoints.news        -> blocks the bot (403); the Claude engine still searches it live
 # biospace.com          -> bot challenge (202); Claude searches it live
