@@ -129,25 +129,36 @@ def render_timeline(events: list[dict]) -> str:
     """Vertical, fully readable timeline (HTML) — no label overlap, color-coded."""
     if not events:
         return '<p class="muted">No dated catalysts on file yet.</p>'
-    # Only show the next ~5 months so it doesn't stretch out to next year.
+    # One continuous timeline: near-term detail flowing into the longer horizon,
+    # grouped by period so it reads cleanly without a hard cut-off.
     today = dt.date.today()
-    horizon = today + dt.timedelta(days=150)
-    near = [e for e in events if e["date"] <= horizon] or events[:3]
-    beyond = len(events) - len(near)
-    rows = []
-    for e in near:
-        cat = _category(e["full"])
-        d = e["date"].strftime("%-d %b %Y")
-        rows.append(
-            f'<li class="vtl-item {cat}"><span class="vtl-dot"></span>'
-            f'<span class="vtl-date">{d}</span>'
-            f'<span class="vtl-text" title="{html.escape(e["full"])}">{html.escape(e["label"])}</span></li>')
+    labels = ["Next 30 days", "1–3 months", "On the horizon"]
+
+    def bucket(d):
+        delta = (d - today).days
+        return 0 if delta <= 30 else (1 if delta <= 90 else 2)
+
+    groups = {0: [], 1: [], 2: []}
+    for e in events:
+        groups[bucket(e["date"])].append(e)
+
+    parts = []
+    for gi in (0, 1, 2):
+        if not groups[gi]:
+            continue
+        parts.append(f'<div class="vtl-group">{labels[gi]}</div><ol class="vtl">')
+        for e in groups[gi]:
+            cat = _category(e["full"])
+            d = e["date"].strftime("%-d %b %Y")
+            parts.append(
+                f'<li class="vtl-item {cat}"><span class="vtl-dot"></span>'
+                f'<span class="vtl-date">{d}</span>'
+                f'<span class="vtl-text" title="{html.escape(e["full"])}">{html.escape(e["label"])}</span></li>')
+        parts.append("</ol>")
     legend = ('<div class="vtl-legend">'
               + "".join(f'<span class="lg {k}">{v}</span>' for k, v in _CAT_NAMES.items())
               + "</div>")
-    more = (f'<p class="muted" style="margin-top:10px;font-size:12px">+ {beyond} further out (see <code>catalysts.md</code>)</p>'
-            if beyond > 0 else "")
-    return f'<ol class="vtl">{"".join(rows)}</ol>{legend}{more}'
+    return '<div class="vtl-wrap">' + "".join(parts) + "</div>" + legend
 
 
 def render_catalyst_mix(events: list[dict]) -> str:
@@ -368,7 +379,9 @@ ul{padding-left:1.2em}li{margin:.25em 0}
 .two-col{display:grid;grid-template-columns:1.4fr 1fr;gap:24px;align-items:start}
 @media(max-width:640px){.two-col{grid-template-columns:1fr}}
 /* vertical timeline */
-.vtl{list-style:none;margin:8px 0 4px;padding:0}
+.vtl-group{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin:18px 0 2px}
+.vtl-wrap > .vtl-group:first-child{margin-top:4px}
+.vtl{list-style:none;margin:4px 0;padding:0}
 .vtl-item{position:relative;padding:9px 0 9px 28px;border-left:2px solid var(--line)}
 .vtl-item:last-child{border-left-color:transparent}
 .vtl-dot{position:absolute;left:-7px;top:14px;width:12px;height:12px;border-radius:50%;
