@@ -346,6 +346,17 @@ MARKET_TICKERS = [
     ("GSK", "GSK"), ("AMGN", "Amgen"), ("ABBV", "AbbVie"), ("JNJ", "J&J"),
 ]
 
+# Companies added to the markets strip ONLY when today's digest covers them (semi-dynamic).
+EXTRA_TICKERS = {
+    "summit": ("SMMT", "Summit Therapeutics"), "viking": ("VKTX", "Viking"),
+    "biontech": ("BNTX", "BioNTech"), "moderna": ("MRNA", "Moderna"),
+    "roche": ("RHHBY", "Roche"), "sanofi": ("SNY", "Sanofi"),
+    "takeda": ("TAK", "Takeda"), "gilead": ("GILD", "Gilead"),
+    "regeneron": ("REGN", "Regeneron"), "vertex": ("VRTX", "Vertex"),
+    "bristol": ("BMY", "Bristol Myers"), "incyte": ("INCY", "Incyte"),
+    "bayer": ("BAYRY", "Bayer"), "biogen": ("BIIB", "Biogen"),
+}
+
 
 def fetch_market(tickers: list) -> list[dict]:
     out = []
@@ -391,27 +402,53 @@ def render_market(data: list[dict], anchors: dict | None = None) -> str:
 # ----------------------------------------------------------------------------- #
 #  Page assembly
 # ----------------------------------------------------------------------------- #
-def page(title: str, body: str, home_link: bool = True) -> str:
+def get_repo_url() -> str:
+    cfg = ROOT / ".git" / "config"
+    if cfg.exists():
+        m = re.search(r"github\.com[:/]([^/\s]+/[^/\s]+?)(?:\.git)?\s", cfg.read_text())
+        if m:
+            return "https://github.com/" + m.group(1)
+    return ""
+
+
+def page(title: str, body: str, home_link: bool = True, repo_url: str = "") -> str:
     base = "index.html" if home_link else ""
     nav = "".join(f'<a href="{base}#{i}">{n}</a>'
                   for i, n in [("latest", "Latest"), ("upcoming", "Catalysts"),
                                ("markets", "Markets"), ("archive", "Archive")])
     src = ", ".join(f'<a href="{u}" target="_blank" rel="noopener">{n}</a>' for n, u in SOURCES)
-    search = ('<a class="util" id="searchToggle" href="#">Search</a>' if not home_link
-              else '<a class="util" href="index.html">Search</a>')
-    util = f'{search}<a class="util" href="{base}#archive">Archive</a><a class="util" href="{base}#about">About</a>'
+    cloud = (f'<h4>Cloud</h4>'
+             f'<a href="{repo_url}/actions" target="_blank" rel="noopener">Run / manage digests &rarr;</a>'
+             f'<a href="{repo_url}" target="_blank" rel="noopener">Project on GitHub &rarr;</a>') if repo_url else ""
+    drawer = (
+        '<div class="drawer-bg" id="drawerbg"></div>'
+        '<aside class="drawer" id="drawer"><button class="close" id="drawerclose" aria-label="Close">&times;</button>'
+        '<div class="dtitle">Settings</div>'
+        '<h4>Appearance</h4>'
+        '<div class="seg" id="themeseg"><button data-theme="auto">Auto</button>'
+        '<button data-theme="light">Light</button><button data-theme="dark">Dark</button></div>'
+        '<h4>Go to</h4>'
+        f'<a href="{base}#latest">Latest digest</a><a href="{base}#upcoming">Catalysts</a>'
+        f'<a href="{base}#markets">Markets</a><a href="{base}#archive">Archive</a><a href="{base}#about">About</a>'
+        '<h4>Find</h4><button class="opt" id="opensearch">Search the archive</button>'
+        f'{cloud}</aside>')
     topbar = (f'<header class="topbar"><div class="bar">'
               f'<a class="wordmark" href="index.html">Pharma Morning Brief</a>'
-              f'<nav class="util-nav">{util}</nav></div></header>')
+              f'<button class="gear" id="gear" aria-label="Settings">&#9881;</button></div></header>')
     inner = f'<article class="doc">{body}</article>' if home_link else body
     footer = (f'<footer><div class="bar"><div class="foot-nav">{nav}</div>'
               f'<div class="foot-src">Sources monitored &mdash; {src}</div></div></footer>')
+    head_theme = ('<script>(function(){try{var t=localStorage.getItem("theme")||"auto";'
+                  'if(t==="dark"||(t==="auto"&&matchMedia("(prefers-color-scheme:dark)").matches))'
+                  'document.documentElement.classList.add("dark");}catch(e){}})();</script>')
     return f"""<!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{html.escape(title)}</title>
+{head_theme}
 <link rel="stylesheet" href="style.css">
-</head><body>{topbar}<main>{inner}</main>{footer}</body></html>"""
+</head><body>{drawer}{topbar}<main>{inner}</main>{footer}
+<script src="settings.js"></script></body></html>"""
 
 
 def meta_of(md: str) -> dict:
@@ -449,8 +486,32 @@ SEARCH_JS = """(function(){
 })();"""
 
 
+SETTINGS_JS = """(function(){
+  var g=document.getElementById('gear'),d=document.getElementById('drawer'),
+      bg=document.getElementById('drawerbg'),c=document.getElementById('drawerclose');
+  function open(){if(d){d.classList.add('open');bg.classList.add('open');}}
+  function close(){if(d){d.classList.remove('open');bg.classList.remove('open');}}
+  if(g)g.onclick=open; if(c)c.onclick=close; if(bg)bg.onclick=close;
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')close();});
+  var seg=document.getElementById('themeseg');
+  function apply(t){
+    var dark=t==='dark'||(t==='auto'&&matchMedia('(prefers-color-scheme:dark)').matches);
+    document.documentElement.classList.toggle('dark',dark);
+    if(seg)[].forEach.call(seg.querySelectorAll('button'),function(b){
+      b.classList.toggle('sel',b.getAttribute('data-theme')===t);});
+  }
+  var cur='auto'; try{cur=localStorage.getItem('theme')||'auto';}catch(e){}
+  apply(cur);
+  if(seg)[].forEach.call(seg.querySelectorAll('button'),function(b){
+    b.onclick=function(){var t=b.getAttribute('data-theme');try{localStorage.setItem('theme',t);}catch(e){}apply(t);};});
+  var os=document.getElementById('opensearch'),bar=document.getElementById('searchbar'),q=document.getElementById('q');
+  if(os)os.onclick=function(){close();if(bar){bar.hidden=false;if(q)q.focus();}else{location.href='index.html';}};
+})();"""
+
+
 def build():
     OUT.mkdir(parents=True, exist_ok=True)
+    repo_url = get_repo_url()
     files = sorted([p for p in DIGESTS.glob("*.md") if p.stem != "INDEX"], reverse=True)
 
     arch_items, search_index = [], []
@@ -458,7 +519,7 @@ def build():
         md = p.read_text(encoding="utf-8")
         m = meta_of(md)
         slug = p.stem + ".html"
-        (OUT / slug).write_text(page(m["title"], render_digest(md)), encoding="utf-8")
+        (OUT / slug).write_text(page(m["title"], render_digest(md), repo_url=repo_url), encoding="utf-8")
         engine = m["engine"]
         short_title = m["title"].split("—")[-1].strip()
         arch_items.append(
@@ -474,8 +535,13 @@ def build():
     latest_html = render_digest(latest_md) if files else '<p class="muted">No digests yet.</p>'
     _key = {"LLY": "lilly", "NVO": "novo", "PFE": "pfizer", "AZN": "astrazeneca", "MRK": "merck",
             "NVS": "novartis", "GSK": "gsk", "AMGN": "amgen", "ABBV": "abbvie", "JNJ": "j&j"}
-    anchors = company_anchors(renumber_sources(latest_md), _key)
-    market_html = render_market(fetch_market(MARKET_TICKERS), anchors)
+    _dt = plain_text(latest_md).lower()
+    tickers, have, full_key = list(MARKET_TICKERS), {t for t, _ in MARKET_TICKERS}, dict(_key)
+    for kw, (tk, nm) in EXTRA_TICKERS.items():
+        if kw in _dt and tk not in have:
+            tickers.append((tk, nm)); have.add(tk); full_key[tk] = kw
+    anchors = company_anchors(renumber_sources(latest_md), full_key)
+    market_html = render_market(fetch_market(tickers), anchors)
     market_block = (
         '<section class="block" id="markets"><div class="block-label">Markets</div><div class="block-body">'
         + market_html + '<p class="meta">Source: Yahoo Finance, end-of-day prices. Not investment advice.</p>'
@@ -502,10 +568,11 @@ def build():
   <p>One shared editorial standard runs through two interchangeable engines &mdash; <em>Claude</em> (richest analysis, on demand) and <em>DeepSeek</em> (lean, automatic in the cloud each morning). Every fact is grounded in a real, linked source; niche terms are glossed in plain language; each issue is labelled with the engine that wrote it.</p>
 </div></section>
 <script src="search-data.js"></script><script src="search.js"></script>"""
-    (OUT / "index.html").write_text(page("Pharma Morning Brief", index_body, home_link=False), encoding="utf-8")
+    (OUT / "index.html").write_text(page("Pharma Morning Brief", index_body, home_link=False, repo_url=repo_url), encoding="utf-8")
     (OUT / "style.css").write_text(CSS, encoding="utf-8")
     (OUT / "search-data.js").write_text("window.DIGESTS=" + json.dumps(search_index) + ";", encoding="utf-8")
     (OUT / "search.js").write_text(SEARCH_JS, encoding="utf-8")
+    (OUT / "settings.js").write_text(SETTINGS_JS, encoding="utf-8")
     print(f"Site built ✓  ({len(files)} digests)  -> {OUT / 'index.html'}")
 
 
@@ -661,12 +728,31 @@ footer .bar{flex-direction:column;align-items:flex-start;gap:14px;padding:40px c
 }
 
 /* dark — deep ink-black canvas, soft off-white text */
-@media (prefers-color-scheme: dark){
- :root{--paper:#0b0c10;--ink:#e2e8f0;--muted:#8a91a0;--line:#20232c;--accent:#86b3ad;
-  --c-reg:#86b3ad;--c-earn:#c1948b;--c-conf:#bd9bb1;--c-other:#b9baa3;--up:#86b3ad;--down:#cf9087;--major:#d39b91;}
- .vtl-dot{box-shadow:0 0 0 4px var(--paper)}
- ::selection{background:var(--accent);color:#0b0c10}
-}
+/* dark mode is toggleable via the settings gear (html.dark); "Auto" follows the OS */
+html.dark{--paper:#0b0c10;--ink:#e2e8f0;--muted:#8a91a0;--line:#20232c;--accent:#86b3ad;
+ --c-reg:#86b3ad;--c-earn:#c1948b;--c-conf:#bd9bb1;--c-other:#b9baa3;--up:#86b3ad;--down:#cf9087;--major:#d39b91;}
+html.dark .vtl-dot{box-shadow:0 0 0 4px var(--paper)}
+html.dark ::selection{background:var(--accent);color:#0b0c10}
+/* settings gear + drawer */
+.gear{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--ink);
+ font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1;padding:0}
+.gear:hover{border-color:var(--accent);color:var(--accent);transform:rotate(40deg);transition:transform .2s}
+.drawer-bg{position:fixed;inset:0;background:rgba(10,11,16,.4);z-index:50;opacity:0;pointer-events:none;transition:opacity .2s}
+.drawer-bg.open{opacity:1;pointer-events:auto}
+.drawer{position:fixed;top:0;right:0;height:100%;width:300px;max-width:86vw;background:var(--paper);
+ border-left:1px solid var(--line);z-index:60;transform:translateX(100%);transition:transform .24s ease;
+ padding:24px 24px 48px;overflow-y:auto;box-shadow:-12px 0 40px rgba(0,0,0,.12)}
+.drawer.open{transform:none}
+.drawer .dtitle{font-family:var(--serif);font-size:24px;font-weight:700;margin:0 0 2px}
+.drawer h4{font-family:var(--mono);text-transform:uppercase;letter-spacing:.16em;font-size:10px;color:var(--muted);margin:24px 0 8px}
+.drawer a,.drawer button.opt{display:block;width:100%;text-align:left;background:none;border:none;
+ font-family:var(--sans);font-size:14.5px;color:var(--ink);padding:7px 0;cursor:pointer}
+.drawer a:hover,.drawer button.opt:hover{color:var(--accent)}
+.drawer .close{position:absolute;top:16px;right:18px;border:none;background:none;font-size:22px;color:var(--muted);cursor:pointer;line-height:1}
+.seg{display:flex;border:1px solid var(--line);border-radius:8px;overflow:hidden;margin:2px 0}
+.seg button{flex:1;background:none;border:none;padding:9px 0;font-family:var(--mono);font-size:11px;
+ text-transform:uppercase;letter-spacing:.06em;color:var(--muted);cursor:pointer}
+.seg button.sel{background:var(--accent);color:#fff}
 """
 
 
