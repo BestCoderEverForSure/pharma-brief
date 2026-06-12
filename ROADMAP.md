@@ -17,24 +17,24 @@ Where the project stands, and everything we discussed adding.
 - [x] Cloud automation - GitHub Actions: daily email + auto-publish website
 - [x] Anonymised public repo (no name/email exposed)
 - [x] Sourcing upgrade - added Labiotech.eu; quality-source rule
+- [x] Editorial magazine UI + ⚙ settings drawer (theme/nav/search/cloud links)
+- [x] Clickable headlines + `[n]` citations; sources renumbered by order of appearance (site **and** email)
+- [x] Semi-dynamic markets table (core tickers + covered tickers; correlation-only)
+- [x] Viewer-local publish time on the website; fixed Rome stamp in email
+- [x] **Telegram delivery** - summary card + "read full brief" link to a public channel (free, no domain)
+- [x] **Sunday "Week in Review"** - deeper evening edition over 7 days, in the cloud
+- [x] Thin-digest guard - aborts (so GitHub emails you) instead of sending a hollow brief
 
-## To decide / your action ⬜
-- [ ] **Simplify schedulers** - pick ONE automatic runner (see below) - *decide now*
-- [ ] **Switch Resend key Full → Send-only** - security hardening *(you, ~2 min)*
-- [ ] **Delete old private `pharma-news` repo** - tidy-up *(you, via github.com)*
+## Next up / your action ⬜
+- [ ] **A/B DeepSeek v4-pro vs flash** - flip `DEEPSEEK_MODEL` secret, compare a few days *(you: send the exact model id; cost ~$1.50/mo on pro)*
+- [ ] **Create the Telegram channel + set `TELEGRAM_CHAT_ID`** - last step to go live *(you: ~2 min — DONE if `@pharma_morning_brief` is wired)*
+- [ ] **Claude-grade cloud digest** - Anthropic API + live web search (`web_search` tool), stdlib-only via raw HTTP; recommend running it for the **Sunday weekly** only (premium where it counts, pennies the rest of the week). ~$5-15/mo + web-search fee.
+- [ ] *(optional)* Revoke/rotate the Telegram bot token via @BotFather (it passed through a chat)
 
 ## Optional / future 💡
-- [ ] Send to your IMD email or a custom "from" - needs verifying a domain in Resend
-- [ ] Stock / markets chart on the website - needs a price-data source (avoids made-up numbers)
-- [ ] WhatsApp / Telegram delivery (instead of / alongside email)
-- [ ] Higher-quality *cloud* digest via the Anthropic (Claude) API - so the automatic one is Claude-grade, not DeepSeek
-- [ ] Evening edition in the cloud (a second daily run)
+- [ ] Verify a Resend domain - required to email **other people** (e.g. a pharma friend); Telegram is the free alternative
 - [ ] More sources as you find them (add RSS feeds to `deepseek/feeds.txt`)
+- [ ] Port the whole thing to another industry (e.g. AI news) - swap feeds/watchlist/catalysts/branding; ~half a day, no core rewrite
 
-## Note on schedulers (the thing to simplify)
-You currently have **three** ways it could run - too many:
-1. **Cloud (GitHub Actions, DeepSeek)** - reliable, laptop-independent, also publishes the site. ✅ recommended as the one automatic runner.
-2. **Claude app task (Claude engine)** - better quality, but only runs if the Claude app is open, and emails only (no website). Currently ON → causes a *duplicate* morning email.
-3. **Local macOS launchd job (DeepSeek)** - fully redundant with the cloud. Currently OFF.
-
-**Recommended:** keep #1 automatic, turn off #2 and remove #3, and use `/pharma-news` (Claude) on-demand when you want the premium read.
+## Note on schedulers (resolved ✅)
+Settled on **one** automatic runner: **GitHub Actions (cloud, DeepSeek)** - laptop-independent, emails + publishes the site, runs Mon-Sat morning + Sunday weekly. Local launchd is not used (macOS TCC blocks it from `~/Desktop`). Use `/pharma-news` (Claude engine) on-demand when you want the premium read.
