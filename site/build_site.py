@@ -17,6 +17,7 @@ import re
 import json
 import html
 import datetime as dt
+import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -165,6 +166,52 @@ def render_catalyst_mix(events: list[dict]) -> str:
 
 
 # ----------------------------------------------------------------------------- #
+#  Markets chart (real prices, free Yahoo Finance endpoint — no key, no fake data)
+# ----------------------------------------------------------------------------- #
+MARKET_TICKERS = [
+    ("LLY", "Eli Lilly"), ("NVO", "Novo Nordisk"), ("PFE", "Pfizer"),
+    ("AZN", "AstraZeneca"), ("MRK", "Merck"), ("NVS", "Novartis"),
+    ("GSK", "GSK"), ("AMGN", "Amgen"), ("ABBV", "AbbVie"), ("JNJ", "J&J"),
+]
+
+
+def fetch_market(tickers: list) -> list[dict]:
+    """5-day % move per ticker from Yahoo Finance. Skips any that fail — never invents data."""
+    out = []
+    for t, name in tickers:
+        try:
+            req = urllib.request.Request(
+                f"https://query1.finance.yahoo.com/v8/finance/chart/{t}?range=5d&interval=1d",
+                headers={"User-Agent": "Mozilla/5.0"})
+            d = json.loads(urllib.request.urlopen(req, timeout=15).read())
+            closes = [c for c in d["chart"]["result"][0]["indicators"]["quote"][0]["close"] if c]
+            if len(closes) >= 2:
+                out.append({"t": t, "name": name,
+                            "pct": (closes[-1] / closes[0] - 1) * 100, "last": closes[-1]})
+        except Exception:
+            continue
+    return out
+
+
+def render_market(data: list[dict]) -> str:
+    if not data:
+        return ""
+    data = sorted(data, key=lambda x: x["pct"], reverse=True)
+    mx = max((abs(x["pct"]) for x in data), default=1) or 1
+    rows = []
+    for x in data:
+        cls = "up" if x["pct"] >= 0 else "down"
+        sign = "+" if x["pct"] >= 0 else ""
+        w = round(abs(x["pct"]) / mx * 100)
+        rows.append(
+            '<div class="mkt-row">'
+            f'<span class="mkt-name">{html.escape(x["name"])} <span class="tkr">{x["t"]}</span></span>'
+            f'<span class="mkt-bar"><span class="mkt-fill {cls}" style="width:{w}%"></span></span>'
+            f'<span class="mkt-pct {cls}">{sign}{x["pct"]:.1f}%</span></div>')
+    return '<div class="market">' + "".join(rows) + "</div>"
+
+
+# ----------------------------------------------------------------------------- #
 #  Page assembly
 # ----------------------------------------------------------------------------- #
 def page(title: str, body: str, home_link: bool = True) -> str:
@@ -237,6 +284,11 @@ def build():
     events = parse_catalysts()
     timeline, mix = render_timeline(events), render_catalyst_mix(events)
     latest_html = md_to_html(files[0].read_text(encoding="utf-8")) if files else '<p class="muted">No digests yet.</p>'
+    market_html = render_market(fetch_market(MARKET_TICKERS))
+    market_panel = (
+        '<section class="panel"><h2>📈 Pharma markets — 5-day move</h2>' + market_html +
+        '<p class="muted" style="font-size:11px;margin-top:10px">Source: Yahoo Finance, end-of-day prices. Not investment advice.</p></section>'
+    ) if market_html else ""
 
     index_body = f"""
 <header class="hero">
@@ -253,6 +305,7 @@ def build():
   <h2>📅 Week Ahead</h2>
   <div class="two-col"><div>{timeline}</div><div><h3>Catalyst mix</h3>{mix}</div></div>
 </section>
+{market_panel}
 <section class="panel" id="archive">
   <h2>🗂️ Archive</h2>
   <div class="grid">{''.join(cards) if cards else '<p class="muted">No digests yet.</p>'}</div>
@@ -330,6 +383,17 @@ ul{padding-left:1.2em}li{margin:.25em 0}
 .bar-fill.reg{background:#7c3aed}.bar-fill.earn{background:#16a34a}
 .bar-fill.conf{background:#0ea5e9}.bar-fill.other{background:#9a9aa0}
 .bar-val{min-width:18px;text-align:right;font-weight:700}
+/* markets */
+.market{margin-top:4px}
+.mkt-row{display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px}
+.mkt-name{flex:0 0 190px}
+.tkr{color:var(--muted);font-size:11px}
+.mkt-bar{flex:1;height:9px;background:var(--line);border-radius:999px;overflow:hidden}
+.mkt-fill{display:block;height:100%;border-radius:999px}
+.mkt-fill.up{background:#16a34a}.mkt-fill.down{background:#dc2626}
+.mkt-pct{flex:0 0 56px;text-align:right;font-weight:700}
+.mkt-pct.up{color:#16a34a}.mkt-pct.down{color:#dc2626}
+@media(max-width:560px){.mkt-name{flex-basis:120px}}
 /* dark mode */
 @media (prefers-color-scheme: dark){
  :root{--bg:#0f0f12;--card:#1b1b20;--ink:#ededf0;--muted:#9a9aa3;--line:#2b2b32;--accent:#a78bfa}
