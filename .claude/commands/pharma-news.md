@@ -39,7 +39,7 @@ Run **multiple, varied web searches** to get genuine breadth and balance. Do not
 - **Trends & macro for pharma**: drug pricing, IRA/policy, tariffs, supply chain, GLP-1/obesity, AI in drug discovery, biosimilars.
 - **Emerging markets (demand-driven, not a quota)**: surface **China and India** business news when material (innovation, out-licensing, API supply, pricing/access) — these genuinely move big pharma. Other emerging markets only if a story has real global significance. Do **not** add a standing EM section or pad with low-relevance regional items; relevance over coverage.
 
-**Balance rule:** draw from a spread of sources — trade press (Endpoints News, STAT, Fierce Pharma, BioPharma Dive, Pharmaphorum), financial/general (Reuters, Bloomberg, FT, WSJ), and primary sources (company press releases, regulator sites). When a story is contested or spun, note the differing angles. Distinguish **fact** from **rumour** from **opinion**.
+**Balance rule:** draw from a spread of **reputable** sources — trade press (Endpoints News, STAT, Fierce Pharma, BioPharma Dive, Labiotech.eu, Pharmaphorum), financial/general (Reuters, Bloomberg, FT, WSJ), and primary sources (company press releases, regulator sites: FDA/EMA). Prefer established outlets over aggregators/blogs; if a claim only appears on a low-quality source, treat it as unconfirmed. When a story is contested or spun, note the differing angles. Distinguish **fact** from **rumour** from **opinion**.
 
 **FT link-through:** when the Financial Times has relevant coverage, surface and **link** it in Sources (do not attempt to scrape paywalled FT content — just cite and link the headline so it can be opened with a valid subscription).
 
