@@ -125,6 +125,21 @@ def md_to_html(md: str) -> str:
 
 
 def main() -> int:
+    # --preview: render the email to an HTML file (no keys needed) so anyone can
+    # see what the emailed digest looks like without sending anything.
+    args = sys.argv[1:]
+    if "--preview" in args:
+        rest = [a for a in args if a != "--preview"]
+        digest_path = find_digest(rest[0] if rest else None)
+        if not digest_path.exists():
+            print(f"ERROR: digest not found: {digest_path}", file=sys.stderr)
+            return 3
+        out = Path(rest[1]).expanduser() if len(rest) > 1 else (PROJECT_ROOT / "samples" / "email-preview.html")
+        out.parent.mkdir(parents=True, exist_ok=True)
+        out.write_text(md_to_html(digest_path.read_text(encoding="utf-8")), encoding="utf-8")
+        print(f"Email preview written ✓ -> {out}")
+        return 0
+
     secrets = load_secrets()
     api_key = secrets.get("RESEND_API_KEY")
     to_addr = secrets.get("EMAIL_TO")
