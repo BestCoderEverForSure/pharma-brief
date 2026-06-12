@@ -134,22 +134,36 @@ def main() -> int:
     md = digest_path.read_text(encoding="utf-8")
     message = build_message(md, digest_path.stem, site_base)
 
-    payload = json.dumps({
-        "chat_id": chat_id,
-        "text": message,
-        "parse_mode": "HTML",
-        "disable_web_page_preview": False,
-    }).encode("utf-8")
-    req = urllib.request.Request(
-        TG_API.format(token=token), data=payload, method="POST",
-        headers={"Content-Type": "application/json"},
-    )
-    try:
+    def post(text: str, as_html: bool):
+        body = {"chat_id": chat_id, "text": text, "disable_web_page_preview": False}
+        if as_html:
+            body["parse_mode"] = "HTML"
+        req = urllib.request.Request(
+            TG_API.format(token=token), data=json.dumps(body).encode("utf-8"),
+            method="POST", headers={"Content-Type": "application/json"})
         with urllib.request.urlopen(req, timeout=30) as resp:
-            print(f"Telegram sent ✓  ({resp.status}) -> {chat_id}")
-            return 0
+            return resp.status
+
+    try:
+        status = post(message, as_html=True)
+        print(f"Telegram sent ✓  ({status}) -> {chat_id}")
+        return 0
     except urllib.error.HTTPError as e:
-        print(f"ERROR {e.code}: {e.read().decode('utf-8', 'replace')}", file=sys.stderr)
+        detail = e.read().decode("utf-8", "replace")
+        # A malformed entity (e.g. an odd character in a headline) gives a 400.
+        # Rather than drop the post, retry as plain text with the tags stripped.
+        if e.code == 400:
+            print(f"WARN: HTML post rejected ({detail}); retrying as plain text.", file=sys.stderr)
+            plain = re.sub(r"<[^>]+>", "", message)
+            plain = plain.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").replace("&#x27;", "'")
+            try:
+                status = post(plain, as_html=False)
+                print(f"Telegram sent ✓ (plain, {status}) -> {chat_id}")
+                return 0
+            except urllib.error.HTTPError as e2:
+                print(f"ERROR {e2.code}: {e2.read().decode('utf-8', 'replace')}", file=sys.stderr)
+                return 4
+        print(f"ERROR {e.code}: {detail}", file=sys.stderr)
         return 4
     except urllib.error.URLError as e:
         print(f"ERROR: network failure: {e.reason}", file=sys.stderr)

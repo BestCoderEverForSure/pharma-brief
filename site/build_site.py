@@ -560,9 +560,8 @@ def build():
         md = p.read_text(encoding="utf-8")
         m = meta_of(md)
         slug = p.stem + ".html"
-        hour = 16 if "edition: evening" in md.lower() else 5
         (OUT / slug).write_text(
-            page(m["title"], with_published(render_digest(md), p.stem, hour), repo_url=repo_url),
+            page(m["title"], with_published(render_digest(md), p.stem), repo_url=repo_url),
             encoding="utf-8")
         engine = m["engine"]
         short_title = m["title"].split("—")[-1].strip()
@@ -576,8 +575,7 @@ def build():
     events = parse_catalysts()
     timeline, mix = render_timeline(events), render_catalyst_mix(events)
     latest_md = files[0].read_text(encoding="utf-8") if files else ""
-    latest_html = (with_published(render_digest(latest_md), files[0].stem,
-                                  16 if "edition: evening" in latest_md.lower() else 5)
+    latest_html = (with_published(render_digest(latest_md), files[0].stem)
                    if files else '<p class="muted">No digests yet.</p>')
     _key = {"LLY": "lilly", "NVO": "novo", "PFE": "pfizer", "AZN": "astrazeneca", "MRK": "merck",
             "NVS": "novartis", "GSK": "gsk", "AMGN": "amgen", "ABBV": "abbvie", "JNJ": "j&j"}
