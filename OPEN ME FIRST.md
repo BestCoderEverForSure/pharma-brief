@@ -18,6 +18,7 @@ Everything else is reference, in rough order of usefulness:
 - samples/email-preview.html  - exactly what the morning email looks like (opens in a browser)
 - EVIDENCE.md      - proof the email + cloud automation really run (not a mock-up)
 - CLAUDE.md        - project overview + the problem statement it was built against
+- PRD.md           - one-page product requirements (problem, target users, key features)
 - README.md        - the full technical manual
 - ROADMAP.md       - features built, and ideas considered or parked
 - DEMO.md          - a 60-second demo script
