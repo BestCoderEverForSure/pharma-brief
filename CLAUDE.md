@@ -57,7 +57,7 @@ This file is the persistent context for this project (read it first).
 - macOS launchd can't read `~/Desktop` (TCC) → scheduling lives in the cloud, not local.
 
 **Open / optional (see ROADMAP.md):**
-- **Telegram delivery** — the free, no-domain way to add other readers (e.g. the user's pharma friend). WhatsApp was ruled out: Business API isn't free/simple (needs business acct + paid provider + approved templates). Telegram bot is free + ~5 min; **not yet built — pending user go-ahead.**
+- **Telegram delivery** — **BUILT** (`pharma-news/send_telegram.py`, wired via `run_digest.py --telegram` + the workflow). Posts a summary card (title + talking point + TL;DR + "read full brief" link) to a channel; free, no domain (the chosen way to share with others, e.g. the user's pharma friend). Bot = **@pharma_morning_brief_bot**; `TELEGRAM_BOT_TOKEN` is set locally + as a GitHub Secret. **Pending: create a public channel, add the bot as admin, then set `TELEGRAM_CHAT_ID`=`@channelusername` (local secrets.env + GitHub Secret).** Until that's set, the script skips cleanly (daily run unaffected). WhatsApp was ruled out (Business API isn't free/simple).
 - **Claude-API cloud version** — make the *automatic* digest Claude-grade (currently only on-demand `/pharma-news` is Claude; the cloud daily is DeepSeek).
 - Resend domain verification (only needed to email recipients other than the test inbox; user has no domain → Telegram is the chosen path for sharing).
 
