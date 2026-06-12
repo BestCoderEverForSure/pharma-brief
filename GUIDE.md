@@ -7,6 +7,19 @@ This explains everything you have, in plain language. No jargon.
 ## What is this project?
 A little robot that reads the pharma news for you every morning, writes a 2–3 minute summary (with analysis and a focus on Eli Lilly), and **emails it to you** + **puts it on a website**.
 
+## 🎛️ The Command Centre — your one button
+**Double-click `Pharma Command Centre.command`** in this folder. One menu controls everything (simple Mac pop-ups, no typing):
+- **Generate a digest now** (on this Mac) — pick window + edition + email
+- **Run the cloud digest now** — emails you and updates the website
+- **Turn the daily 7am cloud digest ON / OFF**
+- **Open the website**
+- **Status** — last run, is the daily one on, last cloud run
+- **Edit** your watchlist / news sources / calendar
+- **Make an audio brief**
+
+*(First time: if macOS blocks it, right-click → Open → Open once.)*
+The only thing it can't drive is the premium **Claude** read — for that, type `/pharma-news` in the Claude app.
+
 ---
 
 ## The one idea to hold onto: 1 recipe, 2 cooks, 1 waiter
