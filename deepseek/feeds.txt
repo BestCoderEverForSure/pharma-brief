@@ -1,8 +1,11 @@
-# RSS feeds for the DeepSeek standalone digest. One URL per line; # = comment.
-# Edit freely. These are the news sources DeepSeek summarises from.
+# RSS feeds the DeepSeek engine reads news from. One URL per line; # = comment.
+# Edit freely — add any source that publishes an RSS feed.
 https://www.fiercepharma.com/rss/xml
 https://www.fiercebiotech.com/rss/xml
-https://endpoints.news/feed/
-https://www.statnews.com/category/pharma/feed/
 https://www.biopharmadive.com/feeds/news/
-https://www.fda.gov/about-fda/contact-fda/stay-informed/rss-feeds/press-releases/rss.xml
+https://www.statnews.com/category/pharma/feed/
+https://www.labiotech.eu/feed/
+# --- Notes on sources that can't be auto-pulled ---
+# endpoints.news/feed/  -> blocks automated fetching (403); covered via the feeds above
+# FDA press-release RSS  -> URL returns 404; FDA news is covered via the trade press above
+# imapac.com newsletter  -> it's an email newsletter, not an RSS feed, so it can't be auto-fetched
