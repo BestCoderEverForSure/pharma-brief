@@ -38,3 +38,21 @@ This file is the persistent context for this project (read it first).
 - `README.md` - full technical manual.
 - `ROADMAP.md` - done/checklist of features.
 - `digests/` - saved digests (the archive the website renders).
+
+## Current state & open items (session handoff)
+**Live:** repo `github.com/BestCoderEverForSure/pharma-brief` (public, anonymised) · site `https://bestcodereverforsure.github.io/pharma-brief/` · GitHub Actions runs daily **07:00 Rome** (active) and emails + publishes. Secrets in `~/.config/pharma-news/secrets.env` (RESEND_API_KEY send-only, DEEPSEEK_API_KEY, EMAIL_TO=`k.valtetsiotis+resend@gmail.com`; Resend **test mode** = delivers only to that inbox).
+
+**Built (all in `site/build_site.py` unless noted; live on local site, online site, and email where applicable):**
+- Editorial magazine UI: serif masthead, custom palette (Ash Grey/Smoky Rose/Granite/Ink Black/Dusty Mauve), Avenir Next + Iowan; no sidebar/cards; centred ~760px measure.
+- **⚙ Settings drawer** (gear in top bar): theme Auto/Light/Dark toggle (persists, no-flash via head script + `html.dark`), nav, search, GitHub cloud links (`SETTINGS_JS`).
+- Clickable **headlines + inline `[n]` citations** (link to sources via `_SRCMAP`/`render_digest`); sources renumbered 1..N (`renumber_sources`).
+- **Major-story highlight**: append ` {major}` to a heading → Smoky Rose + "MAJOR STORY" label; supported in site AND email (`send_digest.py`).
+- **Semi-dynamic markets** (`render_market`): core 10 tickers + `EXTRA_TICKERS` added only when covered today; "may relate to" notes link to the specific story anchor (`#sN`/section) — correlation only, no forecasts (no-advice scope).
+- Google News breadth feed in `deepseek/feeds.txt`; aggregator links get a `↗` flag; visited links grey out.
+
+**Gotchas:**
+- Cloud regenerates the digest daily → **overwrites any manual `{major}` demo tag**; DeepSeek flags major rarely (by design). To demo, re-tag a heading in today's `digests/*.md`.
+- Git: cloud auto-commits digests so local diverges → sync with **`git pull origin main --no-rebase -X ours --no-edit` then push** (never force).
+- macOS launchd can't read `~/Desktop` (TCC) → scheduling lives in the cloud, not local.
+
+**Open / optional (see ROADMAP.md):** WhatsApp/Telegram delivery; Claude-API cloud version (make the *automatic* digest Claude-grade); evening edition in the cloud; verify a Resend domain to email the IMD address.
