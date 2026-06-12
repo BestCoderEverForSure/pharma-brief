@@ -110,6 +110,29 @@ def md_to_html(md: str) -> str:
     return "\n".join(out)
 
 
+def renumber_sources(md: str) -> str:
+    """DeepSeek cites sources by their position in the fetched feed (gappy: 1,3,4,8...).
+    Renumber the Sources list to 1,2,3... and rewrite the inline [n] citations to match."""
+    lines = md.splitlines()
+    start = next((i for i, l in enumerate(lines) if l.strip().lower().startswith("## sources")), None)
+    if start is None:
+        return md
+    mapping, new_n = {}, 0
+    for i in range(start + 1, len(lines)):
+        m = re.match(r"^(\d+)\.(\s.*)$", lines[i])
+        if m:
+            new_n += 1
+            mapping[m.group(1)] = str(new_n)
+            lines[i] = f"{new_n}.{m.group(2)}"
+        elif lines[i].startswith("#"):
+            break
+    if not mapping:
+        return md
+    body = re.sub(r"\[(\d+)\]", lambda mm: "[" + mapping.get(mm.group(1), mm.group(1)) + "]",
+                  "\n".join(lines[:start]))
+    return body + "\n" + "\n".join(lines[start:])
+
+
 def link_headings(md: str) -> str:
     """Turn each Top Story headline into a link to its cited source.
     Uses the inline [n] citation + the numbered Sources list (DeepSeek), or leaves
@@ -353,7 +376,7 @@ def build():
         md = p.read_text(encoding="utf-8")
         m = meta_of(md)
         slug = p.stem + ".html"
-        (OUT / slug).write_text(page(m["title"], md_to_html(link_headings(md))), encoding="utf-8")
+        (OUT / slug).write_text(page(m["title"], md_to_html(link_headings(renumber_sources(md)))), encoding="utf-8")
         engine = m["engine"]
         short_title = m["title"].split("—")[-1].strip()
         arch_items.append(
@@ -365,7 +388,7 @@ def build():
 
     events = parse_catalysts()
     timeline, mix = render_timeline(events), render_catalyst_mix(events)
-    latest_html = md_to_html(link_headings(files[0].read_text(encoding="utf-8"))) if files else '<p class="muted">No digests yet.</p>'
+    latest_html = md_to_html(link_headings(renumber_sources(files[0].read_text(encoding="utf-8")))) if files else '<p class="muted">No digests yet.</p>'
     market_html = render_market(fetch_market(MARKET_TICKERS))
     market_block = (
         '<section class="block" id="markets"><div class="block-label">Markets</div><div class="block-body">'
