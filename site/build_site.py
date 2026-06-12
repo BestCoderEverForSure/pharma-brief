@@ -332,8 +332,7 @@ def build():
 <section class="panel">
   <h2>ℹ️ About this project</h2>
   <p><strong>Pharma Morning Brief</strong> turns the day's pharmaceutical news into a fact-checked, 2–3 minute executive digest — built for someone entering pharma who needs to stay current without reading 20 outlets every morning.</p>
-  <p><strong>How it works:</strong> one shared "recipe" (what a good digest looks like) runs through <strong>two interchangeable AI engines</strong> — <em>Claude</em> (richest analysis, on-demand) and <em>DeepSeek</em> (cheap, runs automatically in the cloud every morning). The result is emailed to subscribers <em>and</em> published to this website. Every fact is grounded in a real, linked source; niche terms are glossed in plain language; each digest is labelled with the engine that wrote it.</p>
-  <p class="muted">Built with Claude Code for the IMD MBA Vibe Coding workshop.</p>
+  <p><strong>How it works:</strong> one shared "recipe" (what a good digest looks like) runs through <strong>two interchangeable AI engines</strong> — <em>Claude</em> (richest analysis, on-demand) and <em>DeepSeek</em> (cheap, runs automatically in the cloud every morning). The result is emailed <em>and</em> published to this website. Every fact is grounded in a real, linked source; niche terms are glossed in plain language; each digest is labelled with the engine that wrote it.</p>
 </section>
 <script src="search-data.js"></script>
 <script src="search.js"></script>"""
@@ -354,8 +353,8 @@ CSS = """
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);line-height:1.62;font-size:16.5px;
  font-family:var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
-main{max-width:780px;margin:0 auto;padding:40px 22px 16px;}
-footer{max-width:780px;margin:0 auto;padding:22px 0 56px;color:var(--muted);font-size:11.5px;
+main{max-width:940px;margin:0 auto;padding:40px 22px 16px;}
+footer{max-width:940px;margin:0 auto;padding:22px 0 56px;color:var(--muted);font-size:11.5px;
  border-top:1px solid var(--line);font-family:var(--mono);letter-spacing:.04em;text-transform:uppercase;}
 h1{font-family:var(--serif);font-weight:700;font-size:30px;line-height:1.15;margin:.2em 0 .3em}
 h2{font-family:var(--serif);font-weight:700;font-size:21px;margin:1.7em 0 .7em;padding-bottom:.3em;border-bottom:1px solid var(--line)}
