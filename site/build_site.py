@@ -47,6 +47,17 @@ def strip_lead(s: str) -> str:
     return _LEAD_EMOJI.sub("", s)
 
 
+def _visible(t: str) -> str:
+    """Heading text without markdown link syntax / {major} / emphasis marks."""
+    t = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", t)
+    t = re.sub(r"\s*\{major\}\s*$", "", t)
+    return re.sub(r"[*`]", "", t).strip()
+
+
+def _slug(t: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "-", _visible(t).lower()).strip("-")[:60] or "sec"
+
+
 _SRCMAP: dict = {}
 
 
@@ -72,7 +83,7 @@ def md_inline(text: str) -> str:
 
 
 def md_to_html(md: str) -> str:
-    out, items, in_quote = [], [], False
+    out, items, in_quote, h3n = [], [], False, 0
 
     def flush_list():
         nonlocal items
@@ -100,14 +111,16 @@ def md_to_html(md: str) -> str:
         if not line.strip():
             flush_list(); close_quote(); continue
         if line.startswith("### "):
-            flush_list(); close_quote()
+            flush_list(); close_quote(); h3n += 1
             ht, cls, tag = strip_lead(line[4:]), "", ""
             if ht.rstrip().endswith("{major}"):
                 cls = ' class="major"'; tag = '<div class="major-tag">Major story</div>'
                 ht = re.sub(r"\s*\{major\}\s*$", "", ht)
-            out.append(f"{tag}<h3{cls}>{md_inline(ht)}</h3>")
+            out.append(f'{tag}<h3 id="s{h3n}"{cls}>{md_inline(ht)}</h3>')
         elif line.startswith("## "):
-            flush_list(); close_quote(); out.append(f"<h2>{md_inline(strip_lead(line[3:]))}</h2>")
+            flush_list(); close_quote()
+            h2t = strip_lead(line[3:])
+            out.append(f'<h2 id="{_slug(h2t)}">{md_inline(h2t)}</h2>')
         elif line.startswith("# "):
             flush_list(); close_quote(); out.append(f"<h1>{md_inline(strip_lead(line[2:]))}</h1>")
         elif line.strip() in ("---", "***", "___"):
@@ -203,6 +216,27 @@ def render_digest(md: str) -> str:
     _SRCMAP = _parse_srcmap(md)
     out = md_to_html(link_headings(md))
     _SRCMAP = {}
+    return out
+
+
+def company_anchors(md: str, keymap: dict) -> dict:
+    """Map each ticker to the anchor of the digest section that mentions it — a Top Story
+    (#sN) if possible, else a ## section — so a markets note jumps straight to it."""
+    stories, sections, cur, h3n = [], [], None, 0
+    for l in md.splitlines():
+        if l.startswith("### "):
+            h3n += 1; stories.append([f"s{h3n}", strip_lead(l[4:])]); cur = ("S", len(stories) - 1)
+        elif l.startswith("## "):
+            t = strip_lead(l[3:]); sections.append([_slug(t), t]); cur = ("H", len(sections) - 1)
+        elif l.startswith("# "):
+            cur = None
+        elif cur:
+            (stories if cur[0] == "S" else sections)[cur[1]][1] += " " + l
+    out = {}
+    for tk, kw in keymap.items():
+        kw = kw.lower()
+        out[tk] = next((s[0] for s in stories if kw in s[1].lower()),
+                       next((s[0] for s in sections if kw in s[1].lower()), None))
     return out
 
 
@@ -330,10 +364,10 @@ def fetch_market(tickers: list) -> list[dict]:
     return out
 
 
-def render_market(data: list[dict], covered: set | None = None) -> str:
+def render_market(data: list[dict], anchors: dict | None = None) -> str:
     if not data:
         return ""
-    covered = covered or set()
+    anchors = anchors or {}
     data = sorted(data, key=lambda x: x["pct"], reverse=True)
     mx = max((abs(x["pct"]) for x in data), default=1) or 1
     rows = []
@@ -341,10 +375,11 @@ def render_market(data: list[dict], covered: set | None = None) -> str:
         cls = "up" if x["pct"] >= 0 else "down"
         sign = "+" if x["pct"] >= 0 else ""
         w = round(abs(x["pct"]) / mx * 100)
-        # Only a hedged, sourced CORRELATION note — never causation, never a forecast.
+        # Only a hedged, sourced CORRELATION note (links to the specific story) — never causation, never a forecast.
+        a = anchors.get(x["t"])
         note = (f'<div class="mkt-note">· may relate to '
-                f'<a href="#latest">today&rsquo;s coverage of {html.escape(x["name"])}</a></div>'
-                if x["t"] in covered else "")
+                f'<a href="#{a}">today&rsquo;s coverage of {html.escape(x["name"])}</a></div>'
+                if a else "")
         rows.append(
             '<div class="mkt-item"><div class="mkt-row">'
             f'<span class="mkt-name">{html.escape(x["name"])} <span class="tkr">{x["t"]}</span></span>'
@@ -439,9 +474,8 @@ def build():
     latest_html = render_digest(latest_md) if files else '<p class="muted">No digests yet.</p>'
     _key = {"LLY": "lilly", "NVO": "novo", "PFE": "pfizer", "AZN": "astrazeneca", "MRK": "merck",
             "NVS": "novartis", "GSK": "gsk", "AMGN": "amgen", "ABBV": "abbvie", "JNJ": "j&j"}
-    _dt = plain_text(latest_md).lower()
-    covered = {t for t, kw in _key.items() if kw in _dt}
-    market_html = render_market(fetch_market(MARKET_TICKERS), covered)
+    anchors = company_anchors(renumber_sources(latest_md), _key)
+    market_html = render_market(fetch_market(MARKET_TICKERS), anchors)
     market_block = (
         '<section class="block" id="markets"><div class="block-label">Markets</div><div class="block-body">'
         + market_html + '<p class="meta">Source: Yahoo Finance, end-of-day prices. Not investment advice.</p>'
