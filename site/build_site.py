@@ -345,11 +345,11 @@ def build():
 
 CSS = """
 :root{
- --paper:#f6f5f0;--card:#fffdf8;--ink:#1c1e22;--muted:#6c706e;--line:#e6e1d6;--accent:#15715a;
+ --paper:#e8e9e0;--card:#fbfbf6;--ink:#0f1020;--muted:#5e6a65;--line:#cdcebf;--accent:#466362;
  --serif:Georgia,"Iowan Old Style","Palatino Linotype",Palatino,"Times New Roman",serif;
  --sans:-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
  --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
- --c-reg:#15715a;--c-earn:#b07d2b;--c-conf:#2f6f9f;--c-other:#9a958a;--up:#15715a;--down:#a3402f;}
+ --c-reg:#466362;--c-earn:#8b635c;--c-conf:#9e768f;--c-other:#9aa08c;--up:#466362;--down:#8b635c;}
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);line-height:1.62;font-size:16.5px;
  font-family:var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
@@ -360,7 +360,7 @@ h1{font-family:var(--serif);font-weight:700;font-size:30px;line-height:1.15;marg
 h2{font-family:var(--serif);font-weight:700;font-size:21px;margin:1.7em 0 .7em;padding-bottom:.3em;border-bottom:1px solid var(--line)}
 h3{font-family:var(--sans);font-weight:700;font-size:16px;letter-spacing:-.01em;margin:1.4em 0 .4em}
 p{margin:.6em 0}
-a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(21,113,90,.3)}
+a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(70,99,98,.35)}
 a:hover{border-bottom-color:var(--accent)}
 .muted{color:var(--muted)}
 .back{display:inline-block;margin-bottom:18px;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.07em;border:none}
@@ -382,15 +382,15 @@ a:hover{border-bottom-color:var(--accent)}
 .card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.08)}
 .card-date{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.03em}
 .card-title{font-family:var(--serif);font-weight:700;margin:5px 0 10px;font-size:16px;line-height:1.25}
-.badge{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:4px;background:#ece8df;color:#5b5f5d}
-.badge.claude{background:#f3ecdf;color:#8a5a1b}
-.badge.deepseek{background:#e6eef3;color:#2f6f9f}
+.badge{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:4px;background:#d8dac9;color:#4d5249}
+.badge.claude{background:#ece0db;color:#6e463f}
+.badge.deepseek{background:#dde7e5;color:#33514f}
 /* pull-quote */
 blockquote{margin:1.1em 0;padding:.1em 0 .1em 1.1em;border-left:3px solid var(--accent);
- font-family:var(--serif);font-style:italic;font-size:18px;line-height:1.4;color:#34322c}
+ font-family:var(--serif);font-style:italic;font-size:18px;line-height:1.4;color:var(--ink)}
 blockquote p{margin:.2em 0}
 hr{border:none;border-top:1px solid var(--line);margin:1.6em 0}
-code{font-family:var(--mono);background:#efebe1;padding:1px 5px;border-radius:4px;font-size:.85em}
+code{font-family:var(--mono);background:#dcdccf;padding:1px 5px;border-radius:4px;font-size:.85em}
 ul{padding-left:1.15em}li{margin:.3em 0}
 /* two columns */
 .two-col{display:grid;grid-template-columns:1.4fr 1fr;gap:26px;align-items:start}
@@ -434,15 +434,15 @@ ul{padding-left:1.15em}li{margin:.3em 0}
 @media(max-width:560px){.mkt-name{flex-basis:120px}}
 /* dark mode */
 @media (prefers-color-scheme: dark){
- :root{--paper:#16171b;--card:#1d1f24;--ink:#ece9e1;--muted:#9a968c;--line:#2d2f35;--accent:#5cba9c;
-  --c-reg:#5cba9c;--c-earn:#d6a85a;--c-conf:#6aa6d6;--c-other:#8a877d;--up:#5cba9c;--down:#d6735f;}
- .card{background:#202329}
- blockquote{color:#d8d4c8}
- code{background:#2a2c31}
- .badge{background:#2a2c31;color:#c9c6bd}
- .badge.claude{background:#34281a;color:#e3b877}
- .badge.deepseek{background:#1a2b36;color:#8fc1e0}
- a{border-bottom-color:rgba(92,186,156,.4)}
+ :root{--paper:#0f1020;--card:#191b2c;--ink:#e8e9e0;--muted:#9aa0a0;--line:#2b2d40;--accent:#7ba6a3;
+  --c-reg:#7ba6a3;--c-earn:#b88a82;--c-conf:#b894ab;--c-other:#b9baa3;--up:#7ba6a3;--down:#c08a82;}
+ .card{background:#191b2c}
+ blockquote{color:#e2e3da}
+ code{background:#23253a}
+ .badge{background:#23253a;color:#c7c8bb}
+ .badge.claude{background:#2f2421;color:#caa49b}
+ .badge.deepseek{background:#1d2c2b;color:#9cc3bf}
+ a{border-bottom-color:rgba(123,166,163,.45)}
 }
 @media(max-width:560px){main{padding:22px 16px}.brand{font-size:32px}h1{font-size:25px}}
 """
