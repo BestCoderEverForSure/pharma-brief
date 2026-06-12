@@ -40,12 +40,13 @@ This file is the persistent context for this project (read it first).
 - `digests/` - saved digests (the archive the website renders).
 
 ## Current state & open items (session handoff)
-**Live:** repo `github.com/BestCoderEverForSure/pharma-brief` (public, anonymised) · site `https://bestcodereverforsure.github.io/pharma-brief/` · GitHub Actions runs daily **07:00 Rome** (active) and emails + publishes. Secrets in `~/.config/pharma-news/secrets.env` (RESEND_API_KEY send-only, DEEPSEEK_API_KEY, EMAIL_TO=`k.valtetsiotis+resend@gmail.com`; Resend **test mode** = delivers only to that inbox).
+**Live:** repo `github.com/BestCoderEverForSure/pharma-brief` (public, anonymised) · site `https://bestcodereverforsure.github.io/pharma-brief/` · GitHub Actions runs **Mon–Sat 07:00 Rome** (24h morning brief) + **Sunday 07:00 Rome** (deeper "Week in Review" = evening edition over 168h) — both email + publish. Schedule is two crons in `pharma-digest.yml` (`1-6` and `0`); the run step branches on `date -u +%u`. Secrets in `~/.config/pharma-news/secrets.env` (RESEND_API_KEY send-only, DEEPSEEK_API_KEY, EMAIL_TO=`k.valtetsiotis+resend@gmail.com`; Resend **test mode** = delivers only to that inbox — sending to anyone else needs a verified domain, which the user does not own).
 
 **Built (all in `site/build_site.py` unless noted; live on local site, online site, and email where applicable):**
 - Editorial magazine UI: serif masthead, custom palette (Ash Grey/Smoky Rose/Granite/Ink Black/Dusty Mauve), Avenir Next + Iowan; no sidebar/cards; centred ~760px measure.
 - **⚙ Settings drawer** (gear in top bar): theme Auto/Light/Dark toggle (persists, no-flash via head script + `html.dark`), nav, search, GitHub cloud links (`SETTINGS_JS`).
-- Clickable **headlines + inline `[n]` citations** (link to sources via `_SRCMAP`/`render_digest`); sources renumbered 1..N (`renumber_sources`).
+- Clickable **headlines + inline `[n]` citations** — link to sources via `_SRCMAP`/`render_digest`. Sources are renumbered **1,2,3… in order of first appearance in the brief** and the Sources list is reordered to match (`renumber_sources`); uncited sources kept at the end. **The email does this too now** — `send_digest.py` has its own `renumber_sources` + `parse_srcmap` + `prepare_digest`, and `md_inline` makes `[n]` clickable. Both engines benefit (both render through these two files).
+- **Viewer-local publish time**: website shows a `Published <time data-utc=…>` line localized to each visitor's timezone via JS (`published_line`/`with_published` in `build_site.py`; localize snippet appended to `SETTINGS_JS`). Email **can't** localize live (no JS in mail clients) → it stamps a fixed **Europe/Rome** time (`published_stamp` in `send_digest.py`, via stdlib `zoneinfo`). Publish instant anchored at the cron hour (05:00 UTC morning, 16:00 UTC evening).
 - **Major-story highlight**: append ` {major}` to a heading → Smoky Rose + "MAJOR STORY" label; supported in site AND email (`send_digest.py`).
 - **Semi-dynamic markets** (`render_market`): core 10 tickers + `EXTRA_TICKERS` added only when covered today; "may relate to" notes link to the specific story anchor (`#sN`/section) — correlation only, no forecasts (no-advice scope).
 - Google News breadth feed in `deepseek/feeds.txt`; aggregator links get a `↗` flag; visited links grey out.
@@ -55,4 +56,9 @@ This file is the persistent context for this project (read it first).
 - Git: cloud auto-commits digests so local diverges → sync with **`git pull origin main --no-rebase -X ours --no-edit` then push** (never force).
 - macOS launchd can't read `~/Desktop` (TCC) → scheduling lives in the cloud, not local.
 
-**Open / optional (see ROADMAP.md):** WhatsApp/Telegram delivery; Claude-API cloud version (make the *automatic* digest Claude-grade); evening edition in the cloud; verify a Resend domain to email the IMD address.
+**Open / optional (see ROADMAP.md):**
+- **Telegram delivery** — the free, no-domain way to add other readers (e.g. the user's pharma friend). WhatsApp was ruled out: Business API isn't free/simple (needs business acct + paid provider + approved templates). Telegram bot is free + ~5 min; **not yet built — pending user go-ahead.**
+- **Claude-API cloud version** — make the *automatic* digest Claude-grade (currently only on-demand `/pharma-news` is Claude; the cloud daily is DeepSeek).
+- Resend domain verification (only needed to email recipients other than the test inbox; user has no domain → Telegram is the chosen path for sharing).
+
+**Done this session:** references renumbered by order-of-appearance + clickable `[n]` in email (and site reordering to match); viewer-local time on site + fixed Rome stamp in email; **Sunday weekly "Week in Review" edition** added to the cloud (evening edition, 7-day window).
