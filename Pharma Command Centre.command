@@ -22,7 +22,7 @@ pick_edition(){  # -> EDITION
 workflow_state(){ gh api "repos/$REPO/actions/workflows" --jq ".workflows[]|select(.path==\".github/workflows/$WF\")|.state" 2>/dev/null; }
 
 while true; do
-  choice=$(osascript -e 'choose from list {"📰 Generate a digest now (this Mac)","🌐 Open the website","☁️ Run the cloud digest now (emails + website)","⏰ Daily 7am cloud digest: turn ON / OFF","📊 Status","✏️ Edit watchlist / sources / calendar","🔊 Make an audio brief","❓ Help / guide"} with prompt "PHARMA BRIEF — COMMAND CENTRE
+  choice=$(osascript -e 'choose from list {"📰 Generate a digest now (this Mac)","🌐 Open the website (file)","🖥️ Open the website on localhost (live demo server)","☁️ Run the cloud digest now (emails + website)","⏰ Daily 7am cloud digest: turn ON / OFF","📊 Status","✏️ Edit watchlist / sources / calendar","🔊 Make an audio brief","❓ Help / guide"} with prompt "PHARMA BRIEF — COMMAND CENTRE
 
 What would you like to do?" default items {"📰 Generate a digest now (this Mac)"}' 2>/dev/null)
   [ "$choice" = "false" ] || [ -z "$choice" ] && exit 0
@@ -58,6 +58,11 @@ What would you like to do?" default items {"📰 Generate a digest now (this Mac
     "🌐 Open"*)
       [ -f "$DIR/site/public/index.html" ] && open "$DIR/site/public/index.html"
       [ -n "$REPO" ] && open "https://$(echo "$REPO" | cut -d/ -f1 | tr 'A-Z' 'a-z').github.io/$(echo "$REPO" | cut -d/ -f2)/" ;;
+
+    "🖥️ Open the website on localhost"*)
+      ( cd "$DIR/site/public" && python3 -m http.server 8765 >/dev/null 2>&1 & )
+      sleep 1; open "http://localhost:8765"
+      dlg "🖥️ Your site is now running at http://localhost:8765 (local server). It keeps running until you quit this Command Centre window." ;;
 
     "📊 Status"*)
       last=$(python3 -c "import json;print(json.load(open('pharma-news/state.json')).get('last_run') or 'never')" 2>/dev/null)
