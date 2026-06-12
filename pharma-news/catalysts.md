@@ -3,6 +3,7 @@
 Known upcoming pharma catalysts. The digest reads this file AND refreshes/extends it with live search each run, surfacing anything due in the next ~7 days under "Week Ahead." Add or correct entries freely — date · event · why it matters.
 
 ## Regulatory — FDA (US)
+- **~2026-06-20** · Cytisinicline (smoking cessation) — FDA decision expected; watch approval vs. CRL.
 - **2026-09-18** · Zidesamtinib (Nuvalent/GSK) PDUFA — ROS1+ NSCLC; first key milestone of the GSK acquisition.
 
 ## Regulatory — EMA (EU) & other agencies

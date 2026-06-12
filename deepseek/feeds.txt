@@ -5,7 +5,11 @@ https://www.fiercebiotech.com/rss/xml
 https://www.biopharmadive.com/feeds/news/
 https://www.statnews.com/category/pharma/feed/
 https://www.labiotech.eu/feed/
-# --- Notes on sources that can't be auto-pulled ---
-# endpoints.news/feed/  -> blocks automated fetching (403); covered via the feeds above
-# FDA press-release RSS  -> URL returns 404; FDA news is covered via the trade press above
-# imapac.com newsletter  -> it's an email newsletter, not an RSS feed, so it can't be auto-fetched
+https://www.pharmaceutical-technology.com/feed/
+# --- Sources that block automated fetching or aren't RSS (so not listed above) ---
+# endpoints.news        -> blocks the bot (403); the Claude engine still searches it live
+# biospace.com          -> bot challenge (202); Claude searches it live
+# pharmaphorum.com      -> redirect/blocks; Claude searches it live
+# drugdiscoverytrends   -> blocks the bot (403)
+# FDA / EMA press RSS    -> unreliable URLs; their decisions are covered via the trade press above
+# imapac.com newsletter -> an email newsletter, not an RSS feed — can't be auto-fetched
