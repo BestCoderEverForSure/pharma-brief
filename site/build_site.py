@@ -47,6 +47,9 @@ def strip_lead(s: str) -> str:
     return _LEAD_EMOJI.sub("", s)
 
 
+_SRCMAP: dict = {}
+
+
 def _mk_link(m):
     label, url = m.group(1), m.group(2)
     gnews = "news.google.com" in url
@@ -61,6 +64,10 @@ def md_inline(text: str) -> str:
     text = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", text)
     text = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"<em>\1</em>", text)
     text = re.sub(r"`([^`]+)`", r"<code>\1</code>", text)
+    if _SRCMAP:
+        text = re.sub(r"\[(\d+)\]", lambda m: (
+            f'<a class="cite" href="{_SRCMAP[m.group(1)]}" target="_blank" rel="noopener">[{m.group(1)}]</a>'
+            if m.group(1) in _SRCMAP else m.group(0)), text)
     return text
 
 
@@ -93,7 +100,12 @@ def md_to_html(md: str) -> str:
         if not line.strip():
             flush_list(); close_quote(); continue
         if line.startswith("### "):
-            flush_list(); close_quote(); out.append(f"<h3>{md_inline(strip_lead(line[4:]))}</h3>")
+            flush_list(); close_quote()
+            ht, cls, tag = strip_lead(line[4:]), "", ""
+            if ht.rstrip().endswith("{major}"):
+                cls = ' class="major"'; tag = '<div class="major-tag">Major story</div>'
+                ht = re.sub(r"\s*\{major\}\s*$", "", ht)
+            out.append(f"{tag}<h3{cls}>{md_inline(ht)}</h3>")
         elif line.startswith("## "):
             flush_list(); close_quote(); out.append(f"<h2>{md_inline(strip_lead(line[3:]))}</h2>")
         elif line.startswith("# "):
@@ -157,6 +169,9 @@ def link_headings(md: str) -> str:
     for i, l in enumerate(lines):
         hm = re.match(r"^### (.+)$", l)
         if hm and "](" not in l and "]" not in hm.group(1):
+            text, suffix = hm.group(1), ""
+            if text.rstrip().endswith("{major}"):
+                suffix = " {major}"; text = re.sub(r"\s*\{major\}\s*$", "", text)
             url = None
             for j in range(i + 1, n):
                 if re.match(r"^#{1,3} ", lines[j]):
@@ -166,10 +181,29 @@ def link_headings(md: str) -> str:
                     url = smap[cm.group(1)]
                     break
             if url:
-                out.append(f"### [{hm.group(1)}]({url})")
+                out.append(f"### [{text}]({url}){suffix}")
                 continue
         out.append(l)
     return "\n".join(out)
+
+
+def _parse_srcmap(md: str) -> dict:
+    smap = {}
+    for l in md.splitlines():
+        m = re.match(r"^\s*(\d+)\.\s*\[[^\]]+\]\((https?://[^)\s]+)\)", l)
+        if m:
+            smap[m.group(1)] = m.group(2)
+    return smap
+
+
+def render_digest(md: str) -> str:
+    """Full digest -> HTML: renumber sources, link headlines, and make inline [n] citations clickable."""
+    global _SRCMAP
+    md = renumber_sources(md)
+    _SRCMAP = _parse_srcmap(md)
+    out = md_to_html(link_headings(md))
+    _SRCMAP = {}
+    return out
 
 
 # ----------------------------------------------------------------------------- #
@@ -296,9 +330,10 @@ def fetch_market(tickers: list) -> list[dict]:
     return out
 
 
-def render_market(data: list[dict]) -> str:
+def render_market(data: list[dict], covered: set | None = None) -> str:
     if not data:
         return ""
+    covered = covered or set()
     data = sorted(data, key=lambda x: x["pct"], reverse=True)
     mx = max((abs(x["pct"]) for x in data), default=1) or 1
     rows = []
@@ -306,11 +341,15 @@ def render_market(data: list[dict]) -> str:
         cls = "up" if x["pct"] >= 0 else "down"
         sign = "+" if x["pct"] >= 0 else ""
         w = round(abs(x["pct"]) / mx * 100)
+        # Only a hedged, sourced CORRELATION note — never causation, never a forecast.
+        note = (f'<div class="mkt-note">· may relate to '
+                f'<a href="#latest">today&rsquo;s coverage of {html.escape(x["name"])}</a></div>'
+                if x["t"] in covered else "")
         rows.append(
-            '<div class="mkt-row">'
+            '<div class="mkt-item"><div class="mkt-row">'
             f'<span class="mkt-name">{html.escape(x["name"])} <span class="tkr">{x["t"]}</span></span>'
             f'<span class="mkt-bar"><span class="mkt-fill {cls}" style="width:{w}%"></span></span>'
-            f'<span class="mkt-pct {cls}">{sign}{x["pct"]:.1f}%</span></div>')
+            f'<span class="mkt-pct {cls}">{sign}{x["pct"]:.1f}%</span></div>' + note + "</div>")
     return '<div class="market">' + "".join(rows) + "</div>"
 
 
@@ -384,7 +423,7 @@ def build():
         md = p.read_text(encoding="utf-8")
         m = meta_of(md)
         slug = p.stem + ".html"
-        (OUT / slug).write_text(page(m["title"], md_to_html(link_headings(renumber_sources(md)))), encoding="utf-8")
+        (OUT / slug).write_text(page(m["title"], render_digest(md)), encoding="utf-8")
         engine = m["engine"]
         short_title = m["title"].split("—")[-1].strip()
         arch_items.append(
@@ -396,8 +435,13 @@ def build():
 
     events = parse_catalysts()
     timeline, mix = render_timeline(events), render_catalyst_mix(events)
-    latest_html = md_to_html(link_headings(renumber_sources(files[0].read_text(encoding="utf-8")))) if files else '<p class="muted">No digests yet.</p>'
-    market_html = render_market(fetch_market(MARKET_TICKERS))
+    latest_md = files[0].read_text(encoding="utf-8") if files else ""
+    latest_html = render_digest(latest_md) if files else '<p class="muted">No digests yet.</p>'
+    _key = {"LLY": "lilly", "NVO": "novo", "PFE": "pfizer", "AZN": "astrazeneca", "MRK": "merck",
+            "NVS": "novartis", "GSK": "gsk", "AMGN": "amgen", "ABBV": "abbvie", "JNJ": "j&j"}
+    _dt = plain_text(latest_md).lower()
+    covered = {t for t, kw in _key.items() if kw in _dt}
+    market_html = render_market(fetch_market(MARKET_TICKERS), covered)
     market_block = (
         '<section class="block" id="markets"><div class="block-label">Markets</div><div class="block-body">'
         + market_html + '<p class="meta">Source: Yahoo Finance, end-of-day prices. Not investment advice.</p>'
@@ -437,7 +481,7 @@ CSS = """
  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
  --sans:"Avenir Next","Avenir","Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
  --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
- --c-reg:#466362;--c-earn:#8b635c;--c-conf:#9e768f;--c-other:#9aa08c;--up:#466362;--down:#8b635c;}
+ --c-reg:#466362;--c-earn:#8b635c;--c-conf:#9e768f;--c-other:#9aa08c;--up:#466362;--down:#8b635c;--major:#8b635c;}
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
  font-size:17px;line-height:1.72;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
@@ -487,6 +531,10 @@ h1 a:hover,h2 a:hover,h3 a:hover{text-decoration:underline;text-underline-offset
 /* visited source links fade; aggregator (redirect-prone) links get a marker */
 a.src:visited{color:var(--muted)}
 a.gnews::after{content:"↗";font-size:.72em;color:var(--muted);margin-left:1px;vertical-align:super}
+h2.major a,h3.major a,h2.major,h3.major{color:var(--major) !important}
+.major-tag{font-family:var(--mono);text-transform:uppercase;letter-spacing:.16em;font-size:10px;color:var(--major);margin:0 0 5px}
+a.cite{border-bottom:none;color:var(--accent);font-weight:600;font-size:.82em;padding:0 1px}
+a.cite:hover{text-decoration:underline;text-underline-offset:2px}
 .muted{color:var(--muted)}
 .meta{font-family:var(--mono);font-size:11.5px;letter-spacing:.02em;color:var(--muted);text-transform:none;margin:.4em 0 1.4em}
 strong{font-weight:700}
@@ -547,7 +595,11 @@ code{font-family:var(--mono);font-size:.82em;color:var(--accent);background:tran
 
 /* markets */
 .market{margin-top:2px}
-.mkt-row{display:flex;align-items:center;gap:12px;margin:10px 0;font-size:14px}
+.mkt-item{margin:11px 0}
+.mkt-row{display:flex;align-items:center;gap:12px;margin:0;font-size:14px}
+.mkt-note{font-size:12px;color:var(--muted);margin:3px 0 0;padding-left:2px}
+.mkt-note a{border-bottom:1px solid var(--line)}
+.mkt-note a:hover{color:var(--accent);border-bottom-color:var(--accent)}
 .mkt-name{flex:0 0 190px}
 .tkr{font-family:var(--mono);color:var(--muted);font-size:11px}
 .mkt-bar{flex:1;height:6px;background:var(--line);border-radius:2px;overflow:hidden}
@@ -577,7 +629,7 @@ footer .bar{flex-direction:column;align-items:flex-start;gap:14px;padding:40px c
 /* dark — deep ink-black canvas, soft off-white text */
 @media (prefers-color-scheme: dark){
  :root{--paper:#0b0c10;--ink:#e2e8f0;--muted:#8a91a0;--line:#20232c;--accent:#86b3ad;
-  --c-reg:#86b3ad;--c-earn:#c1948b;--c-conf:#bd9bb1;--c-other:#b9baa3;--up:#86b3ad;--down:#cf9087;}
+  --c-reg:#86b3ad;--c-earn:#c1948b;--c-conf:#bd9bb1;--c-other:#b9baa3;--up:#86b3ad;--down:#cf9087;--major:#d39b91;}
  .vtl-dot{box-shadow:0 0 0 4px var(--paper)}
  ::selection{background:var(--accent);color:#0b0c10}
 }

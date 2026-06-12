@@ -96,6 +96,8 @@ Include a **Sources** section with the actual **named outlet + linked title** fo
 
 **Linked headlines:** make each Top Story headline a link to its primary source — write the heading as `### N. [Headline](https://source-url)` so a reader can click the title straight through to the article. (Keep the full Sources section as well.)
 
+**Major story flag (use very sparingly):** if — and only if — a story is genuinely *sector-defining* (a multi-billion-dollar M&A, a blockbuster approval or rejection/CRL, a safety withdrawal, or a pivotal Phase 3 win/fail for a major asset), append ` {major}` to the very end of that heading line so the website highlights it in a distinct colour. Most mornings, flag **nothing**; never flag more than one. Restraint is the point.
+
 **Formatting rules:** the digest is Markdown only — **never use raw HTML tags** (no `<small>`, `<br>`, `<sub>`, etc.). In the header subtitle, set the engine to **Claude with your exact model id** — e.g. `Engine: Claude (claude-opus-4-8)`. Use whatever model you are actually running as, so the label is always accurate.
 
 **Plain-language glosses:** the reader has a biomedical background but is **new to pharma**. On first use, add a *brief* parenthetical gloss for **niche** industry/regulatory/scientific terms — e.g. *PDUFA (the FDA's target decision date)*, *CRL (a rejection letter)*, *ADC (antibody–drug conjugate)*, *TYK2 inhibitor (an oral anti-inflammatory mechanism)*, *skinny label*, *MFN pricing*, *bispecific*, *molecular glue*. Do **not** gloss obvious terms (FDA, EMA, Phase 3, oncology, biotech). Keep each gloss to a few words — clarify, don't clutter.
