@@ -238,8 +238,14 @@ def main() -> int:
 
     print("Gathering news from RSS feeds...", file=sys.stderr)
     items = gather(args.hours)
-    if not items:
-        print("ERROR: no articles fetched (feeds down or window too narrow).", file=sys.stderr)
+    # Thin-digest guard: too few articles usually means feeds are down, not a quiet
+    # news day. Abort with a non-zero exit so GitHub's failure email surfaces it,
+    # rather than silently emailing a hollow digest. Override with MIN_ARTICLES.
+    min_articles = int(os.environ.get("MIN_ARTICLES", "5"))
+    if len(items) < min_articles:
+        print(f"ERROR: only {len(items)} articles fetched (< {min_articles}); "
+              "feeds are likely down or the window too narrow. Aborting so the "
+              "failure is visible instead of sending a thin digest.", file=sys.stderr)
         return 3
     print(f"  {len(items)} articles in the last {args.hours}h", file=sys.stderr)
 
