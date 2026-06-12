@@ -228,6 +228,7 @@ def main() -> int:
     ap.add_argument("--hours", type=int, default=24)
     ap.add_argument("--edition", choices=["morning", "evening"], default="morning")
     ap.add_argument("--email", action="store_true", help="email the result via send_digest.py")
+    ap.add_argument("--telegram", action="store_true", help="post a summary via send_telegram.py")
     args = ap.parse_args()
 
     secrets = load_secrets()
@@ -268,6 +269,10 @@ def main() -> int:
     if args.email:
         import subprocess
         subprocess.run([sys.executable, str(ROOT / "pharma-news" / "send_digest.py"), str(out)])
+
+    if args.telegram:
+        import subprocess
+        subprocess.run([sys.executable, str(ROOT / "pharma-news" / "send_telegram.py"), str(out)])
 
     # Rebuild the static site so the archive + timeline stay current.
     import subprocess
