@@ -1,0 +1,20 @@
+# Generated site (rebuilt by site/build_site.py and by GitHub Actions)
+site/public/
+
+# Audio briefs and run logs
+digests/audio/
+digests/cron.log
+
+# Python
+__pycache__/
+*.pyc
+
+# macOS
+.DS_Store
+
+# Secrets never live in the repo (they're in ~/.config/pharma-news/secrets.env),
+# but guard against accidents:
+*secrets*.env
+
+# Local Claude Code settings (machine-specific)
+.claude/settings.local.json

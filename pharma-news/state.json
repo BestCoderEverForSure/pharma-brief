@@ -1,0 +1,15 @@
+{
+  "last_run": "2026-06-12T09:45:00Z",
+  "history": [
+    {
+      "date": "2026-06-12",
+      "window": "last 24 hours (first run)",
+      "headline_count": 3
+    },
+    {
+      "date": "2026-06-12",
+      "window": "last 24 hours (re-run with full feature set)",
+      "headline_count": 3
+    }
+  ]
+}

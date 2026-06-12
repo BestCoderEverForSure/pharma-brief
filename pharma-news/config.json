@@ -1,0 +1,9 @@
+{
+  "delivery_time": "07:00",
+  "target_timezone": "Europe/Rome",
+  "current_machine_timezone": "Asia/Singapore",
+  "cron": "0 7 * * *",
+  "audio": false,
+  "audio_voice": "Daniel",
+  "note": "The scheduler fires at delivery_time on the COMPUTER'S LOCAL clock — there is no per-task timezone. Right now the cron '0 7 * * *' fires at 07:00 Singapore. When you move your Mac's clock to Italy (Europe/Rome), the same cron automatically becomes 07:00 Rome — no change needed. If you ever want 7am in a timezone DIFFERENT from your Mac's clock, ask Claude to recompute the cron (e.g. 7am Rome while on Singapore time = '0 13 * * *')."
+}

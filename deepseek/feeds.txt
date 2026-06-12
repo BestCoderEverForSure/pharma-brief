@@ -1,0 +1,8 @@
+# RSS feeds for the DeepSeek standalone digest. One URL per line; # = comment.
+# Edit freely. These are the news sources DeepSeek summarises from.
+https://www.fiercepharma.com/rss/xml
+https://www.fiercebiotech.com/rss/xml
+https://endpoints.news/feed/
+https://www.statnews.com/category/pharma/feed/
+https://www.biopharmadive.com/feeds/news/
+https://www.fda.gov/about-fda/contact-fda/stay-informed/rss-feeds/press-releases/rss.xml
