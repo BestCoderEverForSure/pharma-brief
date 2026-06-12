@@ -15,6 +15,7 @@ This script intentionally uses only the Python standard library — no pip insta
 """
 
 import os
+import re
 import sys
 import json
 import html as _html
