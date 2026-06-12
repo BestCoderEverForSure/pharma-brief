@@ -110,6 +110,37 @@ def md_to_html(md: str) -> str:
     return "\n".join(out)
 
 
+def link_headings(md: str) -> str:
+    """Turn each Top Story headline into a link to its cited source.
+    Uses the inline [n] citation + the numbered Sources list (DeepSeek), or leaves
+    headings already written as markdown links (Claude) untouched."""
+    lines = md.splitlines()
+    smap = {}
+    for l in lines:
+        m = re.match(r"^\s*(\d+)\.\s*\[[^\]]+\]\((https?://[^)\s]+)\)", l)
+        if m:
+            smap[m.group(1)] = m.group(2)
+    if not smap:
+        return md
+    out, n = [], len(lines)
+    for i, l in enumerate(lines):
+        hm = re.match(r"^### (.+)$", l)
+        if hm and "](" not in l and "]" not in hm.group(1):
+            url = None
+            for j in range(i + 1, n):
+                if re.match(r"^#{1,3} ", lines[j]):
+                    break
+                cm = re.search(r"\[(\d+)\]", lines[j])
+                if cm and cm.group(1) in smap:
+                    url = smap[cm.group(1)]
+                    break
+            if url:
+                out.append(f"### [{hm.group(1)}]({url})")
+                continue
+        out.append(l)
+    return "\n".join(out)
+
+
 # ----------------------------------------------------------------------------- #
 #  Catalyst timeline
 # ----------------------------------------------------------------------------- #
@@ -322,7 +353,7 @@ def build():
         md = p.read_text(encoding="utf-8")
         m = meta_of(md)
         slug = p.stem + ".html"
-        (OUT / slug).write_text(page(m["title"], md_to_html(md)), encoding="utf-8")
+        (OUT / slug).write_text(page(m["title"], md_to_html(link_headings(md))), encoding="utf-8")
         engine = m["engine"]
         short_title = m["title"].split("—")[-1].strip()
         arch_items.append(
@@ -334,7 +365,7 @@ def build():
 
     events = parse_catalysts()
     timeline, mix = render_timeline(events), render_catalyst_mix(events)
-    latest_html = md_to_html(files[0].read_text(encoding="utf-8")) if files else '<p class="muted">No digests yet.</p>'
+    latest_html = md_to_html(link_headings(files[0].read_text(encoding="utf-8"))) if files else '<p class="muted">No digests yet.</p>'
     market_html = render_market(fetch_market(MARKET_TICKERS))
     market_block = (
         '<section class="block" id="markets"><div class="block-label">Markets</div><div class="block-body">'
@@ -420,6 +451,8 @@ p{margin:.75em 0}
 .doc{padding:46px 0 24px}
 .doc a,.block-body p a,.point-b a{border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
 .doc a:hover,.block-body p a:hover{border-bottom-color:var(--accent)}
+h1 a,h2 a,h3 a{color:inherit !important;border-bottom:none !important}
+h1 a:hover,h2 a:hover,h3 a:hover{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
 .muted{color:var(--muted)}
 .meta{font-family:var(--mono);font-size:11.5px;letter-spacing:.02em;color:var(--muted);text-transform:none;margin:.4em 0 1.4em}
 strong{font-weight:700}
