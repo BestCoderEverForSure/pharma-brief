@@ -32,6 +32,14 @@ MONTHS = {m: i for i, m in enumerate(
 # ----------------------------------------------------------------------------- #
 #  Markdown -> HTML (the subset our digests use)
 # ----------------------------------------------------------------------------- #
+_LEAD_EMOJI = re.compile(r"^[\U0001F000-\U0001FAFF☀-➿←-⇿⬀-⯿ℹ️⃣]+\s*")
+
+
+def strip_lead(s: str) -> str:
+    """Remove a leading emoji/icon from heading or quote text (less 'AI-generated' look)."""
+    return _LEAD_EMOJI.sub("", s)
+
+
 def md_inline(text: str) -> str:
     text = html.escape(text)
     text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2" target="_blank" rel="noopener">\1</a>', text)
@@ -59,18 +67,18 @@ def md_to_html(md: str) -> str:
         if not line.strip():
             close_list(); close_quote(); continue
         if line.startswith("### "):
-            close_list(); close_quote(); out.append(f"<h3>{md_inline(line[4:])}</h3>")
+            close_list(); close_quote(); out.append(f"<h3>{md_inline(strip_lead(line[4:]))}</h3>")
         elif line.startswith("## "):
-            close_list(); close_quote(); out.append(f"<h2>{md_inline(line[3:])}</h2>")
+            close_list(); close_quote(); out.append(f"<h2>{md_inline(strip_lead(line[3:]))}</h2>")
         elif line.startswith("# "):
-            close_list(); close_quote(); out.append(f"<h1>{md_inline(line[2:])}</h1>")
+            close_list(); close_quote(); out.append(f"<h1>{md_inline(strip_lead(line[2:]))}</h1>")
         elif line.strip() in ("---", "***", "___"):
             close_list(); close_quote(); out.append("<hr>")
         elif line.startswith("> "):
             close_list()
             if not in_quote:
                 out.append("<blockquote>"); in_quote = True
-            out.append(f"<p>{md_inline(line[2:])}</p>")
+            out.append(f"<p>{md_inline(strip_lead(line[2:]))}</p>")
         elif re.match(r"^[-*] ", line):
             close_quote()
             if not in_list:
@@ -304,7 +312,7 @@ def build():
     latest_html = md_to_html(files[0].read_text(encoding="utf-8")) if files else '<p class="muted">No digests yet.</p>'
     market_html = render_market(fetch_market(MARKET_TICKERS))
     market_panel = (
-        '<section class="panel"><h2>📈 Pharma markets — 5-day move</h2>' + market_html +
+        '<section class="panel" id="markets"><h2>Pharma markets &mdash; 5-day move</h2>' + market_html +
         '<p class="muted" style="font-size:11px;margin-top:10px">Source: Yahoo Finance, end-of-day prices. Not investment advice.</p></section>'
     ) if market_html else ""
 
@@ -316,24 +324,44 @@ def build():
   <input id="q" class="search" type="search" placeholder="Search all digests...">
 </header>
 <div id="results" style="display:none"></div>
-<section class="panel">
-  <h2>📰 Latest digest</h2>
+<div class="shell">
+<aside class="rail">
+  <div class="rail-h">On this page</div>
+  <a href="#latest">Latest digest</a>
+  <a href="#upcoming">Upcoming catalysts</a>
+  <a href="#markets">Markets</a>
+  <a href="#archive">Archive</a>
+  <a href="#about">About</a>
+  <div class="rail-h">Sources monitored</div>
+  <a href="https://endpoints.news" target="_blank" rel="noopener">Endpoints News</a>
+  <a href="https://www.statnews.com/category/pharma/" target="_blank" rel="noopener">STAT Pharma</a>
+  <a href="https://www.fiercepharma.com" target="_blank" rel="noopener">Fierce Pharma</a>
+  <a href="https://www.biopharmadive.com" target="_blank" rel="noopener">BioPharma Dive</a>
+  <a href="https://www.labiotech.eu" target="_blank" rel="noopener">Labiotech</a>
+  <a href="https://www.fda.gov/news-events/fda-newsroom" target="_blank" rel="noopener">FDA Newsroom</a>
+  <a href="https://www.ema.europa.eu/en/news" target="_blank" rel="noopener">EMA News</a>
+</aside>
+<div class="content">
+<section class="panel" id="latest">
+  <h2>Latest digest</h2>
   {latest_html}
 </section>
-<section class="panel">
-  <h2>📅 Upcoming catalysts</h2>
+<section class="panel" id="upcoming">
+  <h2>Upcoming catalysts</h2>
   <div class="two-col"><div>{timeline}</div><div><h3>Catalyst mix</h3>{mix}</div></div>
 </section>
 {market_panel}
 <section class="panel" id="archive">
-  <h2>🗂️ Archive</h2>
+  <h2>Archive</h2>
   <div class="grid">{''.join(cards) if cards else '<p class="muted">No digests yet.</p>'}</div>
 </section>
-<section class="panel">
-  <h2>ℹ️ About this project</h2>
-  <p><strong>Pharma Morning Brief</strong> turns the day's pharmaceutical news into a fact-checked, 2–3 minute executive digest — built for someone entering pharma who needs to stay current without reading 20 outlets every morning.</p>
-  <p><strong>How it works:</strong> one shared "recipe" (what a good digest looks like) runs through <strong>two interchangeable AI engines</strong> — <em>Claude</em> (richest analysis, on-demand) and <em>DeepSeek</em> (cheap, runs automatically in the cloud every morning). The result is emailed <em>and</em> published to this website. Every fact is grounded in a real, linked source; niche terms are glossed in plain language; each digest is labelled with the engine that wrote it.</p>
+<section class="panel" id="about">
+  <h2>About this project</h2>
+  <p><strong>Pharma Morning Brief</strong> turns the day's pharmaceutical news into a fact-checked, 2-3 minute executive digest &mdash; built for someone entering pharma who needs to stay current without reading 20 outlets every morning.</p>
+  <p><strong>How it works:</strong> one shared "recipe" runs through <strong>two interchangeable AI engines</strong> &mdash; <em>Claude</em> (richest analysis, on-demand) and <em>DeepSeek</em> (cheap, runs automatically in the cloud every morning). The result is emailed <em>and</em> published here. Every fact is grounded in a real, linked source; niche terms are glossed in plain language; each digest is labelled with the engine that wrote it.</p>
 </section>
+</div>
+</div>
 <script src="search-data.js"></script>
 <script src="search.js"></script>"""
     (OUT / "index.html").write_text(page("Pharma Morning Brief", index_body, home_link=False), encoding="utf-8")
@@ -353,8 +381,8 @@ CSS = """
 *{box-sizing:border-box}
 body{margin:0;background:var(--paper);color:var(--ink);line-height:1.62;font-size:16.5px;
  font-family:var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
-main{max-width:940px;margin:0 auto;padding:40px 22px 16px;}
-footer{max-width:940px;margin:0 auto;padding:22px 0 56px;color:var(--muted);font-size:11.5px;
+main{max-width:1060px;margin:0 auto;padding:40px 22px 16px;}
+footer{max-width:1060px;margin:0 auto;padding:22px 0 56px;color:var(--muted);font-size:11.5px;
  border-top:1px solid var(--line);font-family:var(--mono);letter-spacing:.04em;text-transform:uppercase;}
 h1{font-family:var(--serif);font-weight:700;font-size:30px;line-height:1.15;margin:.2em 0 .3em}
 h2{font-family:var(--serif);font-weight:700;font-size:21px;margin:1.7em 0 .7em;padding-bottom:.3em;border-bottom:1px solid var(--line)}
@@ -373,6 +401,15 @@ a:hover{border-bottom-color:var(--accent)}
  font-size:15px;font-family:var(--sans);background:var(--card);color:var(--ink)}
 .search:focus{outline:none;border-color:var(--accent)}
 .snip{font-size:12.5px;color:var(--muted);margin-top:8px}
+/* layout shell + side rail */
+.shell{display:grid;grid-template-columns:180px 1fr;gap:36px;align-items:start}
+.content{min-width:0}
+.rail{position:sticky;top:22px;font-size:13px;line-height:1.45;border-right:1px solid var(--line);padding-right:16px}
+.rail-h{font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;font-size:9.5px;color:var(--muted);margin:18px 0 6px}
+.rail-h:first-child{margin-top:0}
+.rail a{display:block;color:var(--ink);border-bottom:none;padding:3px 0}
+.rail a:hover{color:var(--accent)}
+@media(max-width:760px){.shell{grid-template-columns:1fr}.rail{position:static;border-right:none;border-bottom:1px solid var(--line);padding:0 0 10px;margin-bottom:6px;display:flex;flex-wrap:wrap;gap:6px 14px}.rail-h{width:100%;margin:6px 0 0}}
 /* panels & cards */
 .panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px 26px;margin:18px 0}
 .panel h2:first-child{margin-top:.1em}
