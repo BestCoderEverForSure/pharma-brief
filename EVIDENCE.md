@@ -17,7 +17,7 @@ Sent ✓  (200)  -> ***
 
 - `Sent ✓ (200)` = Resend accepted and sent the email (HTTP 200).
 - `{"id":"f97d0a79-…"}` = the Resend message ID for that specific email.
-- `***` = the recipient is hidden because the email address is stored as an encrypted secret (it's never exposed, even in logs).
+- `***` = GitHub automatically masks the recipient in the public log (it's simply your own inbox).
 - The same run then auto-committed the digest (`Digest 2026-06-12`) and deployed the site.
 
 **Verify it yourself:** open the repo's **Actions** tab → a run of "Pharma Morning Digest (DeepSeek)" → expand **"Generate and email the digest"** → you'll see the `Sent ✓ (200)` line.

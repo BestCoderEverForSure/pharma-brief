@@ -32,7 +32,7 @@
 
 ---
 
-## 🦁 Lilly Watch
+## 🎯 Lilly Watch
 > Lilly's own news + competitor/market moves that affect its position. "So what for Lilly" where it helps.
 - **{Lilly item}** — {what it means for Lilly}.
 - **{Competitor move}** — {how it bears on Lilly's position}.

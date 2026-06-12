@@ -72,7 +72,7 @@ Keep the digest a **full-industry view** — but always surface what matters to 
 - **Lilly's key franchises** — Mounjaro/Zepbound (tirzepatide), oral orforglipron / Foundayo, Kisunla/donanemab (Alzheimer's), Verzenio, Jaypirca, Ebglyss, and pipeline assets.
 - **Direct competitive threats** — Novo Nordisk, Amgen (MariTide), Pfizer/Metsera, Viking, Roche, and others moving on obesity/diabetes/Alzheimer's.
 
-Produce a short **🦁 Lilly Watch** block: Lilly's own news plus the most important competitor/market moves that affect Lilly's position, with a brief "so what for Lilly" where it adds insight. If there is genuinely nothing Lilly-relevant in the window, write one honest line saying so rather than padding.
+Produce a short **🎯 Lilly Watch** block: Lilly's own news plus the most important competitor/market moves that affect Lilly's position, with a brief "so what for Lilly" where it adds insight. If there is genuinely nothing Lilly-relevant in the window, write one honest line saying so rather than padding.
 
 ## Step 3 — Bonus: wider world → pharma
 
