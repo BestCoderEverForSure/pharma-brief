@@ -88,7 +88,14 @@ def md_to_html(md: str) -> str:
             continue
         if line.startswith("### "):
             close_list(); close_quote()
-            out.append(f"<h3>{md_inline(line[4:])}</h3>")
+            h = line[4:]
+            if h.rstrip().endswith("{major}"):
+                h = re.sub(r"\s*\{major\}\s*$", "", h)
+                out.append('<div style="font-family:ui-monospace,Menlo,monospace;text-transform:uppercase;'
+                           'letter-spacing:.14em;font-size:11px;color:#8b635c;margin:16px 0 2px">Major story</div>')
+                out.append(f'<h3 style="margin:.2em 0;color:#8b635c">{md_inline(h)}</h3>')
+            else:
+                out.append(f"<h3>{md_inline(h)}</h3>")
         elif line.startswith("## "):
             close_list(); close_quote()
             out.append(f"<h2>{md_inline(line[3:])}</h2>")
