@@ -1,4 +1,6 @@
-# 💊 Pharma Morning News Aggregator - Instruction Manual
+# Pharma Morning News Aggregator - Instruction Manual
+
+> **New here?** Open **`OPEN ME FIRST.md`** for a 30-second orientation - or jump straight to the product: open **`site/public/index.html`**.
 
 A balanced, high-signal briefing on the global pharmaceutical world, built to be read (or heard) in **2-3 minutes** with your morning coffee - with a deeper evening edition when you have more time.
 

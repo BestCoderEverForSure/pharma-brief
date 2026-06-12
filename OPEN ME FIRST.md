@@ -1,24 +1,37 @@
-# 👋 Open me first
+# Open me first
 
-**Pharma Morning Brief** - an automated, balanced pharma news aggregator that turns the day's pharmaceutical news into a fact-checked, 2-3 minute executive digest (with a focus on Eli Lilly), delivered by email and as a website.
+Pharma Morning Brief - an automated, balanced pharma news aggregator. It turns the
+day's pharmaceutical news into a fact-checked, 2-3 minute executive digest (with a
+focus on Eli Lilly), delivered by email and as a website.
 
-## See it in 10 seconds (no setup, works offline)
-➡️ **Open [`site/public/index.html`](site/public/index.html) in your browser.**
-That's the live product: the latest digest, a catalyst timeline, a pharma markets chart, full-text search, and an archive of past digests.
+## Just want to see it? (10 seconds, no setup, works offline)
+Open  **site/public/index.html**  in your browser.
+That is the product: today's digest, a catalyst timeline, a pharma markets chart,
+full-text search, and an archive of past digests.
 
-## See what the morning email looks like
-➡️ **Open [`samples/email-preview.html`](samples/email-preview.html)** - the exact styled digest that gets emailed each morning.
-*(The email itself is sent via a private API key that is intentionally NOT in this folder, so it can't be sent from the zip - but this is precisely what it looks like.)*
+## Reading order - you only need the first two
+1. This file (what to open).
+2. site/public/index.html (the product).
 
-## How it works (plain English)
-➡️ Read [`GUIDE.md`](GUIDE.md). One idea: **1 shared recipe → 2 interchangeable AI engines (Claude + DeepSeek) → delivered by email + website.**
+Everything else is reference, in rough order of usefulness:
+- GUIDE.md         - how it works, in plain English (1 recipe, 2 AI engines, email + website)
+- samples/email-preview.html  - exactly what the morning email looks like (opens in a browser)
+- EVIDENCE.md      - proof the email + cloud automation really run (not a mock-up)
+- CLAUDE.md        - project overview + the problem statement it was built against
+- README.md        - the full technical manual
+- ROADMAP.md       - features built, and ideas considered or parked
+- DEMO.md          - a 60-second demo script
+
+## Folders
+- site/         - the generated website
+- digests/      - saved digests (the data the website shows)
+- pharma-news/  - the engine's config (watchlist, catalysts, template) and scripts
+- deepseek/     - the DeepSeek engine and its news feeds
+- samples/      - the email preview
+- .github/      - the cloud automation (GitHub Actions)
+- .claude/commands/  - the /pharma-news command for Claude Code
 
 ## Run it yourself (optional)
-- **Richest version (Claude):** open this folder in Claude Code and type `/pharma-news`.
-- **Cheap/automatic version (DeepSeek):** `python3 deepseek/run_digest.py` (needs a free DeepSeek API key in `~/.config/pharma-news/secrets.env`).
-- **One-click control:** double-click **`Pharma Command Centre.command`** (generate, serve on localhost, edit sources, etc.).
-
-## More docs
-- [`README.md`](README.md) - full technical manual
-- [`CLAUDE.md`](CLAUDE.md) - project memory / overview
-- [`ROADMAP.md`](ROADMAP.md) - what's built and what's next
+- Richest version (Claude): open this folder in Claude Code and type  /pharma-news
+- Automatic version (DeepSeek): double-click  "Pharma Command Centre.command"  for a
+  simple menu (generate a digest, open the site, check status, edit sources).
