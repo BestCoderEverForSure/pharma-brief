@@ -1,11 +1,9 @@
 #!/usr/bin/env python3
 """
-Build a static website from the saved digests.
+Build a static, print-magazine-style website from the saved digests.
 
-- Renders every digests/*.md into a styled HTML page.
-- Builds an archive index (newest first) with engine badges.
-- Draws a visual "Week Ahead" catalyst timeline (SVG) from pharma-news/catalysts.md
-  — using only real, dated catalysts (no invented data).
+- Renders every digests/*.md into a styled HTML article.
+- Builds an editorial archive index, a catalyst timeline, and a markets strip.
 
 Output: site/public/  (open index.html in a browser; or push to GitHub Pages).
 Stdlib only — no pip installs.
@@ -29,14 +27,23 @@ MONTHS = {m: i for i, m in enumerate(
     ["jan", "feb", "mar", "apr", "may", "jun",
      "jul", "aug", "sep", "oct", "nov", "dec"], start=1)}
 
+SOURCES = [
+    ("Endpoints", "https://endpoints.news"),
+    ("STAT", "https://www.statnews.com/category/pharma/"),
+    ("Fierce Pharma", "https://www.fiercepharma.com"),
+    ("BioPharma Dive", "https://www.biopharmadive.com"),
+    ("Labiotech", "https://www.labiotech.eu"),
+    ("FDA", "https://www.fda.gov/news-events/fda-newsroom"),
+    ("EMA", "https://www.ema.europa.eu/en/news"),
+]
+
 # ----------------------------------------------------------------------------- #
-#  Markdown -> HTML (the subset our digests use)
+#  Markdown -> HTML (editorial subset)
 # ----------------------------------------------------------------------------- #
 _LEAD_EMOJI = re.compile(r"^[\U0001F000-\U0001FAFF☀-➿←-⇿⬀-⯿ℹ️⃣]+\s*")
 
 
 def strip_lead(s: str) -> str:
-    """Remove a leading emoji/icon from heading or quote text (less 'AI-generated' look)."""
     return _LEAD_EMOJI.sub("", s)
 
 
@@ -50,43 +57,56 @@ def md_inline(text: str) -> str:
 
 
 def md_to_html(md: str) -> str:
-    out, in_list, in_quote = [], False, False
+    out, items, in_quote = [], [], False
 
-    def close_list():
-        nonlocal in_list
-        if in_list:
-            out.append("</ul>"); in_list = False
+    def flush_list():
+        nonlocal items
+        if not items:
+            return
+        pts = []
+        for it in items:
+            m = re.match(r"^\*\*(.+?)\*\*\s*[—–·:-]*\s*(.*)$", it)
+            if m:
+                head, body = md_inline(m.group(1)), md_inline(m.group(2).strip())
+                pts.append(f'<div class="point"><div class="point-h">{head}</div>'
+                           + (f'<div class="point-b">{body}</div>' if body else "") + "</div>")
+            else:
+                pts.append(f'<div class="point"><div class="point-b">{md_inline(it)}</div></div>')
+        out.append('<div class="points">' + "".join(pts) + "</div>")
+        items = []
 
     def close_quote():
         nonlocal in_quote
         if in_quote:
-            out.append("</blockquote>"); in_quote = False
+            out.append("</div>"); in_quote = False
 
     for raw in md.splitlines():
         line = raw.rstrip()
         if not line.strip():
-            close_list(); close_quote(); continue
+            flush_list(); close_quote(); continue
         if line.startswith("### "):
-            close_list(); close_quote(); out.append(f"<h3>{md_inline(strip_lead(line[4:]))}</h3>")
+            flush_list(); close_quote(); out.append(f"<h3>{md_inline(strip_lead(line[4:]))}</h3>")
         elif line.startswith("## "):
-            close_list(); close_quote(); out.append(f"<h2>{md_inline(strip_lead(line[3:]))}</h2>")
+            flush_list(); close_quote(); out.append(f"<h2>{md_inline(strip_lead(line[3:]))}</h2>")
         elif line.startswith("# "):
-            close_list(); close_quote(); out.append(f"<h1>{md_inline(strip_lead(line[2:]))}</h1>")
+            flush_list(); close_quote(); out.append(f"<h1>{md_inline(strip_lead(line[2:]))}</h1>")
         elif line.strip() in ("---", "***", "___"):
-            close_list(); close_quote(); out.append("<hr>")
+            flush_list(); close_quote(); out.append("<hr>")
         elif line.startswith("> "):
-            close_list()
+            flush_list()
             if not in_quote:
-                out.append("<blockquote>"); in_quote = True
+                out.append('<div class="lede">'); in_quote = True
             out.append(f"<p>{md_inline(strip_lead(line[2:]))}</p>")
         elif re.match(r"^[-*] ", line):
-            close_quote()
-            if not in_list:
-                out.append("<ul>"); in_list = True
-            out.append(f"<li>{md_inline(line[2:])}</li>")
+            close_quote(); items.append(line[2:])
         else:
-            close_list(); close_quote(); out.append(f"<p>{md_inline(line)}</p>")
-    close_list(); close_quote()
+            flush_list(); close_quote()
+            s = line.strip()
+            if s.startswith("*") and s.endswith("*") and not s.startswith("**"):
+                out.append(f'<p class="meta">{md_inline(line)}</p>')
+            else:
+                out.append(f"<p>{md_inline(line)}</p>")
+    flush_list(); close_quote()
     return "\n".join(out)
 
 
@@ -102,7 +122,7 @@ def parse_catalysts() -> list[dict]:
         if not m:
             continue
         datestr, desc = m.group(1), m.group(2)
-        short = re.split(r" — ", desc)[0].strip()  # split only on em-dash, not periods (keeps "J.P.")
+        short = re.split(r" — ", desc)[0].strip()
         when = None
         iso = re.search(r"(\d{4})-(\d{2})-(\d{2})", datestr)
         if iso:
@@ -134,11 +154,8 @@ _CAT_NAMES = {"reg": "Regulatory", "earn": "Earnings", "conf": "Conference", "ot
 
 
 def render_timeline(events: list[dict]) -> str:
-    """Vertical, fully readable timeline (HTML) — no label overlap, color-coded."""
     if not events:
         return '<p class="muted">No dated catalysts on file yet.</p>'
-    # One continuous timeline: near-term detail flowing into the longer horizon,
-    # grouped by period so it reads cleanly without a hard cut-off.
     today = dt.date.today()
     labels = ["Next 30 days", "1–3 months", "On the horizon"]
 
@@ -170,7 +187,6 @@ def render_timeline(events: list[dict]) -> str:
 
 
 def render_catalyst_mix(events: list[dict]) -> str:
-    """Second graphic: a simple bar chart of upcoming catalysts by type."""
     if not events:
         return ""
     counts: dict[str, int] = {}
@@ -192,7 +208,7 @@ def render_catalyst_mix(events: list[dict]) -> str:
 
 
 # ----------------------------------------------------------------------------- #
-#  Markets chart (real prices, free Yahoo Finance endpoint — no key, no fake data)
+#  Markets (real prices, free Yahoo Finance endpoint — no key, no fake data)
 # ----------------------------------------------------------------------------- #
 MARKET_TICKERS = [
     ("LLY", "Eli Lilly"), ("NVO", "Novo Nordisk"), ("PFE", "Pfizer"),
@@ -202,7 +218,6 @@ MARKET_TICKERS = [
 
 
 def fetch_market(tickers: list) -> list[dict]:
-    """5-day % move per ticker from Yahoo Finance. Skips any that fail — never invents data."""
     out = []
     for t, name in tickers:
         try:
@@ -241,15 +256,22 @@ def render_market(data: list[dict]) -> str:
 #  Page assembly
 # ----------------------------------------------------------------------------- #
 def page(title: str, body: str, home_link: bool = True) -> str:
-    nav = '<a class="back" href="index.html">← All digests</a>' if home_link else ""
+    base = "index.html" if home_link else ""
+    nav = "".join(f'<a href="{base}#{i}">{n}</a>'
+                  for i, n in [("latest", "Latest"), ("upcoming", "Catalysts"),
+                               ("markets", "Markets"), ("archive", "Archive")])
+    src = ", ".join(f'<a href="{u}" target="_blank" rel="noopener">{n}</a>' for n, u in SOURCES)
+    topbar = (f'<header class="topbar"><a class="wordmark" href="index.html">Pharma Morning Brief</a>'
+              f'<nav class="topnav">{nav}</nav></header>')
+    inner = f'<article class="doc">{body}</article>' if home_link else body
+    footer = (f'<footer><div class="foot-nav">{nav}</div>'
+              f'<div class="foot-src">Sources monitored &mdash; {src}</div></footer>')
     return f"""<!DOCTYPE html>
 <html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{html.escape(title)}</title>
 <link rel="stylesheet" href="style.css">
-</head><body><main>{nav}{body}</main>
-<footer>💊 Pharma Morning News Aggregator · auto-generated archive</footer>
-</body></html>"""
+</head><body>{topbar}<main>{inner}</main>{footer}</body></html>"""
 
 
 def meta_of(md: str) -> dict:
@@ -261,7 +283,7 @@ def meta_of(md: str) -> dict:
 
 
 def plain_text(md: str) -> str:
-    t = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", md)   # links -> their text
+    t = re.sub(r"\[([^\]]+)\]\([^)]+\)", r"\1", md)
     t = re.sub(r"[#>*_`|]", " ", t)
     return re.sub(r"\s+", " ", t).strip()
 
@@ -271,18 +293,16 @@ SEARCH_JS = """(function(){
       results=document.getElementById('results'),
       archive=document.getElementById('archive');
   if(!input) return;
+  function row(d){return '<a class="arch-item" href="'+d.slug+'"><span class="arch-date">'+d.date+
+    '</span><span class="arch-title">'+d.title+'</span><span class="arch-engine">'+d.engine+'</span></a>';}
   input.addEventListener('input',function(){
     var q=input.value.trim().toLowerCase();
     if(!q){results.innerHTML='';results.style.display='none';if(archive)archive.style.display='';return;}
     if(archive)archive.style.display='none';results.style.display='';
     var hits=(window.DIGESTS||[]).filter(function(d){return (d.title+' '+d.text).toLowerCase().indexOf(q)>=0;});
-    if(!hits.length){results.innerHTML='<section class="panel"><p class="muted">No matches.</p></section>';return;}
-    results.innerHTML='<section class="panel"><h2>Search results</h2><div class="grid">'+hits.map(function(d){
-      var i=d.text.toLowerCase().indexOf(q),
-          s=i>=0?d.text.substr(Math.max(0,i-45),130):d.text.substr(0,130);
-      return '<a class="card" href="'+d.slug+'"><div class="card-date">'+d.date+'</div>'+
-        '<div class="card-title">'+d.title+'</div><div class="snip">…'+
-        s.replace(/[<>]/g,' ')+'…</div></a>';}).join('')+'</div></section>';
+    var inner=hits.length? '<div class="arch">'+hits.map(row).join('')+'</div>'
+                         : '<p class="muted">No matches.</p>';
+    results.innerHTML='<section class="block"><div class="block-label">Results</div><div class="block-body">'+inner+'</div></section>';
   });
 })();"""
 
@@ -291,19 +311,18 @@ def build():
     OUT.mkdir(parents=True, exist_ok=True)
     files = sorted([p for p in DIGESTS.glob("*.md") if p.stem != "INDEX"], reverse=True)
 
-    cards, search_index = [], []
+    arch_items, search_index = [], []
     for p in files:
         md = p.read_text(encoding="utf-8")
         m = meta_of(md)
         slug = p.stem + ".html"
         (OUT / slug).write_text(page(m["title"], md_to_html(md)), encoding="utf-8")
         engine = m["engine"]
-        badge = "claude" if "claude" in engine.lower() else ("deepseek" if "deepseek" in engine.lower() else "other")
         short_title = m["title"].split("—")[-1].strip()
-        cards.append(
-            f'<a class="card" href="{slug}"><div class="card-date">{html.escape(p.stem)}</div>'
-            f'<div class="card-title">{html.escape(short_title)}</div>'
-            f'<span class="badge {badge}">{html.escape(engine)}</span></a>')
+        arch_items.append(
+            f'<a class="arch-item" href="{slug}"><span class="arch-date">{html.escape(p.stem)}</span>'
+            f'<span class="arch-title">{html.escape(short_title)}</span>'
+            f'<span class="arch-engine">{html.escape(engine)}</span></a>')
         search_index.append({"slug": slug, "date": p.stem, "title": html.escape(short_title),
                              "engine": engine, "text": plain_text(md)[:4000]})
 
@@ -311,59 +330,32 @@ def build():
     timeline, mix = render_timeline(events), render_catalyst_mix(events)
     latest_html = md_to_html(files[0].read_text(encoding="utf-8")) if files else '<p class="muted">No digests yet.</p>'
     market_html = render_market(fetch_market(MARKET_TICKERS))
-    market_panel = (
-        '<section class="panel" id="markets"><h2>Pharma markets &mdash; 5-day move</h2>' + market_html +
-        '<p class="muted" style="font-size:11px;margin-top:10px">Source: Yahoo Finance, end-of-day prices. Not investment advice.</p></section>'
+    market_block = (
+        '<section class="block" id="markets"><div class="block-label">Markets</div><div class="block-body">'
+        + market_html + '<p class="meta">Source: Yahoo Finance, end-of-day prices. Not investment advice.</p>'
+        + "</div></section>"
     ) if market_html else ""
+    arch_html = "".join(arch_items) if arch_items else '<p class="muted">No digests yet.</p>'
 
     index_body = f"""
-<header class="hero">
+<header class="masthead">
   <div class="kicker">Daily Pharmaceutical Intelligence</div>
-  <div class="brand">Pharma Morning Brief</div>
+  <h1 class="brand">Pharma Morning Brief</h1>
   <p class="tagline">Balanced, fact-checked &mdash; in the time it takes to drink a coffee.</p>
-  <input id="q" class="search" type="search" placeholder="Search all digests...">
+  <input id="q" class="search" type="search" placeholder="Search the archive...">
 </header>
 <div id="results" style="display:none"></div>
-<div class="shell">
-<aside class="rail">
-  <div class="rail-h">On this page</div>
-  <a href="#latest">Latest digest</a>
-  <a href="#upcoming">Upcoming catalysts</a>
-  <a href="#markets">Markets</a>
-  <a href="#archive">Archive</a>
-  <a href="#about">About</a>
-  <div class="rail-h">Sources monitored</div>
-  <a href="https://endpoints.news" target="_blank" rel="noopener">Endpoints News</a>
-  <a href="https://www.statnews.com/category/pharma/" target="_blank" rel="noopener">STAT Pharma</a>
-  <a href="https://www.fiercepharma.com" target="_blank" rel="noopener">Fierce Pharma</a>
-  <a href="https://www.biopharmadive.com" target="_blank" rel="noopener">BioPharma Dive</a>
-  <a href="https://www.labiotech.eu" target="_blank" rel="noopener">Labiotech</a>
-  <a href="https://www.fda.gov/news-events/fda-newsroom" target="_blank" rel="noopener">FDA Newsroom</a>
-  <a href="https://www.ema.europa.eu/en/news" target="_blank" rel="noopener">EMA News</a>
-</aside>
-<div class="content">
-<section class="panel" id="latest">
-  <h2>Latest digest</h2>
-  {latest_html}
-</section>
-<section class="panel" id="upcoming">
-  <h2>Upcoming catalysts</h2>
-  <div class="two-col"><div>{timeline}</div><div><h3>Catalyst mix</h3>{mix}</div></div>
-</section>
-{market_panel}
-<section class="panel" id="archive">
-  <h2>Archive</h2>
-  <div class="grid">{''.join(cards) if cards else '<p class="muted">No digests yet.</p>'}</div>
-</section>
-<section class="panel" id="about">
-  <h2>About this project</h2>
-  <p><strong>Pharma Morning Brief</strong> turns the day's pharmaceutical news into a fact-checked, 2-3 minute executive digest &mdash; built for someone entering pharma who needs to stay current without reading 20 outlets every morning.</p>
-  <p><strong>How it works:</strong> one shared "recipe" runs through <strong>two interchangeable AI engines</strong> &mdash; <em>Claude</em> (richest analysis, on-demand) and <em>DeepSeek</em> (cheap, runs automatically in the cloud every morning). The result is emailed <em>and</em> published here. Every fact is grounded in a real, linked source; niche terms are glossed in plain language; each digest is labelled with the engine that wrote it.</p>
-</section>
-</div>
-</div>
-<script src="search-data.js"></script>
-<script src="search.js"></script>"""
+<section class="block" id="latest"><div class="block-label">Latest</div><div class="block-body">{latest_html}</div></section>
+<section class="block" id="upcoming"><div class="block-label">Catalysts</div><div class="block-body">
+  <div class="two-col"><div>{timeline}</div><div><div class="sub-h">Catalyst mix</div>{mix}</div></div>
+</div></section>
+{market_block}
+<section class="block" id="archive"><div class="block-label">Archive</div><div class="block-body"><div class="arch">{arch_html}</div></div></section>
+<section class="block" id="about"><div class="block-label">About</div><div class="block-body">
+  <p><strong>Pharma Morning Brief</strong> turns the day's pharmaceutical news into a fact-checked, 2-3 minute executive digest &mdash; for someone entering pharma who needs to stay current without reading 20 outlets every morning.</p>
+  <p>One shared editorial standard runs through two interchangeable engines &mdash; <em>Claude</em> (richest analysis, on demand) and <em>DeepSeek</em> (lean, automatic in the cloud each morning). Every fact is grounded in a real, linked source; niche terms are glossed in plain language; each issue is labelled with the engine that wrote it.</p>
+</div></section>
+<script src="search-data.js"></script><script src="search.js"></script>"""
     (OUT / "index.html").write_text(page("Pharma Morning Brief", index_body, home_link=False), encoding="utf-8")
     (OUT / "style.css").write_text(CSS, encoding="utf-8")
     (OUT / "search-data.js").write_text("window.DIGESTS=" + json.dumps(search_index) + ";", encoding="utf-8")
@@ -373,115 +365,150 @@ def build():
 
 CSS = """
 :root{
- --paper:#e8e9e0;--card:#fbfbf6;--ink:#0f1020;--muted:#5e6a65;--line:#cdcebf;--accent:#466362;
+ --paper:#f4f2ec;--ink:#17181c;--muted:#7c7a70;--line:#e3dfd4;--accent:#466362;
  --serif:"Iowan Old Style","Palatino Linotype",Palatino,Georgia,"Times New Roman",serif;
  --sans:"Avenir Next","Avenir","Segoe UI",system-ui,-apple-system,Roboto,Helvetica,Arial,sans-serif;
  --mono:"SF Mono",ui-monospace,Menlo,Consolas,monospace;
  --c-reg:#466362;--c-earn:#8b635c;--c-conf:#9e768f;--c-other:#9aa08c;--up:#466362;--down:#8b635c;}
 *{box-sizing:border-box}
-body{margin:0;background:var(--paper);color:var(--ink);line-height:1.62;font-size:16.5px;
- font-family:var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
-main{max-width:1060px;margin:0 auto;padding:40px 22px 16px;}
-footer{max-width:1060px;margin:0 auto;padding:22px 0 56px;color:var(--muted);font-size:11.5px;
- border-top:1px solid var(--line);font-family:var(--mono);letter-spacing:.04em;text-transform:uppercase;}
-h1{font-family:var(--serif);font-weight:700;font-size:30px;line-height:1.15;margin:.2em 0 .3em}
-h2{font-family:var(--serif);font-weight:700;font-size:21px;margin:1.7em 0 .7em;padding-bottom:.3em;border-bottom:1px solid var(--line)}
-h3{font-family:var(--sans);font-weight:700;font-size:16px;letter-spacing:-.01em;margin:1.4em 0 .4em}
-p{margin:.6em 0}
-a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(70,99,98,.35)}
-a:hover{border-bottom-color:var(--accent)}
-.muted{color:var(--muted)}
-.back{display:inline-block;margin-bottom:18px;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.07em;border:none}
+body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--sans);
+ font-size:17px;line-height:1.72;-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;}
+a{color:inherit;text-decoration:none}
+::selection{background:var(--accent);color:#fff}
+
+/* top bar */
+.topbar{position:sticky;top:0;z-index:20;display:flex;justify-content:space-between;align-items:center;
+ gap:20px;padding:13px clamp(20px,5vw,60px);background:color-mix(in srgb,var(--paper) 88%,transparent);
+ backdrop-filter:saturate(140%) blur(8px);border-bottom:1px solid var(--line)}
+.wordmark{font-family:var(--serif);font-weight:700;font-size:16px;letter-spacing:-.01em}
+.topnav{display:flex;gap:20px}
+.topnav a{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.topnav a:hover{color:var(--accent)}
+
+main{max-width:1180px;margin:0 auto;padding:0 clamp(20px,5vw,60px)}
+
 /* masthead */
-.hero{padding:4px 0 18px;border-bottom:2px solid var(--ink);margin-bottom:8px}
-.kicker{font-family:var(--mono);text-transform:uppercase;letter-spacing:.22em;font-size:10.5px;color:var(--accent);margin-bottom:10px}
-.brand{font-family:var(--serif);font-weight:700;font-size:44px;line-height:1.02;letter-spacing:-.015em}
-.tagline{font-family:var(--serif);font-style:italic;color:var(--muted);font-size:16px;margin:.5em 0 0}
-.search{width:100%;margin-top:16px;padding:11px 14px;border:1px solid var(--line);border-radius:8px;
- font-size:15px;font-family:var(--sans);background:var(--card);color:var(--ink)}
-.search:focus{outline:none;border-color:var(--accent)}
-.snip{font-size:12.5px;color:var(--muted);margin-top:8px}
-/* layout shell + side rail */
-.shell{display:grid;grid-template-columns:180px 1fr;gap:36px;align-items:start}
-.content{min-width:0}
-.rail{position:sticky;top:22px;font-size:13px;line-height:1.45;border-right:1px solid var(--line);padding-right:16px}
-.rail-h{font-family:var(--mono);text-transform:uppercase;letter-spacing:.1em;font-size:9.5px;color:var(--muted);margin:18px 0 6px}
-.rail-h:first-child{margin-top:0}
-.rail a{display:block;color:var(--ink);border-bottom:none;padding:3px 0}
-.rail a:hover{color:var(--accent)}
-@media(max-width:760px){.shell{grid-template-columns:1fr}.rail{position:static;border-right:none;border-bottom:1px solid var(--line);padding:0 0 10px;margin-bottom:6px;display:flex;flex-wrap:wrap;gap:6px 14px}.rail-h{width:100%;margin:6px 0 0}}
-/* panels & cards */
-.panel{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:20px 26px;margin:18px 0}
-.panel h2:first-child{margin-top:.1em}
-.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
-.card{display:block;background:var(--paper);border:1px solid var(--line);border-top:3px solid var(--accent);
- border-radius:5px;padding:14px 16px;transition:transform .15s ease,box-shadow .15s ease;color:var(--ink)}
-.card:hover{transform:translateY(-2px);box-shadow:0 8px 22px rgba(0,0,0,.08)}
-.card-date{font-family:var(--mono);font-size:11px;color:var(--muted);letter-spacing:.03em}
-.card-title{font-family:var(--serif);font-weight:700;margin:5px 0 10px;font-size:16px;line-height:1.25}
-.badge{font-family:var(--mono);font-size:10px;text-transform:uppercase;letter-spacing:.04em;padding:2px 7px;border-radius:4px;background:#d8dac9;color:#4d5249}
-.badge.claude{background:#ece0db;color:#6e463f}
-.badge.deepseek{background:#dde7e5;color:#33514f}
-/* pull-quote */
-blockquote{margin:1.1em 0;padding:.1em 0 .1em 1.1em;border-left:3px solid var(--accent);
- font-family:var(--serif);font-style:italic;font-size:18px;line-height:1.4;color:var(--ink)}
-blockquote p{margin:.2em 0}
-hr{border:none;border-top:1px solid var(--line);margin:1.6em 0}
-code{font-family:var(--mono);background:#dcdccf;padding:1px 5px;border-radius:4px;font-size:.85em}
-ul{padding-left:1.15em}li{margin:.3em 0}
-/* two columns */
-.two-col{display:grid;grid-template-columns:1.4fr 1fr;gap:26px;align-items:start}
-@media(max-width:640px){.two-col{grid-template-columns:1fr}}
+.masthead{padding:64px 0 30px;border-bottom:1px solid var(--ink)}
+.kicker{font-family:var(--mono);text-transform:uppercase;letter-spacing:.28em;font-size:11px;color:var(--accent);margin-bottom:18px}
+.brand{font-family:var(--serif);font-weight:700;font-size:clamp(46px,8vw,82px);line-height:.98;letter-spacing:-.02em;margin:0}
+.tagline{font-family:var(--serif);font-style:italic;color:var(--muted);font-size:clamp(17px,2.4vw,21px);margin:.55em 0 0;max-width:34ch}
+.search{margin-top:26px;width:min(360px,100%);padding:9px 2px;border:none;border-bottom:1px solid var(--line);
+ background:transparent;color:var(--ink);font-family:var(--sans);font-size:15px}
+.search:focus{outline:none;border-bottom-color:var(--accent)}
+.search::placeholder{color:var(--muted)}
+
+/* editorial blocks: label gutter + content + breathing right margin */
+.block{display:grid;grid-template-columns:130px minmax(0,720px) 1fr;gap:44px;
+ padding:54px 0;border-top:1px solid var(--line)}
+.block:first-of-type{border-top:none}
+.block-label{grid-column:1;font-family:var(--mono);text-transform:uppercase;letter-spacing:.16em;
+ font-size:11px;color:var(--muted);padding-top:6px}
+.block-body{grid-column:2;min-width:0}
+.sub-h{font-family:var(--mono);text-transform:uppercase;letter-spacing:.12em;font-size:10.5px;color:var(--muted);margin:0 0 8px}
+
+/* typography */
+h1{font-family:var(--serif);font-weight:700;font-size:clamp(30px,4.6vw,44px);line-height:1.08;letter-spacing:-.015em;margin:0 0 .35em}
+h2{font-family:var(--serif);font-weight:700;font-size:26px;line-height:1.15;margin:1.7em 0 .5em}
+h3{font-family:var(--serif);font-weight:700;font-size:20px;line-height:1.2;margin:1.5em 0 .35em}
+p{margin:.75em 0}
+.doc{max-width:720px;margin:0 auto;padding:56px 0 20px}
+.doc a,.block-body p a,.point-b a{border-bottom:1px solid color-mix(in srgb,var(--accent) 40%,transparent)}
+.doc a:hover,.block-body p a:hover{border-bottom-color:var(--accent)}
+.muted{color:var(--muted)}
+.meta{font-family:var(--mono);font-size:11.5px;letter-spacing:.02em;color:var(--muted);text-transform:none;margin:.4em 0 1.4em}
+strong{font-weight:700}
+em{font-style:italic}
+hr{border:none;border-top:1px solid var(--line);margin:2.4em 0}
+code{font-family:var(--mono);font-size:.82em;color:var(--accent);background:transparent;padding:0}
+
+/* the lead "talking point" */
+.lede{margin:1.6em 0;padding:1.15em 0;border-top:1px solid var(--ink);border-bottom:1px solid var(--ink)}
+.lede p{margin:0;font-family:var(--serif);font-style:italic;font-size:clamp(20px,2.7vw,26px);line-height:1.4}
+
+/* TL;DR & quick-hit points: editorial flow, no bullets */
+.points{margin:1.1em 0}
+.point{margin:0 0 1.4em;max-width:60ch}
+.point-h{font-family:var(--sans);font-weight:700;font-size:16px;letter-spacing:-.01em;line-height:1.3}
+.point-b{color:var(--ink);margin-top:.1em}
+
+/* archive — clean ledger, no cards */
+.arch{margin:.4em 0}
+.arch-item{display:grid;grid-template-columns:118px 1fr auto;gap:18px;align-items:baseline;
+ padding:15px 0;border-bottom:1px solid var(--line)}
+.arch-item:hover .arch-title{color:var(--accent)}
+.arch-date{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
+.arch-title{font-family:var(--serif);font-size:19px;line-height:1.2}
+.arch-engine{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);white-space:nowrap}
+
+/* two columns (timeline + mix) */
+.two-col{display:grid;grid-template-columns:1.5fr 1fr;gap:40px;align-items:start}
+@media(max-width:640px){.two-col{grid-template-columns:1fr;gap:24px}}
+
 /* timeline */
 .vtl-group{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:18px 0 4px}
 .vtl-wrap > .vtl-group:first-child{margin-top:2px}
 .vtl{list-style:none;margin:4px 0;padding:0}
-.vtl-item{position:relative;padding:8px 0 8px 26px;border-left:1px solid var(--line)}
+.vtl-item{position:relative;padding:8px 0 8px 24px;border-left:1px solid var(--line)}
 .vtl-item:last-child{border-left-color:transparent}
-.vtl-dot{position:absolute;left:-5px;top:13px;width:9px;height:9px;border-radius:50%;background:var(--accent);border:2px solid var(--card);box-shadow:0 0 0 1px var(--line)}
+.vtl-dot{position:absolute;left:-5px;top:13px;width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--paper)}
 .vtl-item.reg .vtl-dot{background:var(--c-reg)}.vtl-item.earn .vtl-dot{background:var(--c-earn)}
 .vtl-item.conf .vtl-dot{background:var(--c-conf)}.vtl-item.other .vtl-dot{background:var(--c-other)}
 .vtl-date{display:inline-block;min-width:104px;font-family:var(--mono);font-size:12px;margin-right:8px}
-.vtl-text{font-size:14px}
-.vtl-legend{display:flex;gap:14px;flex-wrap:wrap;margin-top:12px;font-size:11.5px;color:var(--muted)}
+.vtl-text{font-size:14.5px}
+.vtl-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:11.5px;color:var(--muted)}
 .vtl-legend .lg{display:flex;align-items:center;gap:6px}
 .vtl-legend .lg::before{content:"";width:9px;height:9px;border-radius:50%;display:inline-block}
 .vtl-legend .reg::before{background:var(--c-reg)}.vtl-legend .earn::before{background:var(--c-earn)}
 .vtl-legend .conf::before{background:var(--c-conf)}.vtl-legend .other::before{background:var(--c-other)}
 @media(max-width:560px){.vtl-date{display:block;min-width:0}}
+
 /* bars */
-.barchart{margin-top:6px}
-.bar-row{display:flex;align-items:center;gap:10px;margin:9px 0;font-size:13px}
+.barchart{margin-top:2px}
+.bar-row{display:flex;align-items:center;gap:10px;margin:10px 0;font-size:13px}
 .bar-name{min-width:84px;color:var(--muted)}
-.bar-track{flex:1;height:8px;background:var(--line);border-radius:2px;overflow:hidden}
-.bar-fill{display:block;height:100%;border-radius:2px;background:var(--accent)}
+.bar-track{flex:1;height:6px;background:var(--line);border-radius:2px;overflow:hidden}
+.bar-fill{display:block;height:100%}
 .bar-fill.reg{background:var(--c-reg)}.bar-fill.earn{background:var(--c-earn)}
 .bar-fill.conf{background:var(--c-conf)}.bar-fill.other{background:var(--c-other)}
 .bar-val{min-width:18px;text-align:right;font-family:var(--mono);font-size:12px}
+
 /* markets */
-.market{margin-top:4px}
-.mkt-row{display:flex;align-items:center;gap:10px;margin:8px 0;font-size:13px}
+.market{margin-top:2px}
+.mkt-row{display:flex;align-items:center;gap:12px;margin:10px 0;font-size:14px}
 .mkt-name{flex:0 0 190px}
 .tkr{font-family:var(--mono);color:var(--muted);font-size:11px}
-.mkt-bar{flex:1;height:8px;background:var(--line);border-radius:2px;overflow:hidden}
-.mkt-fill{display:block;height:100%;border-radius:2px}
+.mkt-bar{flex:1;height:6px;background:var(--line);border-radius:2px;overflow:hidden}
+.mkt-fill{display:block;height:100%}
 .mkt-fill.up{background:var(--up)}.mkt-fill.down{background:var(--down)}
 .mkt-pct{flex:0 0 56px;text-align:right;font-family:var(--mono);font-size:12.5px}
 .mkt-pct.up{color:var(--up)}.mkt-pct.down{color:var(--down)}
 @media(max-width:560px){.mkt-name{flex-basis:120px}}
-/* dark mode */
-@media (prefers-color-scheme: dark){
- :root{--paper:#0f1020;--card:#191b2c;--ink:#e8e9e0;--muted:#9aa0a0;--line:#2b2d40;--accent:#7ba6a3;
-  --c-reg:#7ba6a3;--c-earn:#b88a82;--c-conf:#b894ab;--c-other:#b9baa3;--up:#7ba6a3;--down:#c08a82;}
- .card{background:#191b2c}
- blockquote{color:#e2e3da}
- code{background:#23253a}
- .badge{background:#23253a;color:#c7c8bb}
- .badge.claude{background:#2f2421;color:#caa49b}
- .badge.deepseek{background:#1d2c2b;color:#9cc3bf}
- a{border-bottom-color:rgba(123,166,163,.45)}
+
+/* footer */
+footer{max-width:1180px;margin:0 auto;padding:46px clamp(20px,5vw,60px) 70px;border-top:1px solid var(--ink)}
+.foot-nav{display:flex;gap:22px;flex-wrap:wrap;margin-bottom:14px}
+.foot-nav a{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
+.foot-nav a:hover{color:var(--accent)}
+.foot-src{font-size:13px;color:var(--muted)}
+.foot-src a{border-bottom:1px solid var(--line)}
+.foot-src a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* responsive: drop the gutter, stack */
+@media(max-width:760px){
+ .block{grid-template-columns:1fr;gap:14px;padding:38px 0}
+ .block-label{grid-column:1}.block-body{grid-column:1}
+ .arch-item{grid-template-columns:1fr auto;gap:4px 14px}
+ .arch-date{grid-column:1/-1}
+ .topnav{display:none}
 }
-@media(max-width:560px){main{padding:22px 16px}.brand{font-size:32px}h1{font-size:25px}}
+
+/* dark — deep ink-black canvas, soft off-white text */
+@media (prefers-color-scheme: dark){
+ :root{--paper:#0b0c10;--ink:#e2e8f0;--muted:#8a91a0;--line:#20232c;--accent:#86b3ad;
+  --c-reg:#86b3ad;--c-earn:#c1948b;--c-conf:#bd9bb1;--c-other:#b9baa3;--up:#86b3ad;--down:#cf9087;}
+ .vtl-dot{box-shadow:0 0 0 4px var(--paper)}
+ ::selection{background:var(--accent);color:#0b0c10}
+}
 """
 
 
