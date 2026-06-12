@@ -98,12 +98,8 @@ Manage/pause the task in the **"Scheduled"** sidebar. To pre-approve its tools (
 ### Which engine wrote it?
 Every digest says so in its subtitle — **`Engine: Claude`** or **`Engine: DeepSeek (model)`**. Claude digests use inline linked sources; DeepSeek digests use numbered `[n]` citations resolved in a Sources list.
 
-### Optional local DeepSeek 7am job (on/off)
-A separate macOS `launchd` job can email a **DeepSeek** digest at 7am without Claude. It's currently **OFF**. Toggle by double-clicking, in the project folder:
-- **`Turn ON DeepSeek morning email.command`**
-- **`Turn OFF DeepSeek morning email.command`**
-
-(It needs the Desktop-permission/folder fix above to actually run.) Your active morning digest is the **Claude** one via the Claude app.
+### Your single automatic runner: the cloud
+The automatic morning digest runs in the **cloud** (GitHub Actions, DeepSeek) — reliable, laptop-independent, and it also publishes the website. Start/stop it from the repo's **Actions** tab (Disable/Enable workflow; "Run workflow" for on-demand). For a richer read any time, run `/pharma-news` (Claude) by hand. See `GUIDE.md`.
 
 ---
 
