@@ -64,7 +64,7 @@ jobs:
         run: |
           git config user.name "pharma-digest-bot"
           git config user.email "bot@users.noreply.github.com"
-          git add digests/
+          git add digests/ pharma-news/catalysts.md
           # If a local push landed mid-run, rebase onto it; a genuinely failed push
           # must fail the job — a silently skipped push loses the digest forever
           # (the next day's site is rebuilt from whatever is in the repo).
