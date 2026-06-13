@@ -31,7 +31,7 @@ Type in Claude Code:
 2. **TL;DR** - the 3-5 things that matter.
 3. **Top Stories** - 2-4 items (4-6 in the evening edition), each with *What happened*, *What it means*, and 2-4 analysis lenses.
 4. **🔬 Deep Dive** *(evening only)* - ~150-250 word synthesis of the day's biggest theme.
-5. **🎯 Lilly Watch** - Lilly's own news + competitor moves that affect its position, with "so what for Lilly."
+5. **🎯 Eli Lilly Spotlight** - Lilly's own news + competitor moves that affect its position, with "so what for Lilly."
 6. **On the radar** - quick one-line hits (rumours labelled).
 7. **🌍 Wider world → pharma** - non-pharma news with sector implications.
 8. **📅 Week Ahead** - upcoming catalysts (FDA *and* EMA/CHMP, earnings, readouts, conferences).
