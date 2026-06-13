@@ -21,6 +21,9 @@ pick_edition(){ local e; e=$(menu "Edition?" "Morning (2-3 min)" "Evening (5-8 m
 wf_state(){ gh api "repos/$REPO/actions/workflows" --jq ".workflows[]|select(.path==\".github/workflows/$WF\")|.state" 2>/dev/null; }
 recips(){ grep '^EMAIL_TO=' "$S" 2>/dev/null | cut -d= -f2-; }
 set_recips(){ perl -i -pe "s|^EMAIL_TO=.*|EMAIL_TO=$1|" "$S"; [ -n "$REPO" ] && gh secret set EMAIL_TO --body "$1" -R "$REPO" >/dev/null 2>&1; }
+sched(){ python3 -c "import json;c=json.load(open('pharma-news/config.json'));print(c.get('delivery_time','07:00'),c.get('target_timezone','Europe/Rome'))" 2>/dev/null || echo "07:00 Europe/Rome"; }
+engine_name(){ local e; e=$(grep '^PHARMA_ENGINE=' "$S" 2>/dev/null | cut -d= -f2- | sed "s/[\"' ]//g"); [ -z "$e" ] && e="gemini (default)"; echo "$e"; }
+status_line(){ echo "Engine: $(engine_name)      Daily send: $(sched)"; }
 
 # ---- actions ----
 act_generate(){
@@ -46,19 +49,50 @@ act_read(){
 
 act_cloud(){
   [ -z "$REPO" ] && { dlg "Cloud isn't connected (GitHub CLI not signed in)."; return; }
-  local c; c=$(menu "Cloud & email:" "Send today's digest now (email + Telegram + website)" "Daily auto-send: turn ON / OFF" "Status & last run")
+  local c; c=$(menu "Send & schedule — the automatic cloud digest:" \
+    "Send today's brief now (email + Telegram + website)" \
+    "Set the daily send time & timezone" \
+    "Daily auto-send: turn ON or OFF" \
+    "Status & last run")
   case "$c" in
     "Send today"*) pick_window || return; pick_edition || return
        gh workflow run "$WF" -f hours="$HOURS" -f edition="$EDITION" >/dev/null 2>&1 \
-         && dlg "☁️ Cloud run started — email, Telegram, and the online website update in ~1-2 minutes." || dlg "Couldn't start the cloud run." ;;
+         && dlg "☁️ Cloud run started — email, Telegram, and the online website update in ~1–2 minutes." || dlg "Couldn't start the cloud run." ;;
+    "Set the daily"*) act_schedule ;;
     "Daily auto-send"*) local st; st=$(wf_state); local cur="unknown"; [ "$st" = active ] && cur=ON; [ "$st" = disabled_manually ] && cur=OFF
-       local p; p=$(osascript -e "button returned of (display dialog \"Daily 7am cloud digest is currently: $cur\" buttons {\"Turn OFF\",\"Turn ON\",\"Cancel\"} default button \"Cancel\" with title \"Pharma Command Centre\")" 2>/dev/null)
+       local p; p=$(osascript -e "button returned of (display dialog \"The daily cloud digest (currently: $cur) sends at $(sched).\" buttons {\"Turn OFF\",\"Turn ON\",\"Cancel\"} default button \"Cancel\" with title \"Pharma Command Centre\")" 2>/dev/null)
        [ "$p" = "Turn ON" ]  && gh workflow enable  "$WF" >/dev/null 2>&1 && dlg "✅ Daily cloud digest ON."
        [ "$p" = "Turn OFF" ] && gh workflow disable "$WF" >/dev/null 2>&1 && dlg "🛑 Daily cloud digest OFF." ;;
     "Status"*) local last; last=$(python3 -c "import json;print(json.load(open('pharma-news/state.json')).get('last_run') or 'never')" 2>/dev/null)
-       local st; st=$(wf_state); local cl="unknown"; [ "$st" = active ] && cl="ON (~7am Rome)"; [ "$st" = disabled_manually ] && cl="OFF"
+       local st; st=$(wf_state); local cl="unknown"; [ "$st" = active ] && cl="ON"; [ "$st" = disabled_manually ] && cl="OFF"
        local lr; lr=$(gh run list -R "$REPO" --workflow "$WF" --limit 1 --json conclusion,createdAt --jq '.[0]|"\(.conclusion) (\(.createdAt[0:10]))"' 2>/dev/null)
-       dlg "📊 STATUS\n\nLocal last run: $last\nDaily cloud digest: $cl\nLast cloud run: ${lr:-none}\nEmail goes to: $(recips)" ;;
+       dlg "STATUS\n\nEngine: $(engine_name)\nDaily auto-send: $cl, at $(sched)\nLast cloud run: ${lr:-none}\nEmail goes to: $(recips)" ;;
+  esac
+}
+
+act_schedule(){
+  local cur; cur=$(python3 -c "import json;print(json.load(open('pharma-news/config.json')).get('delivery_time','07:00'))" 2>/dev/null); [ -z "$cur" ] && cur="07:00"
+  local t; t=$(ask "Send the daily brief at what time? (24-hour, e.g. 07:00)" "$cur"); [ -z "$t" ] && return
+  local z; z=$(menu "…in which timezone is that time?" "Europe/Rome" "Asia/Singapore" "Europe/London" "America/New_York" "America/Los_Angeles" "Asia/Kolkata" "Other (type it)")
+  case "$z" in ""|false) return;; "Other"*) z=$(ask "Type the timezone (IANA name, e.g. Europe/Paris)" "Europe/Rome"); [ -z "$z" ] && return;; esac
+  local outp; outp=$(python3 pharma-news/set_schedule.py "$t" "$z" 2>&1)
+  [ $? -ne 0 ] && { dlg "Couldn't set the schedule:\n\n$outp"; return; }
+  local pushed="saved on this Mac (cloud not connected)"
+  if [ -n "$REPO" ]; then
+    git add .github/workflows/pharma-digest.yml pharma-news/config.json >/dev/null 2>&1
+    if git commit -m "schedule: $t $z" >/dev/null 2>&1; then
+      if git pull --rebase origin main >/dev/null 2>&1 && git push >/dev/null 2>&1; then pushed="cloud schedule updated ✓"
+      else pushed="saved locally; cloud push failed — open the menu again to retry"; fi
+    else pushed="no change needed"; fi
+  fi
+  dlg "🕖 $outp\n\nDaily cloud run: $pushed\n\nGitHub runs in UTC — re-set this after a daylight-saving change to keep the local time exact."
+}
+
+act_settings(){
+  local c; c=$(menu "Settings:" "Choose engine (Gemini / DeepSeek)" "Edit watchlist, news sources, or catalysts")
+  case "$c" in
+    "Choose engine"*) act_engine ;;
+    "Edit watchlist"*) act_customise ;;
   esac
 }
 
@@ -97,22 +131,21 @@ act_audio(){
 
 # ---- main loop ----
 while true; do
-  choice=$(menu "PHARMA BRIEF — COMMAND CENTRE     (pick a group)" \
-    "📖  Read the brief" \
-    "✍️  Make a digest now (just on this Mac)" \
-    "☁️  Cloud & email  ▸" \
-    "🔀  Choose engine (Gemini / DeepSeek)" \
-    "✏️  Customise: sources, watchlist, calendar  ▸" \
-    "🔊  Listen to the audio brief" \
-    "❓  Help & how it works")
+  choice=$(menu "Pharma Morning Brief — Command Centre
+$(status_line)" \
+    "Read the latest brief" \
+    "Make a brief now  (on this Mac only)" \
+    "Send & schedule  (the automatic cloud digest)" \
+    "Settings  (engine, sources, watchlist, catalysts)" \
+    "Listen to the audio brief" \
+    "Help — how it all works")
   case "$choice" in
     ""|false) exit 0 ;;
-    *"Read the brief"*)   act_read ;;
-    *"just on this Mac"*) act_generate ;;
-    *"Cloud & email"*)    act_cloud ;;
-    *"Choose engine"*)    act_engine ;;
-    *"Customise"*)        act_customise ;;
-    *"audio brief"*)      act_audio ;;
-    *"Help"*)             open "$DIR/GUIDE.md" ;;
+    "Read the latest"*) act_read ;;
+    "Make a brief"*)    act_generate ;;
+    "Send & schedule"*) act_cloud ;;
+    "Settings"*)        act_settings ;;
+    "Listen"*)          act_audio ;;
+    "Help"*)            open "$DIR/GUIDE.md" ;;
   esac
 done
