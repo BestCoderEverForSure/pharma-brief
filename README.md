@@ -127,7 +127,7 @@ python3 deepseek/run_digest.py --engine deepseek     # force a specific engine f
 - Under the hood it's the `PHARMA_ENGINE` setting (`gemini` | `deepseek`): in `secrets.env` for local runs, and as the repo **Variable** `PHARMA_ENGINE` for the cloud. Unset → Gemini when `GEMINI_API_KEY` is present, else DeepSeek.
 
 **Keys & models (in `secrets.env`, and as GitHub Secrets for the cloud):**
-- **Gemini:** `GEMINI_API_KEY` (free key from [aistudio.google.com](https://aistudio.google.com)); model `GEMINI_MODEL` (default `gemini-2.5-pro`).
+- **Gemini:** `GEMINI_API_KEY` (free key from [aistudio.google.com](https://aistudio.google.com)); model `GEMINI_MODEL` (default `gemini-2.5-flash` — free tier). Note: **`gemini-2.5-pro` is *not* on the free tier** (needs billing enabled, ~$4-5/mo at this volume); Flash is free and plenty for this digest.
 - **DeepSeek:** `DEEPSEEK_API_KEY`; model `DEEPSEEK_MODEL` (e.g. the cheap `deepseek-v4-flash`).
 - Pulls news from [`deepseek/feeds.txt`](deepseek/feeds.txt) (edit to change breadth).
 - **Trade-off:** it can only summarise what the RSS feeds supply, so discovery is narrower than Claude's live web search - the honest cost of going self-hosted.
