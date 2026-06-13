@@ -105,6 +105,78 @@ def render_market_email(md: str) -> str:
         "Source: Yahoo Finance, end-of-day prices (5-day change). Not investment advice.</p>")
 
 
+# --- Catalyst timeline: same dated events as the website, grouped the same way,
+#     rendered email-safe. Read from pharma-news/catalysts.md (mirrors build_site.py). ---
+CATALYSTS_PATH = PROJECT_ROOT / "pharma-news" / "catalysts.md"
+_MONTHS = {m: i for i, m in enumerate(
+    ["jan", "feb", "mar", "apr", "may", "jun",
+     "jul", "aug", "sep", "oct", "nov", "dec"], start=1)}
+
+
+def _parse_catalysts() -> list:
+    if not CATALYSTS_PATH.exists():
+        return []
+    events = []
+    for line in CATALYSTS_PATH.read_text(encoding="utf-8").splitlines():
+        m = re.match(r"^- \*\*(.+?)\*\* · (.+)$", line.strip())
+        if not m:
+            continue
+        datestr, desc = m.group(1), m.group(2)
+        short = re.split(r" — | - ", desc)[0].strip()
+        when = None
+        iso = re.search(r"(\d{4})-(\d{2})-(\d{2})", datestr)
+        if iso:
+            try:
+                when = datetime.date(int(iso[1]), int(iso[2]), int(iso[3]))
+            except ValueError:
+                when = None
+        else:
+            mon = re.search(r"([A-Za-z]{3})[a-z]*\s+(\d{4})", datestr)
+            if mon and mon.group(1).lower() in _MONTHS:
+                when = datetime.date(int(mon.group(2)), _MONTHS[mon.group(1).lower()], 15)
+        if when:
+            events.append({"date": when, "label": short})
+    return sorted(events, key=lambda e: e["date"])
+
+
+def render_catalysts_email() -> str:
+    """Upcoming-catalysts list for the email (mirrors the website's timeline buckets),
+    inline styles only. "" when there are no dated catalysts on file."""
+    events = _parse_catalysts()
+    if not events:
+        return ""
+    today = datetime.date.today()
+    labels = ["Next 30 days", "1–3 months", "On the horizon"]
+
+    def bucket(d):
+        delta = (d - today).days
+        return 0 if delta <= 30 else (1 if delta <= 90 else 2)
+
+    groups: dict = {0: [], 1: [], 2: []}
+    for e in events:
+        groups[bucket(e["date"])].append(e)
+    mono = "ui-monospace,Menlo,Consolas,monospace"
+    parts = ['<hr style="border:none;border-top:1px solid #e3dfd4;margin:26px 0 0">',
+             "<h2>Upcoming catalysts</h2>"]
+    for gi in (0, 1, 2):
+        if not groups[gi]:
+            continue
+        parts.append(f'<p style="font-family:{mono};text-transform:uppercase;letter-spacing:.08em;'
+                     f'font-size:11px;color:#8b635c;margin:16px 0 4px">{labels[gi]}</p>')
+        parts.append('<table style="width:100%;border-collapse:collapse" cellpadding="0" cellspacing="0">')
+        for e in groups[gi]:
+            d = e["date"].strftime("%b %d, %Y")
+            parts.append(
+                "<tr>"
+                f'<td style="padding:5px 12px 5px 0;font-size:12px;color:#8a8a8a;font-family:{mono};'
+                f'white-space:nowrap;vertical-align:top;border-bottom:1px solid #ececec">{d}</td>'
+                f'<td style="padding:5px 0;font-size:14px;border-bottom:1px solid #ececec">'
+                f'{_html.escape(e["label"])}</td>'
+                "</tr>")
+        parts.append("</table>")
+    return "".join(parts)
+
+
 def load_secrets() -> dict:
     """Load secrets from env vars, falling back to the secrets.env file."""
     secrets = {}
@@ -304,7 +376,7 @@ def main() -> int:
         out = Path(rest[1]).expanduser() if len(rest) > 1 else (PROJECT_ROOT / "samples" / "email-preview.html")
         out.parent.mkdir(parents=True, exist_ok=True)
         pmd = prepare_digest(digest_path.read_text(encoding="utf-8"))
-        out.write_text(md_to_html(pmd, render_market_email(pmd)), encoding="utf-8")
+        out.write_text(md_to_html(pmd, render_catalysts_email() + render_market_email(pmd)), encoding="utf-8")
         print(f"Email preview written ✓ -> {out}")
         return 0
 
@@ -333,7 +405,7 @@ def main() -> int:
         "from": from_addr,
         "to": recipients,
         "subject": subject,
-        "html": md_to_html(md, render_market_email(md)),
+        "html": md_to_html(md, render_catalysts_email() + render_market_email(md)),
         "text": md,
     }).encode("utf-8")
 
