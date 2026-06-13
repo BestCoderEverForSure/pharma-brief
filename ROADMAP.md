@@ -27,9 +27,9 @@ Where the project stands, and everything we discussed adding.
 
 ## Next up / your action ⬜
 - [ ] **A/B DeepSeek v4-pro vs flash** - flip `DEEPSEEK_MODEL` secret, compare a few days *(you: send the exact model id; cost ~$1.50/mo on pro)*
-- [ ] **Create the Telegram channel + set `TELEGRAM_CHAT_ID`** - last step to go live *(you: ~2 min — DONE if `@pharma_morning_brief` is wired)*
+- [x] **Create the Telegram channel + set `TELEGRAM_CHAT_ID`** - done; the `@channel` handle is set locally + as a GitHub Secret, so the daily run posts automatically (confirm by checking the channel after the next run)
 - [ ] **Claude-grade cloud digest** - Anthropic API + live web search (`web_search` tool), stdlib-only via raw HTTP; recommend running it for the **Sunday weekly** only (premium where it counts, pennies the rest of the week). ~$5-15/mo + web-search fee.
-- [ ] *(optional)* Revoke/rotate the Telegram bot token via @BotFather (it passed through a chat)
+- [x] *(optional)* Revoke/rotate the Telegram bot token via @BotFather - done; fresh token issued and updated in both places, no longer exposed in any chat
 
 ## Optional / future 💡
 - [ ] Verify a Resend domain - required to email **other people** (e.g. a pharma friend); Telegram is the free alternative

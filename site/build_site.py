@@ -570,7 +570,7 @@ def build():
             f'<span class="arch-title">{html.escape(short_title)}</span>'
             f'<span class="arch-engine">{html.escape(engine)}</span></a>')
         search_index.append({"slug": slug, "date": p.stem, "title": html.escape(short_title),
-                             "engine": engine, "text": plain_text(md)[:4000]})
+                             "engine": html.escape(engine), "text": plain_text(md)[:4000]})
 
     events = parse_catalysts()
     timeline, mix = render_timeline(events), render_catalyst_mix(events)
