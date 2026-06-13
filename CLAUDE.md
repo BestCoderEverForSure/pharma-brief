@@ -12,13 +12,13 @@ This file is the persistent context for this project (read it first).
 4. **Good solution:** A digest that (a) sweeps many reputable sources, (b) explains *what it means* via executive lenses, (c) flags upcoming catalysts, (d) is grounded/fact-checked, (e) arrives automatically each morning and is also browsable.
 5. **Not in scope:** Real-time/intraday alerts; trading signals/investment advice; deep single-company research reports; non-pharma industries (though the design is portable).
 
-## How it works - "1 recipe, 2 engines, 1 delivery"
+## How it works - "1 recipe, swappable engines, 1 delivery"
 - **Recipe (shared methodology):** `.claude/commands/pharma-news.md` (+ `pharma-news/digest-template.md`, `watchlist.md`, `catalysts.md`).
-- **Two engines:**
-  - **Claude** - on-demand `/pharma-news` in Claude Code; live web search, richest analysis.
-  - **DeepSeek** - `deepseek/run_digest.py`; reads RSS feeds (`deepseek/feeds.txt`), cheap/per-token, runs without Claude.
+- **Engines:**
+  - **Claude** - on-demand `/pharma-news` in Claude Code; live web search, richest analysis; runs on the user's Claude Code subscription (no API spend).
+  - **Automatic engine** (`deepseek/run_digest.py`, cloud + Command Centre) - reads RSS feeds (`deepseek/feeds.txt`) and is engine-swappable via `PHARMA_ENGINE` (gemini|deepseek): **Gemini (primary, `gemini-2.5-pro`, free tier)** or **DeepSeek**. Both use the OpenAI-compatible chat API through one `call_model()` path (`PROVIDERS` dict). Switch instantly via **Command Centre → "Choose engine"** (sets local `secrets.env` + the cloud repo Variable `PHARMA_ENGINE`), or `--engine`. Unset → Gemini when `GEMINI_API_KEY` present, else DeepSeek.
 - **Delivery:** `pharma-news/send_digest.py` (email via Resend) + `site/build_site.py` (static website with catalyst timeline, markets chart, search, archive).
-- **Automation:** `.github/workflows/pharma-digest.yml` runs the DeepSeek engine daily in the cloud (GitHub Actions), emails it, and publishes the website (GitHub Pages).
+- **Automation:** `.github/workflows/pharma-digest.yml` runs the automatic engine daily in the cloud (GitHub Actions), emails it, posts a Telegram card, and publishes the website (GitHub Pages).
 
 ## Run it locally
 - **Easiest:** double-click **`Pharma Command Centre.command`** (menu controls everything).
