@@ -28,6 +28,7 @@ import os
 import re
 import sys
 import json
+import time
 import argparse
 import datetime as dt
 from email.utils import parsedate_to_datetime
@@ -194,7 +195,7 @@ PROVIDERS = {
     "gemini":   {"label": "Gemini",
                  "base": "https://generativelanguage.googleapis.com/v1beta/openai",
                  "key": "GEMINI_API_KEY", "model_key": "GEMINI_MODEL",
-                 "base_key": "GEMINI_BASE_URL", "default_model": "gemini-2.5-pro"},
+                 "base_key": "GEMINI_BASE_URL", "default_model": "gemini-2.5-flash"},
 }
 
 
@@ -230,13 +231,31 @@ def call_model(secrets: dict, system: str, user: str) -> str:
         "temperature": 0.4,
         "stream": False,
     }).encode("utf-8")
-    req = urllib.request.Request(
-        f"{base}/chat/completions", data=payload, method="POST",
-        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
-    )
-    with urllib.request.urlopen(req, timeout=180) as r:
-        data = json.loads(r.read().decode("utf-8"))
-    return data["choices"][0]["message"]["content"]
+    # A real User-Agent is required: Google's endpoint drops the default "Python-urllib"
+    # UA (closes the connection), though it accepts curl/browsers.
+    headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json",
+               "User-Agent": "pharma-digest/1.0"}
+    # Retry transient failures (5xx, rate-limit, dropped connection) — free tiers 503 under
+    # load, and we don't want to lose the grounding check to a blip.
+    last = None
+    for delay in (0, 3, 8):
+        if delay:
+            time.sleep(delay)
+        try:
+            req = urllib.request.Request(f"{base}/chat/completions", data=payload,
+                                         method="POST", headers=headers)
+            with urllib.request.urlopen(req, timeout=180) as r:
+                data = json.loads(r.read().decode("utf-8"))
+            return data["choices"][0]["message"]["content"]
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 500, 502, 503, 504) and delay != 8:
+                last = e; continue          # transient — retry
+            raise                            # 4xx (bad request/auth/quota=0) — fail now
+        except (urllib.error.URLError, http.client.HTTPException, OSError) as e:
+            last = e
+            if delay == 8:
+                raise
+    raise last                               # exhausted retries
 
 
 def _fmt_source_dt(iso: str) -> str:
@@ -528,6 +547,11 @@ def main() -> int:
         digest = call_model(secrets, build_system_prompt(args.edition, label), user)
     except urllib.error.HTTPError as e:
         print(f"ERROR {e.code}: {e.read().decode('utf-8','replace')}", file=sys.stderr)
+        return 4
+    except (urllib.error.URLError, http.client.HTTPException, OSError) as e:
+        # Network drop / reset / closed connection — fail cleanly (GitHub emails the
+        # failure) instead of crashing with a traceback.
+        print(f"ERROR: {label} call failed ({e})", file=sys.stderr)
         return 4
 
     # Guard against empty/near-empty model output: don't email or publish a hollow
