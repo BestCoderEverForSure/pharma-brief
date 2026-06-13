@@ -204,6 +204,9 @@ def find_digest(arg_path: str | None) -> Path:
 def md_inline(text: str) -> str:
     """Minimal inline markdown -> HTML (links, bold, italic, clickable [n] citations)."""
     text = _html.escape(text)
+    # Drop "[catalysts.md]"-style markers (internal files cited as if sources); the
+    # lookahead spares real "[label.md](url)" links.
+    text = re.sub(r"\s*\[[^\[\]]*\.md\](?!\()", "", text, flags=re.I)
     # Tolerate a stray space in links the model sometimes writes as "[text] (https://…)";
     # collapse it only before a URL so citations like "[1] (a note)" stay plain text.
     text = re.sub(r"\]\s+\((?=https?://)", "](", text)
