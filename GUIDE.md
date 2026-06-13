@@ -41,7 +41,7 @@ That's the whole thing. Everything below is just *where* and *when* the cooks wo
 ---
 
 ## When it runs (the automatic part)
-- **In the cloud (GitHub), every morning at 7am Rome time.** This is the reliable one - it runs even if your laptop is closed or off, because it's on GitHub's computers, not yours. It makes the digest (DeepSeek), emails you, and updates the website.
+- **In the cloud (GitHub), every morning at 7am Rome time** (Mon-Sat the daily brief; Sunday a deeper "Week in Review"). This is the reliable one - it runs even if your laptop is closed or off, because it's on GitHub's computers, not yours. It makes the digest (DeepSeek), emails you, posts a Telegram card you can share, and updates the website.
 - You don't have to do anything. It just happens.
 
 ## How to STOP or START the automatic run

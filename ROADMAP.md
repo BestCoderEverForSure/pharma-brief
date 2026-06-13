@@ -24,6 +24,14 @@ Where the project stands, and everything we discussed adding.
 - [x] **Telegram delivery** - summary card + "read full brief" link to a public channel (free, no domain)
 - [x] **Sunday "Week in Review"** - deeper evening edition over 7 days, in the cloud
 - [x] Thin-digest guard - aborts (so GitHub emails you) instead of sending a hollow brief
+- [x] **Reliability hardening** - fail-loud on failed email/Telegram send, empty model output, or a failed git push (no more silent losses); one flaky feed no longer kills the run
+- [x] **Email parity with the site** - clickable links + `[n]` citations, a Markets table, and an Upcoming-catalysts list in the email
+- [x] **Source date/times** - each source shows its publish time where the feed provides one (factual only, never guessed)
+- [x] **"What's new" tagging** - stories already covered in the last 7 days only reappear as *Developing:* with a concrete new fact
+- [x] **Grounding self-check** - a second pass fact-checks the draft against the sources and revises out unsupported claims
+- [x] **Self-maintaining catalysts** - explicitly-dated future events from the day's news are auto-filed into `catalysts.md` (clearly labelled, deduped, pruned)
+- [x] **"Last updated" footer** on the site; renamed the Lilly section to **Eli Lilly Spotlight**; removed decorative emojis for a cleaner editorial look
+- [x] Cost: grounding + catalyst extraction share **one** review call (~3 DeepSeek calls/run, ~$1-2/mo)
 
 ## Next up / your action ⬜
 - [ ] **A/B DeepSeek v4-pro vs flash** - flip `DEEPSEEK_MODEL` secret, compare a few days *(you: send the exact model id; cost ~$1.50/mo on pro)*

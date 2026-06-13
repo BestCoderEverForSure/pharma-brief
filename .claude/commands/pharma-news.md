@@ -13,7 +13,7 @@ You are producing **the Pharma Morning Digest** — a balanced, high-signal brie
 
 **Edition (controls depth/length):**
 - **`morning`** *(default)* → the tight **2-3 minute** read described throughout this file.
-- **`evening`** → a deeper **5-8 minute** read for when there's more time. Same structure, but: 4-6 Top Stories (not 2-4), fuller "What it means" and more lenses per story, an expanded Eli Lilly Spotlight, and ONE **🔬 Deep Dive** — a ~150-250 word analytical take on the single most important theme of the day (the kind of synthesis you'd want before a strategy discussion). Still grounded and sourced; longer ≠ looser.
+- **`evening`** → a deeper **5-8 minute** read for when there's more time. Same structure, but: 4-6 Top Stories (not 2-4), fuller "What it means" and more lenses per story, an expanded Eli Lilly Spotlight, and ONE **Deep Dive** — a ~150-250 word analytical take on the single most important theme of the day (the kind of synthesis you'd want before a strategy discussion). Still grounded and sourced; longer ≠ looser.
 
 You can combine them, e.g. `evening catchup`. State the window AND edition at the top of the digest.
 
@@ -72,7 +72,7 @@ Keep the digest a **full-industry view** — but always surface what matters to 
 - **Lilly's key franchises** — Mounjaro/Zepbound (tirzepatide), oral orforglipron / Foundayo, Kisunla/donanemab (Alzheimer's), Verzenio, Jaypirca, Ebglyss, and pipeline assets.
 - **Direct competitive threats** — Novo Nordisk, Amgen (MariTide), Pfizer/Metsera, Viking, Roche, and others moving on obesity/diabetes/Alzheimer's.
 
-Produce a short **🎯 Eli Lilly Spotlight** block: Lilly's own news plus the most important competitor/market moves that affect Lilly's position, with a brief "so what for Lilly" where it adds insight. If there is genuinely nothing Lilly-relevant in the window, write one honest line saying so rather than padding.
+Produce a short **Eli Lilly Spotlight** block: Lilly's own news plus the most important competitor/market moves that affect Lilly's position, with a brief "so what for Lilly" where it adds insight. If there is genuinely nothing Lilly-relevant in the window, write one honest line saying so rather than padding.
 
 ## Step 3 — Bonus: wider world → pharma
 
@@ -90,7 +90,7 @@ Check whether any **watchlist company reports earnings today or this week** (fro
 
 Follow the structure in `pharma-news/digest-template.md` exactly. Match length to the **edition** (morning = 2-3 min; evening = 5-8 min + Deep Dive). Prioritise ruthlessly. Be neutral and balanced in tone; no hype.
 
-Open with a **💡 Talking point** — one sharp, non-obvious, one-line insight or conversation-starter the reader can drop in a meeting or coffee chat to sound genuinely on top of the industry. Make it the smartest single sentence in the digest.
+Open with a **Talking point** — one sharp, non-obvious, one-line insight or conversation-starter the reader can drop in a meeting or coffee chat to sound genuinely on top of the industry. Make it the smartest single sentence in the digest.
 
 Include a **Sources** section with the actual **named outlet + linked title** for each source you used (e.g. `- [STAT — Takeda beats BMS](https://…)`). Never cite a source as a bare number like `[8]` without a matching, named, linked entry in Sources.
 
