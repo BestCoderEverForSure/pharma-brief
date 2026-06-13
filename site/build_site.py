@@ -71,6 +71,9 @@ def _mk_link(m):
 
 def md_inline(text: str) -> str:
     text = html.escape(text)
+    # Tolerate a stray space in links the model sometimes writes as "[text] (https://…)";
+    # collapse it only before a URL so citations like "[1] (a note)" stay plain text.
+    text = re.sub(r"\]\s+\((?=https?://)", "](", text)
     text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", _mk_link, text)
     text = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", text)
     text = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"<em>\1</em>", text)
@@ -570,7 +573,7 @@ def build():
             f'<span class="arch-title">{html.escape(short_title)}</span>'
             f'<span class="arch-engine">{html.escape(engine)}</span></a>')
         search_index.append({"slug": slug, "date": p.stem, "title": html.escape(short_title),
-                             "engine": engine, "text": plain_text(md)[:4000]})
+                             "engine": html.escape(engine), "text": plain_text(md)[:4000]})
 
     events = parse_catalysts()
     timeline, mix = render_timeline(events), render_catalyst_mix(events)

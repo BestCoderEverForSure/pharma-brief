@@ -46,11 +46,11 @@ act_read(){
 
 act_cloud(){
   [ -z "$REPO" ] && { dlg "Cloud isn't connected (GitHub CLI not signed in)."; return; }
-  local c; c=$(menu "Cloud & email:" "Run the cloud digest now" "Daily auto-send: turn ON / OFF" "Status & last run")
+  local c; c=$(menu "Cloud & email:" "Send today's digest now (email + Telegram + website)" "Daily auto-send: turn ON / OFF" "Status & last run")
   case "$c" in
-    "Run the cloud"*) pick_window || return; pick_edition || return
+    "Send today"*) pick_window || return; pick_edition || return
        gh workflow run "$WF" -f hours="$HOURS" -f edition="$EDITION" >/dev/null 2>&1 \
-         && dlg "☁️ Cloud run started — email + website update in ~1-2 minutes." || dlg "Couldn't start the cloud run." ;;
+         && dlg "☁️ Cloud run started — email, Telegram, and the online website update in ~1-2 minutes." || dlg "Couldn't start the cloud run." ;;
     "Daily auto-send"*) local st; st=$(wf_state); local cur="unknown"; [ "$st" = active ] && cur=ON; [ "$st" = disabled_manually ] && cur=OFF
        local p; p=$(osascript -e "button returned of (display dialog \"Daily 7am cloud digest is currently: $cur\" buttons {\"Turn OFF\",\"Turn ON\",\"Cancel\"} default button \"Cancel\" with title \"Pharma Command Centre\")" 2>/dev/null)
        [ "$p" = "Turn ON" ]  && gh workflow enable  "$WF" >/dev/null 2>&1 && dlg "✅ Daily cloud digest ON."
@@ -82,7 +82,7 @@ act_audio(){
 while true; do
   choice=$(menu "PHARMA BRIEF — COMMAND CENTRE     (pick a group)" \
     "📖  Read the brief" \
-    "✍️  Make a new digest now" \
+    "✍️  Make a digest now (just on this Mac)" \
     "☁️  Cloud & email  ▸" \
     "✏️  Customise: sources, watchlist, calendar  ▸" \
     "🔊  Listen to the audio brief" \
@@ -90,7 +90,7 @@ while true; do
   case "$choice" in
     ""|false) exit 0 ;;
     *"Read the brief"*)   act_read ;;
-    *"Make a new digest"*) act_generate ;;
+    *"just on this Mac"*) act_generate ;;
     *"Cloud & email"*)    act_cloud ;;
     *"Customise"*)        act_customise ;;
     *"audio brief"*)      act_audio ;;

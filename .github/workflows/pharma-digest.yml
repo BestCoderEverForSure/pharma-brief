@@ -64,9 +64,16 @@ jobs:
         run: |
           git config user.name "pharma-digest-bot"
           git config user.email "bot@users.noreply.github.com"
-          git add digests/ || true
-          git commit -m "Digest $(date -u +%F)" || echo "nothing to commit"
-          git push || echo "push skipped"
+          git add digests/
+          # If a local push landed mid-run, rebase onto it; a genuinely failed push
+          # must fail the job — a silently skipped push loses the digest forever
+          # (the next day's site is rebuilt from whatever is in the repo).
+          if git commit -m "Digest $(date -u +%F)"; then
+            git pull --rebase origin main
+            git push
+          else
+            echo "nothing to commit"
+          fi
 
       - name: Build the website
         run: python3 site/build_site.py
