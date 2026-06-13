@@ -1,8 +1,8 @@
-# 💊 Pharma {Morning/Evening} Digest - {DATE}
+# Pharma {Morning/Evening} Digest - {DATE}
 
 *Window: {last 24h / since {date}} · Edition: {morning / evening} · Engine: {Claude / DeepSeek} · ~{N} min read*
 
-> 💡 **Talking point:** {one sharp, non-obvious line to sound on top of the industry today}
+> **Talking point:** {one sharp, non-obvious line to sound on top of the industry today}
 
 ## TL;DR
 > The 3-5 things that actually matter today.
@@ -26,13 +26,13 @@
 
 ---
 
-## 🔬 Deep Dive *(evening edition only)*
+## Deep Dive *(evening edition only)*
 > ~150-250 words on the single most important theme of the day - the synthesis you'd want before a strategy discussion. Grounded and sourced.
 {Omit this section entirely in the morning edition.}
 
 ---
 
-## 🎯 Eli Lilly Spotlight
+## Eli Lilly Spotlight
 > Lilly's own news + competitor/market moves that affect its position. "So what for Lilly" where it helps.
 - **{Lilly item}** - {what it means for Lilly}.
 - **{Competitor move}** - {how it bears on Lilly's position}.
@@ -46,13 +46,13 @@
 
 ---
 
-## 🌍 Wider world → pharma
+## Wider world → pharma
 > Non-pharma news with real implications for the sector.
 - **{Event}** → {implication for pharma}.
 
 ---
 
-## 📅 Week Ahead
+## Week Ahead
 > Catalysts due in the next ~7 days. If quiet, name the next big one.
 - **{Date}** · {event} - {why it matters}.
 

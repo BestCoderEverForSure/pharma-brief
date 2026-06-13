@@ -15,7 +15,7 @@ Type in Claude Code:
 | Command | What you get |
 |---|---|
 | `/pharma-news` | The **last 24 hours** - your daily 2-3 min morning read. |
-| `/pharma-news evening` | A deeper **5-8 min** read with more stories + a 🔬 Deep Dive. |
+| `/pharma-news evening` | A deeper **5-8 min** read with more stories + a Deep Dive. |
 | `/pharma-news catchup` | Everything **since you last ran it** (after a few days away). |
 | `/pharma-news since 2026-06-01` | From a specific date until now. |
 | `/pharma-news evening catchup` | Combine modes (deep read, since last run). |
@@ -27,15 +27,15 @@ Type in Claude Code:
 
 ## 2. What's in each digest
 
-1. **💡 Talking point** - one sharp, non-obvious line to sound on top of the industry in a meeting.
+1. **Talking point** - one sharp, non-obvious line to sound on top of the industry in a meeting.
 2. **TL;DR** - the 3-5 things that matter.
-3. **Top Stories** - 2-4 items (4-6 in the evening edition), each with *What happened*, *What it means*, and 2-4 analysis lenses.
-4. **🔬 Deep Dive** *(evening only)* - ~150-250 word synthesis of the day's biggest theme.
-5. **🎯 Eli Lilly Spotlight** - Lilly's own news + competitor moves that affect its position, with "so what for Lilly."
+3. **Top Stories** - 2-4 items (4-6 in the evening edition), each with *What happened*, *What it means*, and 2-4 analysis lenses. A story already covered earlier in the week only reappears (prefixed *Developing:*) if there's a concrete new fact.
+4. **Deep Dive** *(evening only)* - ~150-250 word synthesis of the day's biggest theme.
+5. **Eli Lilly Spotlight** - Lilly's own news + competitor moves that affect its position, with "so what for Lilly."
 6. **On the radar** - quick one-line hits (rumours labelled).
-7. **🌍 Wider world → pharma** - non-pharma news with sector implications.
-8. **📅 Week Ahead** - upcoming catalysts (FDA *and* EMA/CHMP, earnings, readouts, conferences).
-9. **Sources** - every link, so you can verify or read deeper.
+7. **Wider world → pharma** - non-pharma news with sector implications.
+8. **Week Ahead** - upcoming catalysts (FDA *and* EMA/CHMP, earnings, readouts, conferences).
+9. **Sources** - every link (with the article's publish date/time where the feed provides it), so you can verify or read deeper.
 
 ### The eight analysis lenses
 Applied 2-4 per story (never all - a forced lens is noise): **Financial & capital markets · Strategic & competitive · Commercial & market access · Scientific & clinical · Regulatory & legal · Geopolitical & macro · Leadership & organizational · Technology & innovation.**
@@ -50,7 +50,7 @@ Before saving any digest, the engine runs a mandatory accuracy pass:
 - **Rumours are labelled**; weak-sourced specifics are marked or dropped.
 - **No invented links.** If the day is thin, it says so rather than padding.
 
-The DeepSeek version (Section 8) is grounded *only* on the articles it fetches - the lowest-hallucination setup.
+The DeepSeek version (Section 8) is grounded *only* on the articles it fetches - the lowest-hallucination setup. It also runs an automatic **grounding self-check**: after writing the digest, a second pass re-reads it against the fetched sources and flags any claim they don't support, then revises those out before anything is sent. (Disable with `DIGEST_REVIEW=0`.)
 
 ---
 
@@ -71,7 +71,7 @@ Want it longer/shorter, more financial, focused on different companies? Edit `wa
 
 ## 5. Email delivery (Resend)
 
-The morning run can email you the digest. It uses **Resend** with a **send-only** API key, stored privately at `~/.config/pharma-news/secrets.env` (chmod 600, outside this repo).
+The morning run can email you the digest. It uses **Resend** with a **send-only** API key, stored privately at `~/.config/pharma-news/secrets.env` (chmod 600, outside this repo). The email mirrors the website: clickable headlines and `[n]` citations, a **Markets** table, and an **Upcoming catalysts** list. To share with other people without verifying an email domain, the run also posts a summary card to **Telegram** (see Section 8c).
 
 **Setup (done if you see `Sent ✓`):**
 1. Sign up free at [resend.com](https://resend.com) using the address you want the digest sent to.
@@ -86,22 +86,18 @@ The morning run can email you the digest. It uses **Resend** with a **send-only*
 
 ## 6. How the morning schedule works ⚠️ (read this)
 
-The daily run is a **scheduled task** in the Claude app (`pharma-morning-digest`, cron `0 7 * * *`). Important realities:
+The daily run is **fully in the cloud** (GitHub Actions) - laptop-independent, with nothing to keep open:
 
-- **It runs on your computer's local clock.** 7am Singapore now; automatically 7am Rome once you set your Mac to Italy time. No change needed when you relocate.
-- **It uses your Claude account automatically** - you do *not* need to type anything or be present. But...
-- **The Claude app must be running and your Mac must be awake.** If the computer is **asleep, shut, or the app is closed** at 7am, the task does **not** fire on time - it runs **the next time you open the app**. So you'd still get the digest, just later.
-- It does **not** need the `/pharma-news` slash command to be registered - the task carries its own full instructions.
-
-**To make the 7am run reliable:** leave the Mac plugged in, awake, and the Claude app open overnight. For a digest that arrives **even if your laptop is closed**, run the **DeepSeek version on an always-on machine** (Section 8) - that's the only setup fully independent of this laptop.
-
-Manage/pause the task in the **"Scheduled"** sidebar. To pre-approve its tools (so the first auto-run doesn't pause for permissions), hit **"Run now"** there once.
+- **Mon-Sat, 07:00 Rome:** the tight morning brief (last 24h).
+- **Sunday, 07:00 Rome:** a deeper "Week in Review" (evening edition over the last 7 days).
+- Each run generates the digest (DeepSeek), **emails it**, **posts a Telegram card**, archives it to the repo, and **publishes the website** - all without your Mac being awake.
+- Start/stop it or trigger an on-demand run from the repo's **Actions** tab, or the Command Centre → **"Cloud & email."**
+- The website footer shows a **"Last updated"** time, so a stalled run is visible at a glance. Critical failures (feeds down, thin digest, a failed send/publish) exit non-zero, so GitHub emails you the failure rather than failing silently.
 
 ### Which engine wrote it?
 Every digest says so in its subtitle - **`Engine: Claude`** or **`Engine: DeepSeek (model)`**. Claude digests use inline linked sources; DeepSeek digests use numbered `[n]` citations resolved in a Sources list.
 
-### Your single automatic runner: the cloud
-The automatic morning digest runs in the **cloud** (GitHub Actions, DeepSeek) - reliable, laptop-independent, and it also publishes the website. Start/stop it from the repo's **Actions** tab (Disable/Enable workflow; "Run workflow" for on-demand). For a richer read any time, run `/pharma-news` (Claude) by hand. See `GUIDE.md`.
+For a richer read any time, run `/pharma-news` (Claude) by hand - it uses your Claude Code subscription, so it costs nothing extra. See `GUIDE.md`.
 
 ---
 
@@ -141,6 +137,16 @@ python3 deepseek/run_digest.py --email               # also email it
 2. Add repo **Secrets**: `DEEPSEEK_API_KEY`, `RESEND_API_KEY`, `EMAIL_TO`, `EMAIL_FROM`, `DEEPSEEK_MODEL`.
 3. **Settings → Actions → Workflow permissions → Read and write**; and **Settings → Pages → Source: GitHub Actions**.
 4. The workflow runs on schedule, on the **Run workflow** button on demand, and can be paused/resumed from the Actions tab ("activate when I want").
+
+---
+
+## 8c. Telegram delivery (share without a domain)
+
+Each cloud run also posts a short summary card - title, talking point, TL;DR, and a "read the full brief" link - to a **Telegram channel**. It's free, needs no email domain, and is the simplest way to share the brief with someone else (e.g. a colleague): just send them the channel link.
+
+- Sender: [`pharma-news/send_telegram.py`](pharma-news/send_telegram.py) (standard library only), wired via `run_digest.py --telegram`.
+- Secrets: `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` (a `@channel`) in `secrets.env` and as GitHub Secrets. If `TELEGRAM_CHAT_ID` is unset, the step skips cleanly - the daily run is unaffected.
+- The bot must be an **admin** of the channel to post.
 
 ---
 
@@ -196,5 +202,6 @@ Secrets (outside the repo, private):
 
 ## 12. Roadmap
 
-- ✅ On-demand + scheduled digest · email · evening edition · audio · thread-tracking · archive search · earnings-day mode · accuracy pass · DeepSeek version
-- 💡 Parked: charts/visuals (one lightweight chart in HTML email), WhatsApp/Telegram delivery, cloud-hosted always-on run.
+- ✅ On-demand + cloud-scheduled digest · email · **Telegram** · evening + Sunday weekly editions · audio · website (markets, catalyst timeline, search, dark mode, "last updated") · thread-tracking / "what's new" tagging · archive search · accuracy pass + **grounding self-check** · self-maintaining catalysts · source date/times · DeepSeek engine
+- 💡 Parked: WhatsApp (Business API isn't free/simple); a Claude-grade *cloud* digest (the on-demand `/pharma-news` already gives you Claude quality on your subscription).
+- See `ROADMAP.md` for the full checklist.
