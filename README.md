@@ -111,17 +111,24 @@ A spoken version you can listen to on the commute - free, offline, via the macOS
 
 ---
 
-## 8. DeepSeek standalone version (run without Claude)
+## 8. The automatic engine (Gemini or DeepSeek)
 
-A subscription-free, **per-token** version on the DeepSeek API. Same methodology, different brain and news source. Full details in [`deepseek/README.md`](deepseek/README.md).
+The automatic digest (cloud + local script) runs on one of two interchangeable, API-based engines - same methodology, same RSS news source, just a different brain. **Gemini is the primary engine; DeepSeek is the alternative.** Full details in [`deepseek/README.md`](deepseek/README.md).
 
 ```bash
 python3 deepseek/run_digest.py                       # morning, last 24h
 python3 deepseek/run_digest.py --edition evening --hours 48
 python3 deepseek/run_digest.py --email               # also email it
+python3 deepseek/run_digest.py --engine deepseek     # force a specific engine for one run
 ```
 
-- Model is set in `secrets.env` (`DEEPSEEK_MODEL=deepseek-v4-flash` - the cheap one).
+**Switching engines (easy + quick):**
+- **Command Centre → "Choose engine (Gemini / DeepSeek)"** sets it for both this Mac *and* the daily cloud run in one step.
+- Under the hood it's the `PHARMA_ENGINE` setting (`gemini` | `deepseek`): in `secrets.env` for local runs, and as the repo **Variable** `PHARMA_ENGINE` for the cloud. Unset → Gemini when `GEMINI_API_KEY` is present, else DeepSeek.
+
+**Keys & models (in `secrets.env`, and as GitHub Secrets for the cloud):**
+- **Gemini:** `GEMINI_API_KEY` (free key from [aistudio.google.com](https://aistudio.google.com)); model `GEMINI_MODEL` (default `gemini-2.5-pro`).
+- **DeepSeek:** `DEEPSEEK_API_KEY`; model `DEEPSEEK_MODEL` (e.g. the cheap `deepseek-v4-flash`).
 - Pulls news from [`deepseek/feeds.txt`](deepseek/feeds.txt) (edit to change breadth).
 - **Trade-off:** it can only summarise what the RSS feeds supply, so discovery is narrower than Claude's live web search - the honest cost of going self-hosted.
 - **This is also your answer to "runs even if my laptop is closed":** because it's plain Python, you can schedule it with `cron` on an always-on server / Raspberry Pi / cloud function.
@@ -195,7 +202,7 @@ Secrets (outside the repo, private):
 | Email `403 / error code 1010` | Cloudflare blocked it - the send script sets a User-Agent to avoid this; ensure you're on the latest `send_digest.py`. |
 | Email `ERROR: missing RESEND_API_KEY` | Key not pasted/saved in `secrets.env`. |
 | Email sends but doesn't arrive | Check spam; confirm `EMAIL_TO` is your Resend signup address (test mode). |
-| DeepSeek model error | Use a valid ID (`deepseek-v4-flash` / `deepseek-v4-pro`); check balance. |
+| Engine model error | Use a valid model ID for the chosen engine (`gemini-2.5-pro` / `gemini-2.5-flash`, or `deepseek-v4-flash`); for Gemini, confirm the free-tier limits cover the run (3 calls/day fits) or enable billing. |
 | Morning run didn't fire at 7am | Mac was asleep/closed or app shut - see Section 6. |
 
 ---

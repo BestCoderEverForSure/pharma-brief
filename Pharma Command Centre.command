@@ -62,6 +62,23 @@ act_cloud(){
   esac
 }
 
+act_engine(){
+  local e; e=$(menu "Which AI engine writes the morning brief?" "Gemini (primary)" "DeepSeek")
+  local ENG
+  case "$e" in ""|false) return;; *Gemini*) ENG=gemini;; *DeepSeek*) ENG=deepseek;; *) return;; esac
+  # Local runs (this Mac): set PHARMA_ENGINE in the secrets file.
+  if grep -q '^PHARMA_ENGINE=' "$S" 2>/dev/null; then
+    perl -i -pe "s|^PHARMA_ENGINE=.*|PHARMA_ENGINE=$ENG|" "$S"
+  else
+    printf 'PHARMA_ENGINE=%s\n' "$ENG" >> "$S"
+  fi
+  # Daily cloud run: a repo Variable (not a secret).
+  local cloud="(cloud not connected)"
+  [ -n "$REPO" ] && gh variable set PHARMA_ENGINE --body "$ENG" -R "$REPO" >/dev/null 2>&1 && cloud="cloud updated ✓"
+  local warn=""; [ "$ENG" = gemini ] && warn="\n\nGemini needs GEMINI_API_KEY set locally and as a GitHub Secret."
+  dlg "✅ Engine set to: $ENG\n\nThis Mac: updated ✓\nDaily cloud run: $cloud$warn"
+}
+
 act_customise(){
   local c; c=$(menu "What would you like to edit? (opens in TextEdit)" "Watchlist (companies & topics)" "News sources (feeds)" "Catalyst calendar")
   case "$c" in
@@ -84,6 +101,7 @@ while true; do
     "📖  Read the brief" \
     "✍️  Make a digest now (just on this Mac)" \
     "☁️  Cloud & email  ▸" \
+    "🔀  Choose engine (Gemini / DeepSeek)" \
     "✏️  Customise: sources, watchlist, calendar  ▸" \
     "🔊  Listen to the audio brief" \
     "❓  Help & how it works")
@@ -92,6 +110,7 @@ while true; do
     *"Read the brief"*)   act_read ;;
     *"just on this Mac"*) act_generate ;;
     *"Cloud & email"*)    act_cloud ;;
+    *"Choose engine"*)    act_engine ;;
     *"Customise"*)        act_customise ;;
     *"audio brief"*)      act_audio ;;
     *"Help"*)             open "$DIR/GUIDE.md" ;;
