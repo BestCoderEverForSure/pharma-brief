@@ -25,7 +25,7 @@ single, balanced, *analysed*, 2-3 minute morning brief that also says what the n
 2. **Context, not just headlines** - each story analysed through up to 8 executive
    lenses (financial, strategic, commercial, scientific, regulatory, geopolitical,
    leadership, technology).
-3. **Lilly Watch** - a dedicated block on Lilly and its rivals, with "so what for Lilly".
+3. **Eli Lilly Spotlight** - a dedicated block on Lilly and its rivals, with "so what for Lilly".
 4. **Forward-looking** - a catalyst calendar (FDA PDUFA + EMA/CHMP, earnings,
    conferences) and a live pharma markets snapshot.
 5. **Trustworthy** - a mandatory anti-hallucination pass (every fact traced to a real
