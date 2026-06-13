@@ -82,9 +82,16 @@ def md_inline(text: str) -> str:
     text = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"<em>\1</em>", text)
     text = re.sub(r"`([^`]+)`", r"<code>\1</code>", text)
     if _SRCMAP:
-        text = re.sub(r"\[(\d+)\]", lambda m: (
-            f'<a class="cite" href="{_SRCMAP[m.group(1)]}" target="_blank" rel="noopener">[{m.group(1)}]</a>'
-            if m.group(1) in _SRCMAP else m.group(0)), text)
+        def _cite(m):
+            n = m.group(1)
+            if n not in _SRCMAP:
+                return m.group(0)
+            url = _SRCMAP[n]
+            # Mark aggregator (Google News redirect) citations with the ↗ flag too — those
+            # are the ones that can open a blank/region-blocked page.
+            cls = "cite gnews" if "news.google.com" in url else "cite"
+            return f'<a class="{cls}" href="{url}" target="_blank" rel="noopener">[{n}]</a>'
+        text = re.sub(r"\[(\d+)\]", _cite, text)
     return text
 
 
@@ -323,19 +330,14 @@ def render_timeline(events: list[dict]) -> str:
     for gi in (0, 1, 2):
         if not groups[gi]:
             continue
-        parts.append(f'<div class="vtl-group">{labels[gi]}</div><ol class="vtl">')
+        parts.append(f'<div class="cat-group">{labels[gi]}</div><table class="cat-table">')
         for e in groups[gi]:
-            cat = _category(e["full"])
             d = e["date"].strftime("%-d %b %Y")
             parts.append(
-                f'<li class="vtl-item {cat}"><span class="vtl-dot"></span>'
-                f'<span class="vtl-date">{d}</span>'
-                f'<span class="vtl-text" title="{html.escape(e["full"])}">{html.escape(e["label"])}</span></li>')
-        parts.append("</ol>")
-    legend = ('<div class="vtl-legend">'
-              + "".join(f'<span class="lg {k}">{v}</span>' for k, v in _CAT_NAMES.items())
-              + "</div>")
-    return '<div class="vtl-wrap">' + "".join(parts) + "</div>" + legend
+                f'<tr><td class="cat-date">{d}</td>'
+                f'<td class="cat-text" title="{html.escape(e["full"])}">{html.escape(e["label"])}</td></tr>')
+        parts.append("</table>")
+    return '<div class="cat-wrap">' + "".join(parts) + "</div>"
 
 
 def render_catalyst_mix(events: list[dict]) -> str:
@@ -398,27 +400,21 @@ def fetch_market(tickers: list) -> list[dict]:
 
 
 def render_market(data: list[dict], anchors: dict | None = None) -> str:
+    """Clean table (Name · ticker · last · 5-day %), matching the email's formatting."""
     if not data:
         return ""
-    anchors = anchors or {}
     data = sorted(data, key=lambda x: x["pct"], reverse=True)
-    mx = max((abs(x["pct"]) for x in data), default=1) or 1
     rows = []
     for x in data:
         cls = "up" if x["pct"] >= 0 else "down"
         sign = "+" if x["pct"] >= 0 else ""
-        w = round(abs(x["pct"]) / mx * 100)
-        # Only a hedged, sourced CORRELATION note (links to the specific story) — never causation, never a forecast.
-        a = anchors.get(x["t"])
-        note = (f'<div class="mkt-note">· may relate to '
-                f'<a href="#{a}">today&rsquo;s coverage of {html.escape(x["name"])}</a></div>'
-                if a else "")
         rows.append(
-            '<div class="mkt-item"><div class="mkt-row">'
-            f'<span class="mkt-name">{html.escape(x["name"])} <span class="tkr">{x["t"]}</span></span>'
-            f'<span class="mkt-bar"><span class="mkt-fill {cls}" style="width:{w}%"></span></span>'
-            f'<span class="mkt-pct {cls}">{sign}{x["pct"]:.1f}%</span></div>' + note + "</div>")
-    return '<div class="market">' + "".join(rows) + "</div>"
+            "<tr>"
+            f'<td class="mkt-name">{html.escape(x["name"])} <span class="tkr">{x["t"]}</span></td>'
+            f'<td class="mkt-last">{x["last"]:.2f}</td>'
+            f'<td class="mkt-pct {cls}">{sign}{x["pct"]:.1f}%</td>'
+            "</tr>")
+    return '<table class="mkt-table">' + "".join(rows) + "</table>"
 
 
 # ----------------------------------------------------------------------------- #
@@ -599,7 +595,7 @@ def build():
                              "engine": html.escape(engine), "text": plain_text(md)[:4000]})
 
     events = parse_catalysts()
-    timeline, mix = render_timeline(events), render_catalyst_mix(events)
+    timeline = render_timeline(events)
     latest_md = files[0].read_text(encoding="utf-8") if files else ""
     latest_html = (with_published(render_digest(latest_md), files[0].stem, pub.get(files[0].stem))
                    if files else '<p class="muted">No digests yet.</p>')
@@ -629,7 +625,8 @@ def build():
 <div id="results" style="display:none"></div>
 <section class="block" id="latest"><div class="block-label">Latest</div><div class="block-body">{latest_html}</div></section>
 <section class="block" id="upcoming"><div class="block-label">Catalysts</div><div class="block-body">
-  <div class="two-col"><div>{timeline}</div><div><div class="sub-h">Catalyst mix</div>{mix}</div></div>
+  <p class="meta">Dates to watch &mdash; scheduled events that can move the sector: regulatory decisions, trial readouts, earnings, and major conferences.</p>
+  {timeline}
 </div></section>
 {market_block}
 <section class="block" id="archive"><div class="block-label">Archive</div><div class="block-body"><div class="arch">{arch_html}</div></div></section>
@@ -765,21 +762,23 @@ code{font-family:var(--mono);font-size:.82em;color:var(--accent);background:tran
 .bar-fill.conf{background:var(--c-conf)}.bar-fill.other{background:var(--c-other)}
 .bar-val{min-width:18px;text-align:right;font-family:var(--mono);font-size:12px}
 
-/* markets */
-.market{margin-top:2px}
-.mkt-item{margin:11px 0}
-.mkt-row{display:flex;align-items:center;gap:12px;margin:0;font-size:14px}
-.mkt-note{font-size:12px;color:var(--muted);margin:3px 0 0;padding-left:2px}
-.mkt-note a{border-bottom:1px solid var(--line)}
-.mkt-note a:hover{color:var(--accent);border-bottom-color:var(--accent)}
-.mkt-name{flex:0 0 190px}
+/* markets (clean table — matches the email) */
+.mkt-table{width:100%;border-collapse:collapse;margin-top:2px}
+.mkt-table td{padding:8px 0;border-bottom:1px solid var(--line);font-size:14px;vertical-align:baseline}
+.mkt-name{width:60%}
 .tkr{font-family:var(--mono);color:var(--muted);font-size:11px}
-.mkt-bar{flex:1;height:6px;background:var(--line);border-radius:2px;overflow:hidden}
-.mkt-fill{display:block;height:100%}
-.mkt-fill.up{background:var(--up)}.mkt-fill.down{background:var(--down)}
-.mkt-pct{flex:0 0 56px;text-align:right;font-family:var(--mono);font-size:12.5px}
+.mkt-last{text-align:right;font-family:var(--mono);font-size:12.5px;color:var(--muted);white-space:nowrap}
+.mkt-pct{text-align:right;font-family:var(--mono);font-size:12.5px;white-space:nowrap;padding-left:16px}
 .mkt-pct.up{color:var(--up)}.mkt-pct.down{color:var(--down)}
-@media(max-width:560px){.mkt-name{flex-basis:120px}}
+
+/* catalysts (clean grouped table — matches the email) */
+.cat-wrap{margin-top:2px}
+.cat-group{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:20px 0 4px}
+.cat-wrap > .cat-group:first-child{margin-top:2px}
+.cat-table{width:100%;border-collapse:collapse}
+.cat-table td{padding:7px 0;border-bottom:1px solid var(--line);vertical-align:baseline}
+.cat-date{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;padding-right:16px;width:1%}
+.cat-text{font-size:14.5px}
 
 /* footer */
 footer{border-top:1px solid var(--line);margin-top:36px}

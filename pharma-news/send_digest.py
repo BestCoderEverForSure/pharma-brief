@@ -157,7 +157,10 @@ def render_catalysts_email() -> str:
         groups[bucket(e["date"])].append(e)
     mono = "ui-monospace,Menlo,Consolas,monospace"
     parts = ['<hr style="border:none;border-top:1px solid #e3dfd4;margin:26px 0 0">',
-             "<h2>Upcoming catalysts</h2>"]
+             "<h2>Upcoming catalysts</h2>",
+             f'<p style="font-family:{mono};font-size:12px;color:#7c7a70;margin:-2px 0 12px">'
+             "Dates to watch — scheduled events that can move the sector: regulatory decisions, "
+             "trial readouts, earnings, and major conferences.</p>"]
     for gi in (0, 1, 2):
         if not groups[gi]:
             continue
@@ -292,9 +295,8 @@ def published_stamp() -> str:
             f'(Rome time)</span></p>')
 
 
-def md_to_html(md: str, extra_html: str = "") -> str:
-    """Convert the digest's markdown subset to clean HTML for email.
-    `extra_html` (e.g. the markets table) is appended after the digest body."""
+def _md_fragment(md: str) -> str:
+    """Convert the digest's markdown subset to an HTML fragment (no page wrapper)."""
     lines = md.splitlines()
     out, in_list, in_quote = [], False, False
 
@@ -352,7 +354,12 @@ def md_to_html(md: str, extra_html: str = "") -> str:
             out.append(f"<p>{md_inline(line)}</p>")
 
     close_list(); close_quote()
-    body = "\n".join(out)
+    return "\n".join(out)
+
+
+def md_to_html(md: str, extra_html: str = "") -> str:
+    """Wrap the digest body in the email page; `extra_html` is appended after the body."""
+    body = _md_fragment(md)
     # Drop the 'Published' stamp in right after the H1 title.
     stamp = published_stamp()
     body = body.replace("</h1>", "</h1>\n" + stamp, 1) if "</h1>" in body else stamp + body
@@ -364,6 +371,17 @@ def md_to_html(md: str, extra_html: str = "") -> str:
 {body}
 {extra_html}
 </div></body></html>"""
+
+
+def email_html(md: str) -> str:
+    """Assemble the full email: digest body, then Upcoming catalysts, Markets, and the
+    Sources list LAST (moved out of the body to the very end, below markets)."""
+    idx = md.find("\n## Sources")
+    body_md, sources_md = (md[:idx], md[idx + 1:]) if idx != -1 else (md, "")
+    extra = render_catalysts_email() + render_market_email(md)
+    if sources_md.strip():
+        extra += _md_fragment(sources_md)
+    return md_to_html(body_md, extra)
 
 
 def main() -> int:
@@ -379,7 +397,7 @@ def main() -> int:
         out = Path(rest[1]).expanduser() if len(rest) > 1 else (PROJECT_ROOT / "samples" / "email-preview.html")
         out.parent.mkdir(parents=True, exist_ok=True)
         pmd = prepare_digest(digest_path.read_text(encoding="utf-8"))
-        out.write_text(md_to_html(pmd, render_catalysts_email() + render_market_email(pmd)), encoding="utf-8")
+        out.write_text(email_html(pmd), encoding="utf-8")
         print(f"Email preview written ✓ -> {out}")
         return 0
 
@@ -408,7 +426,7 @@ def main() -> int:
         "from": from_addr,
         "to": recipients,
         "subject": subject,
-        "html": md_to_html(md, render_catalysts_email() + render_market_email(md)),
+        "html": email_html(md),
         "text": md,
     }).encode("utf-8")
 
