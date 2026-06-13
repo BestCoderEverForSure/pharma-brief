@@ -21,6 +21,7 @@ Stdlib only — no pip installs.
 """
 
 import os
+import re
 import sys
 import json
 import argparse
@@ -161,6 +162,7 @@ def build_system_prompt(edition: str) -> str:
              "- FORMATTING: Markdown only. NEVER use raw HTML tags (no <small>, <br>, <sub>, etc.).",
              "- CITATIONS: when you use an article, cite it inline as [n] using its number from the provided article list. Do NOT write your own Sources section and do NOT invent URLs — a resolved, named Sources list is appended automatically from the article list.",
              "- NEVER cite the methodology, watchlist, or catalysts files (no [catalysts.md], [watchlist.md], etc.) — they are guidance, not sources. The upcoming-catalysts section is added automatically; just write the analysis. Cite only the numbered articles.",
+             "- FRESHNESS: each article is tagged NEW or 'previously covered'. Lead with NEW stories. Include a previously-covered story ONLY if these articles carry a genuine new development, and when you do, prefix that item with 'Developing:'. Never rehash old news as if it were breaking.",
              "- In the header subtitle line, set 'Engine: DeepSeek'.",
              "",
              "=== METHODOLOGY (follow the analysis & structure; skip the tool/file steps) ==="]
@@ -263,6 +265,174 @@ def finalize(digest: str, items: list[dict], model: str) -> str:
     return digest
 
 
+# --------------------------------------------------------------------------- #
+#  #1  "What's new": tell genuinely-new stories from already-covered ones.
+#      The committed archive is the state — no separate store to keep in sync.
+# --------------------------------------------------------------------------- #
+def _norm_title(t: str) -> str:
+    return re.sub(r"[^a-z0-9]+", "", t.lower())[:60]
+
+
+def recent_seen(days: int = 7) -> tuple[set, set]:
+    """URLs and normalised titles cited in the last `days` of archived digests."""
+    urls, titles = set(), set()
+    today = dt.date.today()
+    for p in (ROOT / "digests").glob("*.md"):
+        m = re.match(r"(\d{4})-(\d{2})-(\d{2})", p.stem)
+        if not m:
+            continue
+        try:
+            d = dt.date(int(m[1]), int(m[2]), int(m[3]))
+        except ValueError:
+            continue
+        if d >= today or (today - d).days > days:   # only strictly-earlier, recent digests
+            continue
+        for line in p.read_text(encoding="utf-8").splitlines():
+            sm = re.match(r"^\s*\d+\.\s*\[([^\]]+)\]\((https?://[^)\s]+)\)", line)
+            if sm:
+                titles.add(_norm_title(sm.group(1)))
+                urls.add(sm.group(2))
+    return urls, titles
+
+
+# --------------------------------------------------------------------------- #
+#  #2  Grounding self-check: a second pass that flags unsupported claims, then
+#      a single targeted revision. Every call is defensive — a flaky check or
+#      revision must never block delivery of an otherwise-good digest.
+# --------------------------------------------------------------------------- #
+def grounding_check(secrets: dict, digest: str, corpus: str) -> tuple[bool, str]:
+    """(ok, issues). ok=True (pass-through) on any network/parse failure."""
+    system = (
+        "You are a strict fact-checking auditor for a news digest. You are given the ONLY "
+        "permitted sources and a draft digest. Flag every specific factual claim (number, "
+        "date, name, approval, trial result, deal value) in the draft that is NOT supported "
+        "by the sources. Ignore style and phrasing. If every factual claim is supported, "
+        "reply with exactly 'PASS' on the first line and nothing else. Otherwise list each "
+        "unsupported claim as a '- ' bullet, quoting it briefly.")
+    try:
+        out = call_deepseek(secrets, system, f"SOURCES:\n\n{corpus}\n\n=== DRAFT DIGEST ===\n\n{digest}").strip()
+    except Exception as e:
+        print(f"  ! grounding check skipped ({e})", file=sys.stderr)
+        return True, ""
+    if out.upper().startswith("PASS") or "- " not in out:
+        return True, ""
+    return False, out
+
+
+def revise_for_grounding(secrets: dict, digest: str, corpus: str, issues: str) -> str:
+    """One targeted fix-pass; returns the original digest unchanged on any failure."""
+    system = (
+        "Revise the digest to fix ONLY the listed unsupported claims — delete them or soften "
+        "to exactly what the sources support. Change NOTHING else: keep the structure, "
+        "headings, [n] citations, talking point, TL;DR and overall length. Output ONLY the "
+        "revised Markdown digest, with no preamble.")
+    user = f"SOURCES:\n\n{corpus}\n\nUNSUPPORTED CLAIMS TO FIX:\n{issues}\n\n=== DIGEST ===\n\n{digest}"
+    try:
+        out = call_deepseek(secrets, system, user).strip()
+    except Exception as e:
+        print(f"  ! grounding revision skipped ({e})", file=sys.stderr)
+        return digest
+    return out if len(out) >= 300 else digest
+
+
+# --------------------------------------------------------------------------- #
+#  #3  Self-maintaining catalysts: extract explicitly-dated future events from
+#      the articles and keep them in a clearly-labelled section of catalysts.md.
+#      Grounded — only dates the articles actually state; never inferred.
+# --------------------------------------------------------------------------- #
+AUTO_CAT_SECTION = "## Auto-detected (from recent briefs)"
+# Generic catalyst words are ignored when deduping, so a match needs a *specific* shared
+# token (a drug or company name) — not just two "FDA decision"s landing on the same day.
+_CAT_STOP = {"decision", "phase", "trial", "trials", "result", "results", "readout",
+             "approval", "earnings", "pdufa", "expected", "data", "study", "conference",
+             "meeting", "filing", "launch", "review", "update", "report", "topline",
+             "interim", "primary", "endpoint", "company", "pharma"}
+
+
+def _cat_tokens(desc: str) -> set:
+    return {w for w in re.findall(r"[a-z0-9]{5,}", desc.lower()) if w not in _CAT_STOP}
+
+
+def extract_catalysts(secrets: dict, corpus: str, today: dt.date) -> list:
+    """[(date, desc), ...] of future catalysts the articles explicitly date; [] on failure."""
+    system = (
+        "From the provided articles ONLY, extract concrete FUTURE dated pharma catalysts the "
+        "articles explicitly date: regulatory/PDUFA decisions, trial readouts, earnings, "
+        "conferences. Output one per line as 'YYYY-MM-DD | short description'. If an article "
+        "gives only a month and year, use the 15th. Include ONLY dates explicitly stated in "
+        "the articles, and ONLY dates after today. NEVER invent or infer a date. If there are "
+        "none, output exactly 'NONE'.")
+    try:
+        out = call_deepseek(secrets, system, f"Today is {today.isoformat()}.\n\nARTICLES:\n\n{corpus}").strip()
+    except Exception as e:
+        print(f"  ! catalyst extraction skipped ({e})", file=sys.stderr)
+        return []
+    events = []
+    for line in out.splitlines():
+        m = re.match(r"^\s*[-*]?\s*(\d{4}-\d{2}-\d{2})\s*[|·–-]\s*(.+)$", line.strip())
+        if not m:
+            continue
+        try:
+            d = dt.date.fromisoformat(m.group(1))
+        except ValueError:
+            continue
+        desc = m.group(2).strip()
+        if d > today and desc:
+            events.append((d, desc))
+    return events
+
+
+def merge_catalysts(events: list, today: dt.date) -> int:
+    """Add new auto-detected catalysts to catalysts.md under a labelled section (prune past,
+    dedup against the whole file). Returns the number newly added."""
+    path = ROOT / "pharma-news" / "catalysts.md"
+    if not path.exists():
+        return 0
+    text = path.read_text(encoding="utf-8")
+    # Peel off any prior auto section; keep only its still-future lines (prune the past).
+    body, auto_lines = text, []
+    idx = text.find(AUTO_CAT_SECTION)
+    if idx != -1:
+        body = text[:idx].rstrip()
+        for line in text[idx:].splitlines()[1:]:
+            m = re.match(r"^- \*\*(\d{4}-\d{2}-\d{2})\*\* · ", line.strip())
+            if m:
+                try:
+                    if dt.date.fromisoformat(m.group(1)) >= today:
+                        auto_lines.append(line.rstrip())
+                except ValueError:
+                    pass
+    # Dedup index: date -> token-sets already on file (curated body + surviving auto lines),
+    # so we skip a new event naming the same thing on the same day even if worded differently.
+    seen_by_date: dict = {}
+    for line in body.splitlines() + auto_lines:
+        m = re.match(r"^- \*\*~?(\d{4}-\d{2}-\d{2})\*\* · (.+)$", line.strip())
+        if m:
+            seen_by_date.setdefault(m.group(1), []).append(
+                _cat_tokens(re.sub(r"\s*\(auto-detected.*$", "", m.group(2))))
+    added = 0
+    for d, desc in sorted(events):
+        di, toks = d.isoformat(), _cat_tokens(desc)
+        same_day = seen_by_date.get(di, [])
+        if any(toks & ts for ts in same_day) or (not toks and same_day):
+            continue                          # shares a specific name (or is a vague same-day dup)
+        seen_by_date.setdefault(di, []).append(toks)
+        auto_lines.append(f"- **{di}** · {desc} (auto-detected {today.isoformat()})")
+        added += 1
+    if added == 0 and idx == -1:
+        return 0                              # nothing to add and no section to prune
+
+    def line_date(l: str) -> str:
+        m = re.match(r"^- \*\*(\d{4}-\d{2}-\d{2})\*\*", l)
+        return m.group(1) if m else "9999-99-99"
+    auto_lines.sort(key=line_date)
+    new_text = (body.rstrip() + "\n\n" + AUTO_CAT_SECTION + "\n" + "\n".join(auto_lines) + "\n") \
+        if auto_lines else (body.rstrip() + "\n")
+    if new_text != text:
+        path.write_text(new_text, encoding="utf-8")
+    return added
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--hours", type=int, default=24)
@@ -289,9 +459,18 @@ def main() -> int:
         return 3
     print(f"  {len(items)} articles in the last {args.hours}h", file=sys.stderr)
 
+    # #1 Freshness: tag each article NEW vs. already-covered in a recent digest.
+    seen_urls, seen_titles = recent_seen()
+    for it in items:
+        it["fresh"] = it["link"] not in seen_urls and _norm_title(it["title"]) not in seen_titles
+    n_new = sum(1 for it in items if it["fresh"])
+    print(f"  freshness: {n_new} new, {len(items) - n_new} previously covered (last 7 days)", file=sys.stderr)
+
     today = dt.date.today().isoformat()
     corpus = "\n\n".join(
-        f"[{i+1}] {it['title']}\n    date: {it['when']}\n    link: {it['link']}\n    {it['summary']}"
+        f"[{i+1}] {it['title']}\n    date: {it['when']}\n"
+        f"    freshness: {'NEW' if it['fresh'] else 'previously covered (include only if a genuine new development)'}\n"
+        f"    link: {it['link']}\n    {it['summary']}"
         for i, it in enumerate(items)
     )
     user = (f"Today is {today}. Window: last {args.hours} hours. Edition: {args.edition}.\n\n"
@@ -313,6 +492,17 @@ def main() -> int:
               "Aborting so the failure is visible.", file=sys.stderr)
         return 4
 
+    # #2 Grounding self-check: flag any claim the sources don't support, then one
+    # targeted fix-pass. Defensive — never blocks delivery. Disable with GROUNDING_CHECK=0.
+    if os.environ.get("GROUNDING_CHECK", "1") != "0":
+        print("Grounding check...", file=sys.stderr)
+        ok, issues = grounding_check(secrets, digest, corpus)
+        if ok:
+            print("  grounding check: passed", file=sys.stderr)
+        else:
+            print(f"  grounding check flagged claims; revising:\n{issues}", file=sys.stderr)
+            digest = revise_for_grounding(secrets, digest, corpus, issues)
+
     digest = finalize(digest, items, secrets.get("DEEPSEEK_MODEL", "deepseek-chat"))
 
     out = ROOT / "digests" / f"{today}.md"
@@ -332,6 +522,13 @@ def main() -> int:
         import subprocess
         if subprocess.run([sys.executable, str(ROOT / "pharma-news" / "send_telegram.py"), str(out)]).returncode != 0:
             rc = 1
+
+    # #3 Self-maintaining catalysts: add any explicitly-dated future events from today's
+    # articles to catalysts.md (grounded; clearly labelled). Disable with AUTO_CATALYSTS=0.
+    if os.environ.get("AUTO_CATALYSTS", "1") != "0":
+        added = merge_catalysts(extract_catalysts(secrets, corpus, dt.date.today()), dt.date.today())
+        if added:
+            print(f"  catalysts: +{added} auto-detected", file=sys.stderr)
 
     # Rebuild the static site so the archive + timeline stay current.
     import subprocess
