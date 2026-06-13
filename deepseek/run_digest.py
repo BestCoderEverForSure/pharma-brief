@@ -159,7 +159,7 @@ def build_system_prompt(edition: str) -> str:
              "- ANTI-HALLUCINATION: every fact, number, date, name, and deal value MUST come from the provided articles. If it is not in the articles, do not state it. Never use facts from your training data. Label rumours as rumours. If the day's articles are thin, say so honestly rather than inventing substance.",
              f"- Edition: {edition} (morning = tight 2-3 min; evening = deeper 5-8 min with a Deep Dive).",
              "- Output ONLY the finished digest in Markdown. No preamble.",
-             "- FORMATTING: Markdown only. NEVER use raw HTML tags (no <small>, <br>, <sub>, etc.).",
+             "- FORMATTING: Markdown only. NEVER use raw HTML tags (no <small>, <br>, <sub>, etc.). Do NOT put emojis in the title, headings, or labels — keep it clean and editorial.",
              "- CITATIONS: when you use an article, cite it inline as [n] using its number from the provided article list. Do NOT write your own Sources section and do NOT invent URLs — a resolved, named Sources list is appended automatically from the article list.",
              "- NEVER cite the methodology, watchlist, or catalysts files (no [catalysts.md], [watchlist.md], etc.) — they are guidance, not sources. The upcoming-catalysts section is added automatically; just write the analysis. Cite only the numbered articles.",
              "- FRESHNESS: each article is tagged NEW or 'previously covered'. Lead with NEW stories. Include a previously-covered story ONLY if these articles add a CONCRETE new fact — a new number, date, decision, or named result (not merely a fresh angle or restatement) — and when you do, prefix that item with 'Developing:'. Otherwise leave it out. Never rehash old news as if it were breaking.",
