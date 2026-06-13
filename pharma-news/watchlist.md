@@ -1,9 +1,9 @@
 # 🔭 Watchlist
 
-The digest checks these every run, on top of its general sweep. Edit freely - add or remove anything you want tracked. (Eli Lilly already has its own dedicated 🎯 Lilly Watch block; this is for everything else you care about.)
+The digest checks these every run, on top of its general sweep. Edit freely - add or remove anything you want tracked. (Eli Lilly already has its own dedicated 🎯 Eli Lilly Spotlight block; this is for everything else you care about.)
 
 ## Companies
-- Eli Lilly *(primary focus - see Lilly Watch)*
+- Eli Lilly *(primary focus - see Eli Lilly Spotlight)*
 - Novo Nordisk
 - Amgen
 - Pfizer / Metsera

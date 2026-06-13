@@ -6,7 +6,7 @@ Have the website open (Command Centre → Read the brief → localhost, or just 
 > "Pharma moves incredibly fast and it's easy to fall behind. I'm heading to an internship at Lilly, so I built a morning brief that reads the whole industry for me and gives a balanced, *2-minute* read with context - not just headlines."
 
 **(10-30s) Show the product.**
-> "Here's today's digest: a one-line *talking point*, the top stories each analysed through executive lenses - financial, strategic, commercial - a dedicated **Lilly Watch**, upcoming **catalysts** on a timeline, and a live **markets** chart. And full-text **search** across every past digest."
+> "Here's today's digest: a one-line *talking point*, the top stories each analysed through executive lenses - financial, strategic, commercial - a dedicated **Eli Lilly Spotlight**, upcoming **catalysts** on a timeline, and a live **markets** chart. And full-text **search** across every past digest."
 *(Scroll the page as you talk; type a term into the search box.)*
 
 **(30-45s) The clever bit - two engines.**
@@ -18,7 +18,7 @@ Have the website open (Command Centre → Read the brief → localhost, or just 
 ---
 
 ## Tying it back to the rubric (say these if asked)
-- **Problem → solution fit:** every feature traces to "stay current, fast, with context" - lenses (context), Lilly Watch (my user), catalysts (forward-looking), grounding (trust).
+- **Problem → solution fit:** every feature traces to "stay current, fast, with context" - lenses (context), Eli Lilly Spotlight (my user), catalysts (forward-looking), grounding (trust).
 - **Scope discipline:** explicitly *not* real-time alerts, trading signals, or deep equity research.
 - **Judgment:** chose to run in the cloud (laptop-independent), cut WhatsApp/paid data, simplified to one scheduler.
 

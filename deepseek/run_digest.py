@@ -162,7 +162,7 @@ def build_system_prompt(edition: str) -> str:
              "- FORMATTING: Markdown only. NEVER use raw HTML tags (no <small>, <br>, <sub>, etc.).",
              "- CITATIONS: when you use an article, cite it inline as [n] using its number from the provided article list. Do NOT write your own Sources section and do NOT invent URLs — a resolved, named Sources list is appended automatically from the article list.",
              "- NEVER cite the methodology, watchlist, or catalysts files (no [catalysts.md], [watchlist.md], etc.) — they are guidance, not sources. The upcoming-catalysts section is added automatically; just write the analysis. Cite only the numbered articles.",
-             "- FRESHNESS: each article is tagged NEW or 'previously covered'. Lead with NEW stories. Include a previously-covered story ONLY if these articles carry a genuine new development, and when you do, prefix that item with 'Developing:'. Never rehash old news as if it were breaking.",
+             "- FRESHNESS: each article is tagged NEW or 'previously covered'. Lead with NEW stories. Include a previously-covered story ONLY if these articles add a CONCRETE new fact — a new number, date, decision, or named result (not merely a fresh angle or restatement) — and when you do, prefix that item with 'Developing:'. Otherwise leave it out. Never rehash old news as if it were breaking.",
              "- In the header subtitle line, set 'Engine: DeepSeek'.",
              "",
              "=== METHODOLOGY (follow the analysis & structure; skip the tool/file steps) ==="]
@@ -296,27 +296,54 @@ def recent_seen(days: int = 7) -> tuple[set, set]:
 
 
 # --------------------------------------------------------------------------- #
-#  #2  Grounding self-check: a second pass that flags unsupported claims, then
-#      a single targeted revision. Every call is defensive — a flaky check or
-#      revision must never block delivery of an otherwise-good digest.
+#  #2 + #3  Combined review: ONE call that both fact-checks the draft against the
+#      sources AND extracts dated future catalysts from them — saves an article-sized
+#      input vs. two calls. Grounding stays the primary task. Every call is defensive:
+#      a flaky review or revision must never block delivery of an otherwise-good digest.
 # --------------------------------------------------------------------------- #
-def grounding_check(secrets: dict, digest: str, corpus: str) -> tuple[bool, str]:
-    """(ok, issues). ok=True (pass-through) on any network/parse failure."""
+def review_digest(secrets: dict, digest: str, corpus: str, today: dt.date) -> tuple[bool, str, list]:
+    """Returns (grounding_ok, issues, catalyst_events). On any network/parse failure or if
+    the model ignores the format, returns safe defaults (True, '', []) so nothing is blocked."""
     system = (
-        "You are a strict fact-checking auditor for a news digest. You are given the ONLY "
-        "permitted sources and a draft digest. Flag every specific factual claim (number, "
-        "date, name, approval, trial result, deal value) in the draft that is NOT supported "
-        "by the sources. Ignore style and phrasing. If every factual claim is supported, "
-        "reply with exactly 'PASS' on the first line and nothing else. Otherwise list each "
-        "unsupported claim as a '- ' bullet, quoting it briefly.")
+        "You are reviewing a pharma news digest against the ONLY permitted sources. Do TWO "
+        "tasks and reply in EXACTLY this format, including the two headers:\n"
+        "### GROUNDING\n"
+        "PASS  — if every specific factual claim (number, date, name, approval, trial result, "
+        "deal value) in the digest is supported by the sources. Otherwise, instead of PASS, "
+        "list each unsupported claim as a '- ' bullet, quoting it briefly. Ignore style/phrasing.\n"
+        "### CATALYSTS\n"
+        "Concrete FUTURE dated catalysts the SOURCES explicitly date (regulatory/PDUFA, trial "
+        "readouts, earnings, conferences), one per line as 'YYYY-MM-DD | short description'. Use "
+        "the 15th if only a month+year is given. Only dates after today. NEVER invent a date. "
+        "Write NONE if there are none.")
+    user = f"Today is {today.isoformat()}.\n\nSOURCES:\n\n{corpus}\n\n=== DIGEST ===\n\n{digest}"
     try:
-        out = call_deepseek(secrets, system, f"SOURCES:\n\n{corpus}\n\n=== DRAFT DIGEST ===\n\n{digest}").strip()
+        out = call_deepseek(secrets, system, user)
     except Exception as e:
-        print(f"  ! grounding check skipped ({e})", file=sys.stderr)
-        return True, ""
-    if out.upper().startswith("PASS") or "- " not in out:
-        return True, ""
-    return False, out
+        print(f"  ! review skipped ({e})", file=sys.stderr)
+        return True, "", []
+    # Split the two sections defensively. If the GROUNDING header is missing, the model
+    # didn't follow the format — don't trust a parse, so pass grounding (fail-safe).
+    mg = re.search(r"###\s*GROUNDING\s*(.*?)(?=###\s*CATALYSTS|\Z)", out, re.S | re.I)
+    mc = re.search(r"###\s*CATALYSTS\s*(.*)\Z", out, re.S | re.I)
+    if mg:
+        gtext = mg.group(1).strip()
+        ok = gtext.upper().startswith("PASS") or "- " not in gtext
+        issues = "" if ok else gtext
+    else:
+        ok, issues = True, ""
+    events = []
+    for line in (mc.group(1).splitlines() if mc else []):
+        m = re.match(r"^\s*[-*]?\s*(\d{4}-\d{2}-\d{2})\s*[|·–-]\s*(.+)$", line.strip())
+        if not m:
+            continue
+        try:
+            d = dt.date.fromisoformat(m.group(1))
+        except ValueError:
+            continue
+        if d > today and m.group(2).strip():
+            events.append((d, m.group(2).strip()))
+    return ok, issues, events
 
 
 def revise_for_grounding(secrets: dict, digest: str, corpus: str, issues: str) -> str:
@@ -351,35 +378,6 @@ _CAT_STOP = {"decision", "phase", "trial", "trials", "result", "results", "reado
 
 def _cat_tokens(desc: str) -> set:
     return {w for w in re.findall(r"[a-z0-9]{5,}", desc.lower()) if w not in _CAT_STOP}
-
-
-def extract_catalysts(secrets: dict, corpus: str, today: dt.date) -> list:
-    """[(date, desc), ...] of future catalysts the articles explicitly date; [] on failure."""
-    system = (
-        "From the provided articles ONLY, extract concrete FUTURE dated pharma catalysts the "
-        "articles explicitly date: regulatory/PDUFA decisions, trial readouts, earnings, "
-        "conferences. Output one per line as 'YYYY-MM-DD | short description'. If an article "
-        "gives only a month and year, use the 15th. Include ONLY dates explicitly stated in "
-        "the articles, and ONLY dates after today. NEVER invent or infer a date. If there are "
-        "none, output exactly 'NONE'.")
-    try:
-        out = call_deepseek(secrets, system, f"Today is {today.isoformat()}.\n\nARTICLES:\n\n{corpus}").strip()
-    except Exception as e:
-        print(f"  ! catalyst extraction skipped ({e})", file=sys.stderr)
-        return []
-    events = []
-    for line in out.splitlines():
-        m = re.match(r"^\s*[-*]?\s*(\d{4}-\d{2}-\d{2})\s*[|·–-]\s*(.+)$", line.strip())
-        if not m:
-            continue
-        try:
-            d = dt.date.fromisoformat(m.group(1))
-        except ValueError:
-            continue
-        desc = m.group(2).strip()
-        if d > today and desc:
-            events.append((d, desc))
-    return events
 
 
 def merge_catalysts(events: list, today: dt.date) -> int:
@@ -492,15 +490,17 @@ def main() -> int:
               "Aborting so the failure is visible.", file=sys.stderr)
         return 4
 
-    # #2 Grounding self-check: flag any claim the sources don't support, then one
-    # targeted fix-pass. Defensive — never blocks delivery. Disable with GROUNDING_CHECK=0.
-    if os.environ.get("GROUNDING_CHECK", "1") != "0":
-        print("Grounding check...", file=sys.stderr)
-        ok, issues = grounding_check(secrets, digest, corpus)
+    # #2 + #3 One combined review call: fact-check the draft AND extract dated catalysts.
+    # If the audit flags unsupported claims, one targeted fix-pass. All defensive — never
+    # blocks delivery. Disable the whole review with DIGEST_REVIEW=0.
+    cat_events = []
+    if os.environ.get("DIGEST_REVIEW", "1") != "0":
+        print("Reviewing (grounding + catalysts)...", file=sys.stderr)
+        ok, issues, cat_events = review_digest(secrets, digest, corpus, dt.date.today())
         if ok:
-            print("  grounding check: passed", file=sys.stderr)
+            print("  grounding: passed", file=sys.stderr)
         else:
-            print(f"  grounding check flagged claims; revising:\n{issues}", file=sys.stderr)
+            print(f"  grounding flagged claims; revising:\n{issues}", file=sys.stderr)
             digest = revise_for_grounding(secrets, digest, corpus, issues)
 
     digest = finalize(digest, items, secrets.get("DEEPSEEK_MODEL", "deepseek-chat"))
@@ -523,10 +523,10 @@ def main() -> int:
         if subprocess.run([sys.executable, str(ROOT / "pharma-news" / "send_telegram.py"), str(out)]).returncode != 0:
             rc = 1
 
-    # #3 Self-maintaining catalysts: add any explicitly-dated future events from today's
-    # articles to catalysts.md (grounded; clearly labelled). Disable with AUTO_CATALYSTS=0.
-    if os.environ.get("AUTO_CATALYSTS", "1") != "0":
-        added = merge_catalysts(extract_catalysts(secrets, corpus, dt.date.today()), dt.date.today())
+    # #3 Self-maintaining catalysts: file the dated events found during the review above
+    # into catalysts.md (grounded; clearly labelled). Disable with AUTO_CATALYSTS=0.
+    if cat_events and os.environ.get("AUTO_CATALYSTS", "1") != "0":
+        added = merge_catalysts(cat_events, dt.date.today())
         if added:
             print(f"  catalysts: +{added} auto-detected", file=sys.stderr)
 
