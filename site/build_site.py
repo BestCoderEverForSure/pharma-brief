@@ -458,8 +458,15 @@ def page(title: str, body: str, home_link: bool = True, repo_url: str = "") -> s
               f'<a class="wordmark" href="index.html">Pharma Morning Brief</a>'
               f'<button class="gear" id="gear" aria-label="Settings">&#9881;</button></div></header>')
     inner = f'<article class="doc">{body}</article>' if home_link else body
+    # "Last updated" = this build's time. The build only runs after a successful digest,
+    # so a stalled pipeline shows as a stale date here (localized to the viewer by the JS).
+    now_utc = dt.datetime.now(dt.timezone.utc)
+    built_iso = now_utc.strftime("%Y-%m-%dT%H:%M:%SZ")
+    built_disp = now_utc.strftime("%b %d, %Y · %H:%M UTC")
     footer = (f'<footer><div class="bar"><div class="foot-nav">{nav}</div>'
-              f'<div class="foot-src">Sources monitored &mdash; {src}</div></div></footer>')
+              f'<div class="foot-src">Sources monitored &mdash; {src}</div>'
+              f'<div class="foot-built">Last updated <time data-utc="{built_iso}">{built_disp}</time></div>'
+              f'</div></footer>')
     head_theme = ('<script>(function(){try{var t=localStorage.getItem("theme")||"auto";'
                   'if(t==="dark"||(t==="auto"&&matchMedia("(prefers-color-scheme:dark)").matches))'
                   'document.documentElement.classList.add("dark");}catch(e){}})();</script>')
@@ -770,6 +777,7 @@ footer .bar{flex-direction:column;align-items:flex-start;gap:14px;padding:40px c
 .foot-src{font-size:13px;color:var(--muted)}
 .foot-src a{border-bottom:1px solid var(--line)}
 .foot-src a:hover{color:var(--accent);border-bottom-color:var(--accent)}
+.foot-built{font-family:var(--mono);font-size:11px;color:var(--muted)}.foot-built time{color:var(--ink)}
 
 /* responsive: drop the gutter, stack */
 @media(max-width:680px){
