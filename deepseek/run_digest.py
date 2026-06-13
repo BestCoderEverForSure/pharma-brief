@@ -160,6 +160,7 @@ def build_system_prompt(edition: str) -> str:
              "- Output ONLY the finished digest in Markdown. No preamble.",
              "- FORMATTING: Markdown only. NEVER use raw HTML tags (no <small>, <br>, <sub>, etc.).",
              "- CITATIONS: when you use an article, cite it inline as [n] using its number from the provided article list. Do NOT write your own Sources section and do NOT invent URLs — a resolved, named Sources list is appended automatically from the article list.",
+             "- NEVER cite the methodology, watchlist, or catalysts files (no [catalysts.md], [watchlist.md], etc.) — they are guidance, not sources. The upcoming-catalysts section is added automatically; just write the analysis. Cite only the numbered articles.",
              "- In the header subtitle line, set 'Engine: DeepSeek'.",
              "",
              "=== METHODOLOGY (follow the analysis & structure; skip the tool/file steps) ==="]
@@ -217,6 +218,10 @@ def finalize(digest: str, items: list[dict], model: str) -> str:
     # 1. Strip leaked raw HTML tags (e.g. <small>) — Markdown only.
     digest = re.sub(r"</?(small|br|sub|sup|span|div|font|u|b|i)\b[^>]*>", "",
                     digest, flags=re.I)
+    # 1b. Strip pseudo-citations of the internal methodology files (e.g. "[catalysts.md]")
+    # the model sometimes appends — they are guidance, not sources. The negative lookahead
+    # leaves any real "[label.md](url)" link untouched.
+    digest = re.sub(r"\s*\[[^\[\]]*\.md\](?!\()", "", digest, flags=re.I)
     # 2. Normalise the engine label in the subtitle (or inject it after the title).
     if re.search(r"Engine:", digest):
         digest = re.sub(r"Engine:\s*[^·\n]*", f"Engine: DeepSeek ({model}) ", digest)
