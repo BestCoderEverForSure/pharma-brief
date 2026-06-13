@@ -32,6 +32,78 @@ RESEND_ENDPOINT = "https://api.resend.com/emails"
 # Populated by prepare_digest() right before rendering; empty otherwise.
 _SRCMAP: dict = {}
 
+# --- Markets: same core tickers as the website, rendered email-safe (inline styles,
+#     no JS/CSS classes) so the email carries the site's markets strip too. Mirrors
+#     the lists in site/build_site.py (the two renderers are intentionally separate). ---
+MARKET_TICKERS = [
+    ("LLY", "Eli Lilly"), ("NVO", "Novo Nordisk"), ("PFE", "Pfizer"),
+    ("AZN", "AstraZeneca"), ("MRK", "Merck"), ("NVS", "Novartis"),
+    ("GSK", "GSK"), ("AMGN", "Amgen"), ("ABBV", "AbbVie"), ("JNJ", "J&J"),
+]
+EXTRA_TICKERS = {
+    "summit": ("SMMT", "Summit Therapeutics"), "viking": ("VKTX", "Viking"),
+    "biontech": ("BNTX", "BioNTech"), "moderna": ("MRNA", "Moderna"),
+    "roche": ("RHHBY", "Roche"), "sanofi": ("SNY", "Sanofi"),
+    "takeda": ("TAK", "Takeda"), "gilead": ("GILD", "Gilead"),
+    "regeneron": ("REGN", "Regeneron"), "vertex": ("VRTX", "Vertex"),
+    "bristol": ("BMY", "Bristol Myers"), "incyte": ("INCY", "Incyte"),
+    "bayer": ("BAYRY", "Bayer"), "biogen": ("BIIB", "Biogen"),
+}
+
+
+def _fetch_market(tickers: list) -> list:
+    out = []
+    for t, name in tickers:
+        try:
+            req = urllib.request.Request(
+                f"https://query1.finance.yahoo.com/v8/finance/chart/{t}?range=5d&interval=1d",
+                headers={"User-Agent": "Mozilla/5.0"})
+            d = json.loads(urllib.request.urlopen(req, timeout=8).read())
+            closes = [c for c in d["chart"]["result"][0]["indicators"]["quote"][0]["close"] if c]
+            if len(closes) >= 2:
+                out.append({"t": t, "name": name,
+                            "pct": (closes[-1] / closes[0] - 1) * 100, "last": closes[-1]})
+        except Exception:
+            continue
+    return out
+
+
+def render_market_email(md: str) -> str:
+    """Markets section for the email: the website's core tickers plus any extra company
+    named in today's digest. Inline styles only (mail clients ignore <style>/classes).
+    Returns "" if no quotes come back, so a flaky/blocked endpoint never breaks the email."""
+    text = md.lower()
+    tickers, have = list(MARKET_TICKERS), {t for t, _ in MARKET_TICKERS}
+    for kw, (tk, nm) in EXTRA_TICKERS.items():
+        if kw in text and tk not in have:
+            tickers.append((tk, nm)); have.add(tk)
+    data = _fetch_market(tickers)
+    if not data:
+        return ""
+    data = sorted(data, key=lambda x: x["pct"], reverse=True)
+    mono = "ui-monospace,Menlo,Consolas,monospace"
+    rows = []
+    for x in data:
+        up = x["pct"] >= 0
+        color = "#2f6f4f" if up else "#9c3b3b"   # legible green/red on white, mail-safe
+        sign = "+" if up else ""
+        rows.append(
+            "<tr>"
+            f'<td style="padding:6px 0;font-size:14px;border-bottom:1px solid #ececec">'
+            f'{_html.escape(x["name"])} <span style="color:#8a8a8a;font-size:11px;font-family:{mono}">{x["t"]}</span></td>'
+            f'<td style="padding:6px 0;text-align:right;font-size:13px;color:#8a8a8a;font-family:{mono};'
+            f'border-bottom:1px solid #ececec">{x["last"]:.2f}</td>'
+            f'<td style="padding:6px 0 6px 16px;text-align:right;font-size:13px;font-weight:600;color:{color};'
+            f'font-family:{mono};border-bottom:1px solid #ececec">{sign}{x["pct"]:.1f}%</td>'
+            "</tr>")
+    return (
+        '<hr style="border:none;border-top:1px solid #e3dfd4;margin:26px 0 0">'
+        "<h2>Markets</h2>"
+        '<table style="width:100%;border-collapse:collapse" cellpadding="0" cellspacing="0">'
+        + "".join(rows) + "</table>"
+        f'<p style="font-family:{mono};font-size:11px;color:#8a8a8a;margin:10px 0 0">'
+        "Source: Yahoo Finance, end-of-day prices (5-day change). Not investment advice.</p>")
+
 
 def load_secrets() -> dict:
     """Load secrets from env vars, falling back to the secrets.env file."""
@@ -60,6 +132,9 @@ def find_digest(arg_path: str | None) -> Path:
 def md_inline(text: str) -> str:
     """Minimal inline markdown -> HTML (links, bold, italic, clickable [n] citations)."""
     text = _html.escape(text)
+    # Tolerate a stray space in links the model sometimes writes as "[text] (https://…)";
+    # collapse it only before a URL so citations like "[1] (a note)" stay plain text.
+    text = re.sub(r"\]\s+\((?=https?://)", "](", text)
     text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', text)
     text = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", text)
     text = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"<em>\1</em>", text)
@@ -142,8 +217,9 @@ def published_stamp() -> str:
             f'(Rome time)</span></p>')
 
 
-def md_to_html(md: str) -> str:
-    """Convert the digest's markdown subset to clean HTML for email."""
+def md_to_html(md: str, extra_html: str = "") -> str:
+    """Convert the digest's markdown subset to clean HTML for email.
+    `extra_html` (e.g. the markets table) is appended after the digest body."""
     lines = md.splitlines()
     out, in_list, in_quote = [], False, False
 
@@ -211,6 +287,7 @@ def md_to_html(md: str) -> str:
             font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
             color:#1d1d1f;line-height:1.55;font-size:15px;">
 {body}
+{extra_html}
 </div></body></html>"""
 
 
@@ -226,7 +303,8 @@ def main() -> int:
             return 3
         out = Path(rest[1]).expanduser() if len(rest) > 1 else (PROJECT_ROOT / "samples" / "email-preview.html")
         out.parent.mkdir(parents=True, exist_ok=True)
-        out.write_text(md_to_html(prepare_digest(digest_path.read_text(encoding="utf-8"))), encoding="utf-8")
+        pmd = prepare_digest(digest_path.read_text(encoding="utf-8"))
+        out.write_text(md_to_html(pmd, render_market_email(pmd)), encoding="utf-8")
         print(f"Email preview written ✓ -> {out}")
         return 0
 
@@ -255,7 +333,7 @@ def main() -> int:
         "from": from_addr,
         "to": recipients,
         "subject": subject,
-        "html": md_to_html(md),
+        "html": md_to_html(md, render_market_email(md)),
         "text": md,
     }).encode("utf-8")
 
