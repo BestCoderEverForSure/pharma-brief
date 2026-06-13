@@ -91,7 +91,8 @@ The daily run is **fully in the cloud** (GitHub Actions) - laptop-independent, w
 - **Mon-Sat, 07:00 Rome:** the tight morning brief (last 24h).
 - **Sunday, 07:00 Rome:** a deeper "Week in Review" (evening edition over the last 7 days).
 - Each run generates the digest (DeepSeek), **emails it**, **posts a Telegram card**, archives it to the repo, and **publishes the website** - all without your Mac being awake.
-- Start/stop it or trigger an on-demand run from the repo's **Actions** tab, or the Command Centre → **"Cloud & email."**
+- Start/stop it or trigger an on-demand run from the repo's **Actions** tab, or the Command Centre → **"Send & schedule."**
+- **Change the send time/timezone** in the Command Centre → "Send & schedule" → "Set the daily send time & timezone." It converts your local time to a UTC cron (GitHub runs in UTC) and pushes the change. (Re-set it after a daylight-saving shift to stay exact.) Under the hood: [`pharma-news/set_schedule.py`](pharma-news/set_schedule.py) edits `config.json` + the workflow cron.
 - The website footer shows a **"Last updated"** time, so a stalled run is visible at a glance. Critical failures (feeds down, thin digest, a failed send/publish) exit non-zero, so GitHub emails you the failure rather than failing silently.
 
 ### Which engine wrote it?

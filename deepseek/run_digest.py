@@ -126,7 +126,6 @@ def parse_feed(xml_bytes: bytes, since: dt.datetime) -> list[dict]:
         if when and when < since:
             continue
         # Trim HTML-ish summaries crudely.
-        import re
         summary = re.sub(r"<[^>]+>", "", summary)[:400]
         # Require a real http(s) link: a citation must trace to a fetchable source.
         # (link falls back to <guid>, which is often a non-URL urn/id — citing that
@@ -276,7 +275,6 @@ def _fmt_source_dt(iso: str) -> str:
 def finalize(digest: str, items: list[dict], engine_label: str, model: str) -> str:
     """Clean the model's output: strip stray HTML, label the engine, and append a
     real, resolved Sources list built from the actual fetched articles."""
-    import re
     # 1. Strip leaked raw HTML tags (e.g. <small>) — Markdown only.
     digest = re.sub(r"</?(small|br|sub|sup|span|div|font|u|b|i)\b[^>]*>", "",
                     digest, flags=re.I)
@@ -581,6 +579,17 @@ def main() -> int:
     out.parent.mkdir(parents=True, exist_ok=True)
     out.write_text(digest, encoding="utf-8")
     print(f"Digest ✓  -> {out}")
+
+    # Record the REAL generation instant (UTC) so the website's "Published" time is the
+    # actual time, not a fixed cron anchor. Stored beside the digests (committed with them);
+    # the site reads digests/published.json. Best-effort — never block on it.
+    try:
+        pub_path = out.parent / "published.json"
+        pubmap = json.loads(pub_path.read_text(encoding="utf-8")) if pub_path.exists() else {}
+        pubmap[today] = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        pub_path.write_text(json.dumps(pubmap, indent=0, sort_keys=True), encoding="utf-8")
+    except Exception as e:
+        print(f"  ! could not record publish time ({e})", file=sys.stderr)
 
     # A failed delivery must fail the run (non-zero exit -> GitHub failure email),
     # otherwise the digest silently never reaches anyone.

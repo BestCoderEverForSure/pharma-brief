@@ -480,22 +480,34 @@ def page(title: str, body: str, home_link: bool = True, repo_url: str = "") -> s
 <script src="settings.js"></script></body></html>"""
 
 
-def published_line(date_str: str, hour_utc: int = 5) -> str:
-    """A 'Published' line whose time localizes to the viewer's timezone via JS.
-    The daily cloud run fires at 05:00 UTC (= 07:00 Rome summer), so we anchor the
-    publish instant there; the no-JS fallback shows the date."""
-    iso = f"{date_str}T{hour_utc:02d}:00:00Z"
-    return (f'<p class="meta pub">Published '
-            f'<time data-utc="{iso}">{date_str}</time> '
-            f'<span class="tz-note">· your local time</span></p>')
+def published_line(date_str: str, iso: str | None = None) -> str:
+    """A 'Published' line. When the real generation instant is known (`iso`, UTC), the JS
+    localizes it to each viewer's timezone; otherwise we honestly show just the date (no
+    invented clock time)."""
+    if iso:
+        return (f'<p class="meta pub">Published '
+                f'<time data-utc="{iso}">{date_str}</time> '
+                f'<span class="tz-note">· your local time</span></p>')
+    return f'<p class="meta pub">Published <time>{date_str}</time></p>'
 
 
-def with_published(body_html: str, date_str: str, hour_utc: int = 5) -> str:
-    """Insert the localized 'Published' line right after the digest's H1."""
-    line = published_line(date_str, hour_utc)
+def with_published(body_html: str, date_str: str, iso: str | None = None) -> str:
+    """Insert the 'Published' line right after the digest's H1."""
+    line = published_line(date_str, iso)
     if "</h1>" in body_html:
         return body_html.replace("</h1>", "</h1>\n" + line, 1)
     return line + body_html
+
+
+def load_published() -> dict:
+    """Map of digest-date -> real generation timestamp (UTC ISO), written by run_digest."""
+    p = DIGESTS / "published.json"
+    if p.exists():
+        try:
+            return json.loads(p.read_text(encoding="utf-8"))
+        except (ValueError, OSError):
+            return {}
+    return {}
 
 
 def meta_of(md: str) -> dict:
@@ -567,6 +579,7 @@ def build():
     OUT.mkdir(parents=True, exist_ok=True)
     repo_url = get_repo_url()
     files = sorted([p for p in DIGESTS.glob("*.md") if p.stem != "INDEX"], reverse=True)
+    pub = load_published()
 
     arch_items, search_index = [], []
     for p in files:
@@ -574,7 +587,7 @@ def build():
         m = meta_of(md)
         slug = p.stem + ".html"
         (OUT / slug).write_text(
-            page(m["title"], with_published(render_digest(md), p.stem), repo_url=repo_url),
+            page(m["title"], with_published(render_digest(md), p.stem, pub.get(p.stem)), repo_url=repo_url),
             encoding="utf-8")
         engine = m["engine"]
         short_title = m["title"].split("—")[-1].strip()
@@ -588,7 +601,7 @@ def build():
     events = parse_catalysts()
     timeline, mix = render_timeline(events), render_catalyst_mix(events)
     latest_md = files[0].read_text(encoding="utf-8") if files else ""
-    latest_html = (with_published(render_digest(latest_md), files[0].stem)
+    latest_html = (with_published(render_digest(latest_md), files[0].stem, pub.get(files[0].stem))
                    if files else '<p class="muted">No digests yet.</p>')
     _key = {"LLY": "lilly", "NVO": "novo", "PFE": "pfizer", "AZN": "astrazeneca", "MRK": "merck",
             "NVS": "novartis", "GSK": "gsk", "AMGN": "amgen", "ABBV": "abbvie", "JNJ": "j&j"}
