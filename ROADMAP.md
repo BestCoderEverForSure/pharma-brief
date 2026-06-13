@@ -31,7 +31,8 @@ Where the project stands, and everything we discussed adding.
 - [x] **Grounding self-check** - a second pass fact-checks the draft against the sources and revises out unsupported claims
 - [x] **Self-maintaining catalysts** - explicitly-dated future events from the day's news are auto-filed into `catalysts.md` (clearly labelled, deduped, pruned)
 - [x] **"Last updated" footer** on the site; renamed the Lilly section to **Eli Lilly Spotlight**; removed decorative emojis for a cleaner editorial look
-- [x] Cost: grounding + catalyst extraction share **one** review call (~3 DeepSeek calls/run, ~$1-2/mo)
+- [x] Cost: grounding + catalyst extraction share **one** review call (~3 model calls/run)
+- [x] **Gemini engine + instant switch** - automatic digest can run on **Gemini** (primary, `gemini-2.5-pro`, free tier) or **DeepSeek**, via one OpenAI-compatible `call_model()` path; switch in the Command Centre ("Choose engine") or `PHARMA_ENGINE` (local `secrets.env` + cloud repo Variable). Free Gemini API key from aistudio.google.com → $0 token cost.
 
 ## Next up / your action ⬜
 - [ ] **A/B DeepSeek v4-pro vs flash** - flip `DEEPSEEK_MODEL` secret, compare a few days *(you: send the exact model id; cost ~$1.50/mo on pro)*

@@ -1,21 +1,25 @@
 #!/usr/bin/env python3
 """
-Standalone Pharma Digest generator running on the DeepSeek API (no Claude).
+Standalone Pharma Digest generator (no Claude Code needed).
 
-Per-token, subscription-free. Pulls real pharma news from RSS feeds, then asks
-DeepSeek to write the digest using THIS PROJECT'S OWN METHODOLOGY (it reads the
-same command file, watchlist, and template Claude uses — one source of truth).
+Per-token / free-tier, subscription-free. Pulls real pharma news from RSS feeds, then
+asks an LLM to write the digest using THIS PROJECT'S OWN METHODOLOGY (it reads the same
+command file, watchlist, and template Claude uses — one source of truth).
 
-Anti-hallucination by design: DeepSeek cannot browse, so it is instructed to use
-ONLY the supplied articles and never add facts from memory.
+Engine-swappable via PHARMA_ENGINE (gemini|deepseek): Gemini is primary (free tier);
+DeepSeek is the alternative. Both speak the OpenAI-compatible chat API. Anti-hallucination
+by design: the engine cannot browse, so it uses ONLY the supplied articles, and a second
+grounding pass revises out any claim the sources don't support.
 
 Usage:
-    python3 deepseek/run_digest.py [--hours 24] [--edition morning|evening] [--email]
+    python3 deepseek/run_digest.py [--hours 24] [--edition morning|evening] [--email] [--engine gemini|deepseek]
 
 Secrets (env var or ~/.config/pharma-news/secrets.env):
-    DEEPSEEK_API_KEY   (required)
+    PHARMA_ENGINE      (optional, "gemini" | "deepseek"; default: Gemini if keyed, else DeepSeek)
+    GEMINI_API_KEY     (for the Gemini engine; free key at aistudio.google.com)
+    GEMINI_MODEL       (optional, default "gemini-2.5-pro")
+    DEEPSEEK_API_KEY   (for the DeepSeek engine)
     DEEPSEEK_MODEL     (optional, default "deepseek-chat")
-    DEEPSEEK_BASE_URL  (optional, default "https://api.deepseek.com")
 
 Stdlib only — no pip installs.
 """
@@ -55,7 +59,8 @@ def load_secrets() -> dict:
             if line and not line.startswith("#") and "=" in line:
                 k, v = line.split("=", 1)
                 s[k.strip()] = v.strip().strip('"').strip("'")
-    for k in ("DEEPSEEK_API_KEY", "DEEPSEEK_MODEL", "DEEPSEEK_BASE_URL"):
+    for k in ("DEEPSEEK_API_KEY", "DEEPSEEK_MODEL", "DEEPSEEK_BASE_URL",
+              "GEMINI_API_KEY", "GEMINI_MODEL", "GEMINI_BASE_URL", "PHARMA_ENGINE"):
         if os.environ.get(k):
             s[k] = os.environ[k]
     return s
@@ -149,11 +154,11 @@ def gather(hours: int) -> list[dict]:
     return uniq
 
 
-def build_system_prompt(edition: str) -> str:
+def build_system_prompt(edition: str, engine_label: str = "DeepSeek") -> str:
     """Reuse the project's tuned methodology as the system prompt."""
     parts = ["You are generating the Pharma Digest.",
              "",
-             "IMPORTANT ADAPTER NOTES (you are running on DeepSeek, not Claude Code):",
+             f"IMPORTANT ADAPTER NOTES (you are running on {engine_label}, not Claude Code):",
              "- You CANNOT browse the web. Use ONLY the news articles provided in the user message.",
              "- Ignore any instructions in the methodology about running web searches or saving files — those are handled outside you.",
              "- ANTI-HALLUCINATION: every fact, number, date, name, and deal value MUST come from the provided articles. If it is not in the articles, do not state it. Never use facts from your training data. Label rumours as rumours. If the day's articles are thin, say so honestly rather than inventing substance.",
@@ -163,7 +168,7 @@ def build_system_prompt(edition: str) -> str:
              "- CITATIONS: when you use an article, cite it inline as [n] using its number from the provided article list. Do NOT write your own Sources section and do NOT invent URLs — a resolved, named Sources list is appended automatically from the article list.",
              "- NEVER cite the methodology, watchlist, or catalysts files (no [catalysts.md], [watchlist.md], etc.) — they are guidance, not sources. The upcoming-catalysts section is added automatically; just write the analysis. Cite only the numbered articles.",
              "- FRESHNESS: each article is tagged NEW or 'previously covered'. Lead with NEW stories. Include a previously-covered story ONLY if these articles add a CONCRETE new fact — a new number, date, decision, or named result (not merely a fresh angle or restatement) — and when you do, prefix that item with 'Developing:'. Otherwise leave it out. Never rehash old news as if it were breaking.",
-             "- In the header subtitle line, set 'Engine: DeepSeek'.",
+             f"- In the header subtitle line, set 'Engine: {engine_label}'.",
              "",
              "=== METHODOLOGY (follow the analysis & structure; skip the tool/file steps) ==="]
     for f in [".claude/commands/pharma-news.md",
@@ -176,11 +181,48 @@ def build_system_prompt(edition: str) -> str:
     return "\n".join(parts)
 
 
-def call_deepseek(secrets: dict, system: str, user: str) -> str:
-    base = secrets.get("DEEPSEEK_BASE_URL", "https://api.deepseek.com").rstrip("/")
-    model = secrets.get("DEEPSEEK_MODEL", "deepseek-chat")
+# --------------------------------------------------------------------------- #
+#  LLM engines. DeepSeek and Gemini both speak the OpenAI-compatible chat API,
+#  so ONE call path serves both — only base URL, key, and model differ. Gemini is
+#  primary; switch with PHARMA_ENGINE=gemini|deepseek (env / secrets.env / the GitHub
+#  Actions variable / the --engine flag / the Command Centre).
+# --------------------------------------------------------------------------- #
+PROVIDERS = {
+    "deepseek": {"label": "DeepSeek", "base": "https://api.deepseek.com",
+                 "key": "DEEPSEEK_API_KEY", "model_key": "DEEPSEEK_MODEL",
+                 "base_key": "DEEPSEEK_BASE_URL", "default_model": "deepseek-chat"},
+    "gemini":   {"label": "Gemini",
+                 "base": "https://generativelanguage.googleapis.com/v1beta/openai",
+                 "key": "GEMINI_API_KEY", "model_key": "GEMINI_MODEL",
+                 "base_key": "GEMINI_BASE_URL", "default_model": "gemini-2.5-pro"},
+}
+
+
+def resolve_engine(secrets: dict) -> str:
+    """Which engine to use. An explicit PHARMA_ENGINE wins; otherwise prefer Gemini
+    (primary) when its key is present, else fall back to DeepSeek — so the daily run
+    never breaks just because the Gemini key hasn't been added yet."""
+    e = (secrets.get("PHARMA_ENGINE") or "").strip().lower()
+    if e in PROVIDERS:
+        return e
+    return "gemini" if secrets.get("GEMINI_API_KEY") else "deepseek"
+
+
+def engine_model(secrets: dict, engine: str) -> str:
+    p = PROVIDERS[engine]
+    return secrets.get(p["model_key"]) or p["default_model"]
+
+
+def call_model(secrets: dict, system: str, user: str) -> str:
+    """Call whichever engine resolve_engine() picks, via its OpenAI-compatible endpoint."""
+    engine = resolve_engine(secrets)
+    p = PROVIDERS[engine]
+    base = (secrets.get(p["base_key"]) or p["base"]).rstrip("/")
+    key = secrets.get(p["key"])
+    if not key:
+        raise RuntimeError(f"missing {p['key']} for engine '{engine}'")
     payload = json.dumps({
-        "model": model,
+        "model": engine_model(secrets, engine),
         "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": user},
@@ -190,8 +232,7 @@ def call_deepseek(secrets: dict, system: str, user: str) -> str:
     }).encode("utf-8")
     req = urllib.request.Request(
         f"{base}/chat/completions", data=payload, method="POST",
-        headers={"Authorization": f"Bearer {secrets['DEEPSEEK_API_KEY']}",
-                 "Content-Type": "application/json"},
+        headers={"Authorization": f"Bearer {key}", "Content-Type": "application/json"},
     )
     with urllib.request.urlopen(req, timeout=180) as r:
         data = json.loads(r.read().decode("utf-8"))
@@ -213,8 +254,8 @@ def _fmt_source_dt(iso: str) -> str:
     return d.strftime("%b %d, %Y · %H:%M UTC")
 
 
-def finalize(digest: str, items: list[dict], model: str) -> str:
-    """Clean DeepSeek's output: strip stray HTML, label the engine, and append a
+def finalize(digest: str, items: list[dict], engine_label: str, model: str) -> str:
+    """Clean the model's output: strip stray HTML, label the engine, and append a
     real, resolved Sources list built from the actual fetched articles."""
     import re
     # 1. Strip leaked raw HTML tags (e.g. <small>) — Markdown only.
@@ -226,12 +267,12 @@ def finalize(digest: str, items: list[dict], model: str) -> str:
     digest = re.sub(r"\s*\[[^\[\]]*\.md\](?!\()", "", digest, flags=re.I)
     # 2. Normalise the engine label in the subtitle (or inject it after the title).
     if re.search(r"Engine:", digest):
-        digest = re.sub(r"Engine:\s*[^·\n]*", f"Engine: DeepSeek ({model}) ", digest)
+        digest = re.sub(r"Engine:\s*[^·\n]*", f"Engine: {engine_label} ({model}) ", digest)
     else:
         lines = digest.splitlines()
         for i, l in enumerate(lines):
             if l.startswith("# "):
-                lines.insert(i + 1, f"\n*Engine: DeepSeek ({model})*")
+                lines.insert(i + 1, f"\n*Engine: {engine_label} ({model})*")
                 break
         digest = "\n".join(lines)
     # 3. Drop any Sources section / footer the model wrote — we rebuild them cleanly.
@@ -260,7 +301,7 @@ def finalize(digest: str, items: list[dict], model: str) -> str:
             return f"{n}. [{md_safe(it['title'])}]({url}){tail}"
         digest += "\n\n## Sources\n" + "\n".join(src_line(n) for n in cited)
     # 5. Standard footer.
-    digest += ("\n\n---\n*Generated by DeepSeek, grounded strictly in the fetched "
+    digest += (f"\n\n---\n*Generated by {engine_label}, grounded strictly in the fetched "
                "articles above. Rumours/unconfirmed items are labelled.*\n")
     return digest
 
@@ -318,7 +359,7 @@ def review_digest(secrets: dict, digest: str, corpus: str, today: dt.date) -> tu
         "Write NONE if there are none.")
     user = f"Today is {today.isoformat()}.\n\nSOURCES:\n\n{corpus}\n\n=== DIGEST ===\n\n{digest}"
     try:
-        out = call_deepseek(secrets, system, user)
+        out = call_model(secrets, system, user)
     except Exception as e:
         print(f"  ! review skipped ({e})", file=sys.stderr)
         return True, "", []
@@ -355,7 +396,7 @@ def revise_for_grounding(secrets: dict, digest: str, corpus: str, issues: str) -
         "revised Markdown digest, with no preamble.")
     user = f"SOURCES:\n\n{corpus}\n\nUNSUPPORTED CLAIMS TO FIX:\n{issues}\n\n=== DIGEST ===\n\n{digest}"
     try:
-        out = call_deepseek(secrets, system, user).strip()
+        out = call_model(secrets, system, user).strip()
     except Exception as e:
         print(f"  ! grounding revision skipped ({e})", file=sys.stderr)
         return digest
@@ -437,11 +478,18 @@ def main() -> int:
     ap.add_argument("--edition", choices=["morning", "evening"], default="morning")
     ap.add_argument("--email", action="store_true", help="email the result via send_digest.py")
     ap.add_argument("--telegram", action="store_true", help="post a summary via send_telegram.py")
+    ap.add_argument("--engine", choices=["gemini", "deepseek"],
+                    help="override the engine for this run (default: PHARMA_ENGINE, else Gemini)")
     args = ap.parse_args()
 
     secrets = load_secrets()
-    if not secrets.get("DEEPSEEK_API_KEY"):
-        print(f"ERROR: set DEEPSEEK_API_KEY (env or {SECRETS_PATH})", file=sys.stderr)
+    if args.engine:
+        secrets["PHARMA_ENGINE"] = args.engine
+    engine = resolve_engine(secrets)
+    label = PROVIDERS[engine]["label"]
+    keyname = PROVIDERS[engine]["key"]
+    if not secrets.get(keyname):
+        print(f"ERROR: engine '{engine}' needs {keyname} (env or {SECRETS_PATH})", file=sys.stderr)
         return 2
 
     print("Gathering news from RSS feeds...", file=sys.stderr)
@@ -475,9 +523,9 @@ def main() -> int:
             f"Here are the ONLY articles you may use ({len(items)} total). "
             f"Write the digest grounded strictly in these:\n\n{corpus}")
 
-    print("Calling DeepSeek...", file=sys.stderr)
+    print(f"Calling {label} ({engine_model(secrets, engine)})...", file=sys.stderr)
     try:
-        digest = call_deepseek(secrets, build_system_prompt(args.edition), user)
+        digest = call_model(secrets, build_system_prompt(args.edition, label), user)
     except urllib.error.HTTPError as e:
         print(f"ERROR {e.code}: {e.read().decode('utf-8','replace')}", file=sys.stderr)
         return 4
@@ -486,7 +534,7 @@ def main() -> int:
     # digest — abort so GitHub's failure email surfaces it (same policy as MIN_ARTICLES).
     if not digest or len(digest.strip()) < 300:
         got = 0 if not digest else len(digest.strip())
-        print(f"ERROR: DeepSeek returned an empty/near-empty digest ({got} chars). "
+        print(f"ERROR: {label} returned an empty/near-empty digest ({got} chars). "
               "Aborting so the failure is visible.", file=sys.stderr)
         return 4
 
@@ -503,7 +551,7 @@ def main() -> int:
             print(f"  grounding flagged claims; revising:\n{issues}", file=sys.stderr)
             digest = revise_for_grounding(secrets, digest, corpus, issues)
 
-    digest = finalize(digest, items, secrets.get("DEEPSEEK_MODEL", "deepseek-chat"))
+    digest = finalize(digest, items, label, engine_model(secrets, engine))
 
     out = ROOT / "digests" / f"{today}.md"
     out.parent.mkdir(parents=True, exist_ok=True)
