@@ -63,6 +63,7 @@ def find_digest(arg_path: str | None) -> Path:
 def tg_inline(text: str) -> str:
     """Markdown subset -> Telegram-flavoured HTML; drop [n] citation markers."""
     text = re.sub(r"\s*\[\d+\]", "", text)                     # strip [n] citations
+    text = re.sub(r"\s*\[[^\[\]]*\.md\](?!\()", "", text)      # strip "[catalysts.md]"-style markers
     text = _html.escape(text)
     text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', text)
     text = re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", text)
