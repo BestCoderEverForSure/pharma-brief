@@ -154,8 +154,11 @@ def main() -> int:
         # Rather than drop the post, retry as plain text with the tags stripped.
         if e.code == 400:
             print(f"WARN: HTML post rejected ({detail}); retrying as plain text.", file=sys.stderr)
-            plain = re.sub(r"<[^>]+>", "", message)
-            plain = plain.replace("&amp;", "&").replace("&lt;", "<").replace("&gt;", ">").replace("&#x27;", "'")
+            # Keep link targets: "<a href=U>label</a>" -> "label U", THEN strip the
+            # remaining tags (a bare strip would silently drop the read-the-brief URL),
+            # and unescape all entities (&quot; included) in one go.
+            plain = re.sub(r'<a href="([^"]*)">([^<]*)</a>', r"\2 \1", message)
+            plain = _html.unescape(re.sub(r"<[^>]+>", "", plain))
             try:
                 status = post(plain, as_html=False)
                 print(f"Telegram sent ✓ (plain, {status}) -> {chat_id}")
