@@ -59,7 +59,7 @@ def main() -> int:
             cfg = {}
     cfg["delivery_time"] = f"{H:02d}:{M:02d}"
     cfg["target_timezone"] = tz
-    cfg["cron_utc"] = f"{UM} {UH} * * 1-6"
+    cfg["cron_utc"] = f"{UH:02d}:{UM:02d} UTC (all scheduled days)"
     cfg["note"] = (f"Automatic send {H:02d}:{M:02d} {tz} = {UH:02d}:{UM:02d} UTC. "
                    "GitHub cron is UTC — re-run set_schedule.py after a daylight-saving "
                    "change to keep the local time exact.")
