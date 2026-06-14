@@ -201,8 +201,10 @@ def md_inline(text: str) -> str:
     text = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"<em>\1</em>", text)
     # Make bare [n] citation markers clickable, linking to their source.
     if _SRCMAP:
+        # html.escape the URL: it comes from the Sources list (a feed link), not from the
+        # already-escaped body text, so a stray quote could otherwise break out of href="".
         text = re.sub(r"\[(\d+)\]", lambda m: (
-            f'<a href="{_SRCMAP[m.group(1)]}" style="color:#8b635c;text-decoration:none;'
+            f'<a href="{_html.escape(_SRCMAP[m.group(1)])}" style="color:#8b635c;text-decoration:none;'
             f'font-weight:600">[{m.group(1)}]</a>' if m.group(1) in _SRCMAP else m.group(0)), text)
     return text
 

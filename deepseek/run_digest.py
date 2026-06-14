@@ -41,6 +41,9 @@ import urllib.error
 ROOT = Path(__file__).resolve().parent.parent
 SECRETS_PATH = Path.home() / ".config" / "pharma-news" / "secrets.env"
 FEEDS_FILE = ROOT / "deepseek" / "feeds.txt"
+# Cap how much of a feed we read before parsing. Real RSS/Atom feeds are well under this;
+# the cap bounds a hostile/runaway payload (stdlib ElementTree isn't hardened for that).
+MAX_FEED_BYTES = 5 * 1024 * 1024
 
 DEFAULT_FEEDS = [
     "https://www.fiercepharma.com/rss/xml",
@@ -80,7 +83,7 @@ def fetch(url: str, timeout: int = 20) -> bytes | None:
     try:
         req = urllib.request.Request(url, headers={"User-Agent": "pharma-digest/1.0"})
         with urllib.request.urlopen(req, timeout=timeout) as r:
-            return r.read()
+            return r.read(MAX_FEED_BYTES)
     except (OSError, http.client.HTTPException, ValueError) as e:
         # OSError covers URLError/timeouts/resets; HTTPException covers errors
         # raised mid-read (IncompleteRead etc.) — one bad feed must not kill the run.
@@ -90,6 +93,13 @@ def fetch(url: str, timeout: int = 20) -> bytes | None:
 
 def parse_feed(xml_bytes: bytes, since: dt.datetime) -> list[dict]:
     items = []
+    # Defuse entity-expansion ("billion laughs"): stdlib ElementTree isn't hardened for
+    # hostile input, and a legitimate RSS/Atom feed never declares custom entities. If one
+    # does, treat the feed as untrusted and skip it rather than parse it. (ElementTree does
+    # not resolve external entities, so XXE/file access isn't a vector here.)
+    if b"<!ENTITY" in xml_bytes:
+        print("  ! skip feed: declares XML entities (untrusted)", file=sys.stderr)
+        return items
     try:
         root = ET.fromstring(xml_bytes)
     except ET.ParseError:

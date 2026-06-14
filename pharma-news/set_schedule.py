@@ -50,6 +50,15 @@ def main() -> int:
     u = local.astimezone(dt.timezone.utc)
     UH, UM = u.hour, u.minute
 
+    # If converting to UTC crosses the calendar day, the weekday the cron fires on shifts
+    # too — but we only rewrite the hour/minute, not the day-of-week field. Warn loudly
+    # rather than silently schedule the wrong day. (07:00 Europe/Rome never triggers this.)
+    if u.date() != local.date():
+        when = "the previous day" if u.date() < local.date() else "the next day"
+        print(f"WARNING: {H:02d}:{M:02d} {tz} falls on {when} in UTC ({UH:02d}:{UM:02d}). "
+              f"The cron weekday is NOT auto-adjusted, so the scheduled day may be off by one — "
+              f"review the 'cron:' lines in {WORKFLOW.name} by hand.", file=sys.stderr)
+
     # Update config.json, preserving any other keys (audio, etc.).
     cfg = {}
     if CONFIG.exists():

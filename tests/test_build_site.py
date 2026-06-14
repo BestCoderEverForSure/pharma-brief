@@ -69,6 +69,16 @@ class TestInlineAndText(unittest.TestCase):
         finally:
             bs._SRCMAP = {}
 
+    def test_citation_url_is_html_escaped_in_href(self):
+        # A source URL with a stray quote must not break out of href="" (W5).
+        bs._SRCMAP = {"1": 'https://x.com/a"><script>evil'}
+        try:
+            out = bs.md_inline("see [1]")
+            self.assertNotIn('"><script>', out)   # no attribute breakout
+            self.assertIn("&quot;", out)            # quote escaped instead
+        finally:
+            bs._SRCMAP = {}
+
     def test_plain_text_strips_markdown(self):
         self.assertEqual(bs.plain_text("# H\n**x** [L](http://u) `c`"), "H x L c")
 

@@ -8,15 +8,30 @@ Run:  python3 -m unittest discover -s tests
 """
 
 import datetime as dt
+import json
 import os
 import tempfile
 import types
 import unittest
+import urllib.error
+from unittest import mock
 from pathlib import Path
 
 import fixtures as F
 
 rd = F.load_run_digest()
+
+
+class _JsonResp:
+    """Stand-in for the OpenAI-compatible chat response, usable as a context manager."""
+    def __init__(self, payload):
+        self._b = json.dumps(payload).encode("utf-8")
+    def __enter__(self):
+        return self
+    def __exit__(self, *a):
+        return False
+    def read(self):
+        return self._b
 
 
 class TestFinalizeGolden(unittest.TestCase):
@@ -211,6 +226,97 @@ class TestResolveAuto(unittest.TestCase):
         rd.resolve_auto(a)
         expected = rd.auto_schedule(dt.datetime.now(dt.timezone.utc).isoweekday())
         self.assertEqual((a.hours, a.edition, a.mode), expected)
+
+
+class TestCallModelRetry(unittest.TestCase):
+    """call_model is the one network call the whole pipeline depends on — its retry/backoff
+    and fail-fast-on-4xx behaviour were previously untested."""
+
+    SECRETS = {"GEMINI_API_KEY": "k"}   # makes resolve_engine pick a keyed engine
+
+    @staticmethod
+    def _ok(content):
+        return _JsonResp({"choices": [{"message": {"content": content}}]})
+
+    def test_retries_transient_then_succeeds(self):
+        seq = [urllib.error.URLError("conn reset"), self._ok("the digest")]
+
+        def fake(req, timeout=180):
+            r = seq.pop(0)
+            if isinstance(r, Exception):
+                raise r
+            return r
+
+        with mock.patch.object(rd.time, "sleep", lambda *a: None), \
+             mock.patch.object(rd.urllib.request, "urlopen", fake):
+            out = rd.call_model(self.SECRETS, "system", "user")
+        self.assertEqual(out, "the digest")
+        self.assertEqual(seq, [])   # both the failure and success were consumed
+
+    def test_4xx_fails_fast_without_retry(self):
+        calls = {"n": 0}
+
+        def fake(req, timeout=180):
+            calls["n"] += 1
+            raise urllib.error.HTTPError("u", 400, "Bad Request", {}, None)
+
+        with mock.patch.object(rd.time, "sleep", lambda *a: None), \
+             mock.patch.object(rd.urllib.request, "urlopen", fake):
+            with self.assertRaises(urllib.error.HTTPError):
+                rd.call_model(self.SECRETS, "s", "u")
+        self.assertEqual(calls["n"], 1)
+
+    def test_missing_key_raises(self):
+        with self.assertRaises(RuntimeError):
+            rd.call_model({}, "s", "u")   # no engine key configured
+
+
+class TestReviewDigest(unittest.TestCase):
+    """The grounding self-check is the product's anti-hallucination guarantee, and its
+    PASS/issue parsing + catalyst extraction is fragile — now covered. call_model is mocked."""
+
+    TODAY = dt.date(2026, 6, 14)
+
+    def _review(self, model_output):
+        with mock.patch.object(rd, "call_model", lambda *a, **k: model_output):
+            return rd.review_digest({}, "digest", "corpus", self.TODAY)
+
+    def test_pass_extracts_only_future_catalysts(self):
+        out = ("### GROUNDING\nPASS\n\n### CATALYSTS\n"
+               "2026-08-01 | tirzepatide PDUFA decision\n"
+               "2020-01-01 | ancient event (past, must be dropped)\n")
+        ok, issues, events = self._review(out)
+        self.assertTrue(ok)
+        self.assertEqual(issues, "")
+        self.assertEqual(events, [(dt.date(2026, 8, 1), "tirzepatide PDUFA decision")])
+
+    def test_flags_unsupported_claims(self):
+        out = '### GROUNDING\n- "Lilly cured cancer" — not in the sources\n\n### CATALYSTS\nNONE\n'
+        ok, issues, events = self._review(out)
+        self.assertFalse(ok)
+        self.assertIn("Lilly cured cancer", issues)
+        self.assertEqual(events, [])
+
+    def test_malformed_output_is_failsafe_pass(self):
+        # Model ignored the format → don't trust a parse; pass grounding (fail-safe).
+        ok, issues, events = self._review("Sure! Overall the digest looks great.")
+        self.assertEqual((ok, issues, events), (True, "", []))
+
+    def test_call_failure_is_failsafe(self):
+        def boom(*a, **k):
+            raise RuntimeError("network down")
+        with mock.patch.object(rd, "call_model", boom):
+            result = rd.review_digest({}, "d", "c", self.TODAY)
+        self.assertEqual(result, (True, "", []))
+
+
+class TestParseFeedEntityGuard(unittest.TestCase):
+    def test_feed_declaring_entities_is_skipped(self):
+        # "billion laughs" style payload — must be refused, not parsed.
+        bomb = (b'<?xml version="1.0"?><!DOCTYPE lolz [<!ENTITY lol "lol">]>'
+                b'<rss><channel><item><title>&lol;</title>'
+                b'<link>https://x.com/a</link></channel></rss>')
+        self.assertEqual(rd.parse_feed(bomb, dt.datetime(2020, 1, 1, tzinfo=dt.timezone.utc)), [])
 
 
 if __name__ == "__main__":

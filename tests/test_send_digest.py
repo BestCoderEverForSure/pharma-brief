@@ -89,6 +89,16 @@ class TestRenumberAndCitations(unittest.TestCase):
         self.assertIn('<a href="https://a.example/y"', out)
         self.assertIn(">[1]</a>", out)
 
+    def test_citation_url_is_html_escaped_in_href(self):
+        # A source URL with a stray quote must not break out of href="" (W5).
+        sd._SRCMAP = {"1": 'https://x.com/a"><script>evil'}
+        try:
+            out = sd.md_inline("see [1]")
+            self.assertNotIn('"><script>', out)
+            self.assertIn("&quot;", out)
+        finally:
+            sd._SRCMAP = {}
+
     def test_direct_link_gets_check_mark(self):
         out = sd.md_inline("[Pub](https://www.statnews.com/x)")
         self.assertIn("✓", out)
