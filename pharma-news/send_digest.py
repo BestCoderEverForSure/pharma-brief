@@ -29,6 +29,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SECRETS_PATH = Path.home() / ".config" / "pharma-news" / "secrets.env"
 RESEND_ENDPOINT = "https://api.resend.com/emails"
+DEFAULT_SITE = "https://bestcodereverforsure.github.io/pharma-brief/"   # web home; override via SITE_URL
 if str(PROJECT_ROOT) not in sys.path:
     sys.path.insert(0, str(PROJECT_ROOT))
 # Citation/markets/catalyst data logic is shared with the website renderer so the email
@@ -170,7 +171,7 @@ def load_secrets() -> dict:
             k, v = line.split("=", 1)
             secrets[k.strip()] = v.strip().strip('"').strip("'")
     # Env vars win over the file.
-    for k in ("RESEND_API_KEY", "EMAIL_TO", "EMAIL_FROM"):
+    for k in ("RESEND_API_KEY", "EMAIL_TO", "EMAIL_FROM", "SITE_URL"):
         if os.environ.get(k):
             secrets[k] = os.environ[k]
     return secrets
@@ -312,9 +313,11 @@ def md_to_html(md: str, extra_html: str = "") -> str:
 </div></body></html>"""
 
 
-def email_html(md: str) -> str:
+def email_html(md: str, web_url: str | None = None) -> str:
     """Assemble the full email: digest body, then Upcoming catalysts, Markets, and the
-    Sources list LAST (moved out of the body to the very end, below markets)."""
+    Sources list LAST (moved out of the body to the very end, below markets). When `web_url`
+    is given, the headline links to the brief's page on the website — one click from inbox
+    to the full web version (the page is already deployed by the time delivery runs)."""
     idx = md.find("\n## Sources")
     body_md, sources_md = (md[:idx], md[idx + 1:]) if idx != -1 else (md, "")
     # Drop a trailing rule so we don't get a double horizontal line before catalysts.
@@ -322,7 +325,13 @@ def email_html(md: str) -> str:
     extra = render_catalysts_email() + render_market_email(md)
     if sources_md.strip():
         extra += _md_fragment(sources_md)
-    return md_to_html(body_md, extra)
+    out = md_to_html(body_md, extra)
+    if web_url:
+        out = re.sub(
+            r"<h1>(.*?)</h1>",
+            rf'<h1><a href="{_html.escape(web_url)}" style="color:inherit;text-decoration:none">\1</a></h1>',
+            out, count=1, flags=re.S)
+    return out
 
 
 def main() -> int:
@@ -338,7 +347,8 @@ def main() -> int:
         out = Path(rest[1]).expanduser() if len(rest) > 1 else (PROJECT_ROOT / "samples" / "email-preview.html")
         out.parent.mkdir(parents=True, exist_ok=True)
         pmd = prepare_digest(digest_path.read_text(encoding="utf-8"))
-        out.write_text(email_html(pmd), encoding="utf-8")
+        web_url = DEFAULT_SITE.rstrip("/") + "/" + digest_path.stem + ".html"
+        out.write_text(email_html(pmd, web_url=web_url), encoding="utf-8")
         print(f"Email preview written ✓ -> {out}")
         return 0
 
@@ -362,12 +372,13 @@ def main() -> int:
     # Subject = first H1 line if present, else a default.
     subject = next((l[2:].strip() for l in md.splitlines() if l.startswith("# ")),
                    f"Pharma Morning Digest — {datetime.date.today().isoformat()}")
+    web_url = (secrets.get("SITE_URL") or DEFAULT_SITE).rstrip("/") + "/" + digest_path.stem + ".html"
 
     payload = json.dumps({
         "from": from_addr,
         "to": recipients,
         "subject": subject,
-        "html": email_html(md),
+        "html": email_html(md, web_url=web_url),
         "text": md,
     }).encode("utf-8")
 

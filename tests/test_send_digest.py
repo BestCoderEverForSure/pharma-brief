@@ -148,6 +148,16 @@ class TestEmailAssembly(unittest.TestCase):
         self.assertLess(i_mkt, i_src)        # Sources come last
         self.assertIn("<h2>Sources</h2>", html)
 
+    def test_title_links_to_web_url_when_given(self):
+        md = "# Pharma Week in Review — 14/06/2026\n\n> Point.\n\n### Story\nBody.\n"
+        html = sd.email_html(md, web_url="https://site.example/2026-06-14.html")
+        self.assertIn('<h1><a href="https://site.example/2026-06-14.html"', html)
+        self.assertRegex(html, r"<h1><a [^>]*>.*Week in Review.*</a></h1>")
+
+    def test_title_unlinked_without_web_url(self):
+        html = sd.email_html("# Brief\n\nbody\n")
+        self.assertIn("<h1>Brief</h1>", html)   # unchanged when no URL passed
+
 
 class TestEmailOnRealFinalizedOutput(unittest.TestCase):
     """End-to-end check that the EMAIL still renders correctly on the exact output the
