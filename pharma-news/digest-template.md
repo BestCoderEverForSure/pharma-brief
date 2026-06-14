@@ -1,6 +1,6 @@
 # Pharma {Morning/Evening} Digest - {DATE}
 
-*Window: {last 24h / since {date}} · Edition: {morning / evening} · Engine: {Claude / DeepSeek} · ~{N} min read*
+*Window: {last 24h / since {date}} · Engine: {Claude / DeepSeek} · Edition: {morning / evening} · ~{N} min read*
 
 > **Talking point:** {one sharp, non-obvious line to sound on top of the industry today}
 

@@ -316,6 +316,17 @@ def finalize(digest: str, items: list[dict], engine_label: str, model: str) -> s
                 lines.insert(i + 1, f"\n*Engine: {engine_label} ({model})*")
                 break
         digest = "\n".join(lines)
+    # 2b. Reorder the subtitle so Edition sits just before the read-time, making the
+    # edition↔length link obvious: Window · Engine · Edition · ~N min read.
+    def _reorder_subtitle(m):
+        parts = [p.strip() for p in m.group(1).split("·") if p.strip()]
+        ed = [p for p in parts if p.lower().startswith("edition")]
+        rest = [p for p in parts if not p.lower().startswith("edition")]
+        if ed and len(rest) >= 1:
+            rest.insert(len(rest) - 1, ed[0])   # Edition becomes second-to-last
+            return "*" + " · ".join(rest) + "*"
+        return m.group(0)
+    digest = re.sub(r"\*(Window[^*\n]*)\*", _reorder_subtitle, digest, count=1)
     # 3. Drop any Sources section / footer the model wrote — we rebuild them cleanly.
     idx = digest.find("## Sources")
     if idx != -1:
@@ -598,14 +609,27 @@ def main() -> int:
     cat_events = []
     if os.environ.get("DIGEST_REVIEW", "1") != "0":
         print("Reviewing (grounding + catalysts)...", file=sys.stderr)
-        ok, issues, cat_events = review_digest(secrets, digest, corpus, dt.date.today())
+        # The curated catalyst calendar is a valid source for dated future events — include it
+        # so the grounding check doesn't strip the Week Ahead's calendar dates as "unsupported"
+        # (it otherwise only sees the articles). Genuine outcome speculation is still flagged.
+        cat_file = ROOT / "pharma-news" / "catalysts.md"
+        review_corpus = corpus
+        if cat_file.exists():
+            review_corpus = (corpus + "\n\n=== CATALYST CALENDAR (curated; its dated entries are "
+                             "valid sources for upcoming events) ===\n" + cat_file.read_text(encoding="utf-8"))
+        ok, issues, cat_events = review_digest(secrets, digest, review_corpus, dt.date.today())
         if ok:
             print("  grounding: passed", file=sys.stderr)
         else:
             print(f"  grounding flagged claims; revising:\n{issues}", file=sys.stderr)
-            digest = revise_for_grounding(secrets, digest, corpus, issues)
+            digest = revise_for_grounding(secrets, digest, review_corpus, issues)
 
     digest = finalize(digest, items, label, engine_model(secrets, engine))
+
+    # Force the title's date to DD/MM/YYYY (replace whatever date the model wrote after the
+    # title's " - "). Deterministic — doesn't rely on the model's date formatting.
+    dmy = dt.date.today().strftime("%d/%m/%Y")
+    digest = re.sub(r"^(#\s+\S.*?)\s+[-–—]\s+.*$", rf"\1 — {dmy}", digest, count=1, flags=re.M)
 
     out = ROOT / "digests" / f"{today}.md"
     out.parent.mkdir(parents=True, exist_ok=True)
