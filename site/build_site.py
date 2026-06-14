@@ -234,14 +234,36 @@ def _parse_srcmap(md: str) -> dict:
     return smap
 
 
-def render_digest(md: str) -> str:
-    """Full digest -> HTML: renumber sources, link headlines, and make inline [n] citations clickable."""
+def _dmy_title(md: str, stem: str) -> str:
+    """Force the H1's trailing date to DD/MM/YYYY using the digest's own date (from its
+    filename), so EVERY digest on the site shows d/m/y — including older archived ones whose
+    title was written before that change."""
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2})", stem)
+    if not m:
+        return md
+    dmy = f"{m.group(3)}/{m.group(2)}/{m.group(1)}"
+    return re.sub(r"^(#\s+\S.*?)\s+[-–—]\s+.*$", rf"\1 — {dmy}", md, count=1, flags=re.M)
+
+
+def render_digest_split(md: str) -> tuple[str, str]:
+    """Renumber sources, link headlines, make [n] citations clickable, then return
+    (body_html_without_sources, sources_html) so the Sources list can be placed last."""
     global _SRCMAP
     md = renumber_sources(md)
     _SRCMAP = _parse_srcmap(md)
-    out = md_to_html(link_headings(md))
+    md = link_headings(md)                       # links headlines while the Sources list is present
+    idx = md.find("\n## Sources")
+    body, src = (md[:idx], md[idx + 1:]) if idx != -1 else (md, "")
+    body_html = md_to_html(body)
+    src_html = md_to_html(src) if src.strip() else ""
     _SRCMAP = {}
-    return out
+    return body_html, src_html
+
+
+def render_digest(md: str) -> str:
+    """Full digest -> HTML (body + sources inline), for any caller that wants the whole thing."""
+    body, src = render_digest_split(md)
+    return body + ("\n" + src if src else "")
 
 
 def company_anchors(md: str, keymap: dict) -> dict:
@@ -604,16 +626,24 @@ def build():
     ) if market_html else ""
     page_extras = catalysts_section + market_block      # appended to each digest page
 
+    def sources_section(src_html):
+        return (f'<section class="block"><div class="block-label">Sources</div>'
+                f'<div class="block-body">{src_html}</div></section>') if src_html else ""
+
     arch_items, search_index = [], []
     for p in files:
-        md = p.read_text(encoding="utf-8")
+        md = _dmy_title(p.read_text(encoding="utf-8"), p.stem)   # d/m/y title for every digest
         m = meta_of(md)
         slug = p.stem + ".html"
+        body_html, src_html = render_digest_split(md)
+        # Order: brief → catalysts → markets → Sources (last), so you don't scroll past the
+        # references to reach catalysts/markets.
         (OUT / slug).write_text(
-            page(m["title"], with_published(render_digest(md), p.stem, pub.get(p.stem)) + page_extras, repo_url=repo_url),
+            page(strip_lead(m["title"]), with_published(body_html, p.stem, pub.get(p.stem)) + page_extras + sources_section(src_html), repo_url=repo_url),
             encoding="utf-8")
         engine = m["engine"]
-        short_title = m["title"].split("—")[-1].strip()
+        # Archive label: digest name only — drop the trailing date and any leading emoji (old digests).
+        short_title = strip_lead(re.sub(r"\s+[-–—]\s+.*$", "", m["title"]).strip())
         arch_items.append(
             f'<a class="arch-item" href="{slug}"><span class="arch-date">{html.escape(p.stem)}</span>'
             f'<span class="arch-title">{html.escape(short_title)}</span>'
@@ -623,12 +653,14 @@ def build():
 
     if files:
         slug0 = files[0].stem + ".html"
-        body0 = render_digest(latest_md)
+        body0, src0 = render_digest_split(_dmy_title(latest_md, files[0].stem))
         # On the homepage, make the latest brief's title a permalink to its own dated page.
         body0 = re.sub(r"<h1>(.*?)</h1>", rf'<h1><a href="{slug0}">\1</a></h1>', body0, count=1, flags=re.S)
         latest_html = with_published(body0, files[0].stem, pub.get(files[0].stem))
+        latest_src_section = sources_section(src0)
     else:
         latest_html = '<p class="muted">No digests yet.</p>'
+        latest_src_section = ""
     arch_html = "".join(arch_items) if arch_items else '<p class="muted">No digests yet.</p>'
 
     index_body = f"""
@@ -646,6 +678,7 @@ def build():
 <section class="block" id="latest"><div class="block-label">Latest brief</div><div class="block-body">{latest_html}</div></section>
 {catalysts_section}
 {market_block}
+{latest_src_section}
 <section class="block" id="archive"><div class="block-label">Archive</div><div class="block-body"><div class="arch">{arch_html}</div></div></section>
 <script src="search-data.js"></script><script src="search.js"></script>"""
     (OUT / "index.html").write_text(page("Pharma Morning Brief", index_body, home_link=False, repo_url=repo_url), encoding="utf-8")
