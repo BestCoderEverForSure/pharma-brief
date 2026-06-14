@@ -166,7 +166,8 @@ def build_system_prompt(edition: str, engine_label: str = "DeepSeek") -> str:
              "- Output ONLY the finished digest in Markdown. No preamble.",
              "- FORMATTING: Markdown only. NEVER use raw HTML tags (no <small>, <br>, <sub>, etc.). Do NOT put emojis in the title, headings, or labels — keep it clean and editorial.",
              "- CITATIONS: when you use an article, cite it inline as [n] using its number from the provided article list. Do NOT write your own Sources section and do NOT invent URLs — a resolved, named Sources list is appended automatically from the article list.",
-             "- NEVER cite the methodology, watchlist, or catalysts files (no [catalysts.md], [watchlist.md], etc.) — they are guidance, not sources. The upcoming-catalysts section is added automatically; just write the analysis. Cite only the numbered articles.",
+             "- NEVER cite the methodology, watchlist, or catalysts files (no [catalysts.md], [watchlist.md], etc.) — they are guidance, not sources. Cite only the numbered articles.",
+             "- Do NOT write a 'Week Ahead' or catalysts section yourself — an 'Upcoming catalysts' list is appended automatically below your text. Just write the analysis.",
              "- FRESHNESS: each article is tagged NEW or 'previously covered'. Lead with NEW stories. Include a previously-covered story ONLY if these articles add a CONCRETE new fact — a new number, date, decision, or named result (not merely a fresh angle or restatement) — and when you do, prefix that item with 'Developing:'. Otherwise leave it out. Never rehash old news as if it were breaking.",
              "- ANALYSIS DEPTH (this is what makes the brief worth reading): each Top Story's 'What it means' must deliver the NON-OBVIOUS so-what — the second-order implication, who specifically gains or loses, what it shifts competitively, or what to watch next. NEVER just restate what happened in different words. Be concrete: name the rivals, the dollar figures, the dates. Ban filler like 'addresses an unmet need', 'a significant development', or 'expands treatment options' UNLESS you immediately say why it matters and to whom.",
              "- TALKING POINT: a sharp, non-obvious thesis a smart reader could NOT get from the headlines alone — a connection ACROSS stories, a contrarian read, or the real stakes underneath. One crisp sentence. Not a summary of the day's events.",
@@ -284,6 +285,10 @@ def finalize(digest: str, items: list[dict], engine_label: str, model: str) -> s
     # the model sometimes appends — they are guidance, not sources. The negative lookahead
     # leaves any real "[label.md](url)" link untouched.
     digest = re.sub(r"\s*\[[^\[\]]*\.md\](?!\()", "", digest, flags=re.I)
+    # 1c. Drop any "Week Ahead" section the model still writes — the Upcoming-catalysts list
+    # is appended automatically (site + email), so an inline one is redundant and was
+    # rendering as an empty "-". Remove from its heading up to the next section/rule.
+    digest = re.sub(r"\n#{1,3}\s*Week Ahead\b.*?(?=\n#{1,3}\s|\n---|\Z)", "\n", digest, flags=re.S | re.I)
     # 2. Normalise the engine label in the subtitle (or inject it after the title).
     if re.search(r"Engine:", digest):
         digest = re.sub(r"Engine:\s*[^·\n]*", f"Engine: {engine_label} ({model}) ", digest)

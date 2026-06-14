@@ -406,8 +406,13 @@ def render_market(data: list[dict], anchors: dict | None = None) -> str:
     data = sorted(data, key=lambda x: x["pct"], reverse=True)
     rows = []
     for x in data:
-        cls = "up" if x["pct"] >= 0 else "down"
-        sign = "+" if x["pct"] >= 0 else ""
+        # Green up, red down, neutral for ~flat (rounds to 0.0%).
+        if round(x["pct"], 1) == 0:
+            cls, sign = "flat", ""
+        elif x["pct"] > 0:
+            cls, sign = "up", "+"
+        else:
+            cls, sign = "down", ""
         rows.append(
             "<tr>"
             f'<td class="mkt-name">{html.escape(x["name"])} <span class="tkr">{x["t"]}</span></td>'
@@ -769,7 +774,7 @@ code{font-family:var(--mono);font-size:.82em;color:var(--accent);background:tran
 .tkr{font-family:var(--mono);color:var(--muted);font-size:11px}
 .mkt-last{text-align:right;font-family:var(--mono);font-size:12.5px;color:var(--muted);white-space:nowrap}
 .mkt-pct{text-align:right;font-family:var(--mono);font-size:12.5px;white-space:nowrap;padding-left:16px}
-.mkt-pct.up{color:var(--up)}.mkt-pct.down{color:var(--down)}
+.mkt-pct.up{color:var(--up)}.mkt-pct.down{color:var(--down)}.mkt-pct.flat{color:var(--muted)}
 
 /* catalysts (clean grouped table — matches the email) */
 .cat-wrap{margin-top:2px}

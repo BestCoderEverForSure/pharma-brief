@@ -78,9 +78,9 @@ Produce a short **Eli Lilly Spotlight** block: Lilly's own news plus the most im
 
 Scan major global news (politics, economics, geopolitics, tech, health policy) for anything with **implications for pharma** that isn't itself a pharma story — e.g. elections, trade/tariffs, currency moves, conflicts affecting supply chains, big tech moves into health. Include only if there's a real, non-obvious implication. 1-3 items.
 
-## Step 3.5 — Week Ahead (catalyst calendar)
+## Step 3.5 — Keep the catalyst calendar current
 
-Surface the forward-looking catalysts due in the **next ~7 days**: read `pharma-news/catalysts.md`, refresh/extend it with live search (upcoming regulatory decisions — **FDA PDUFA dates AND EMA/CHMP opinions & European Commission decisions, plus MHRA/PMDA where relevant** — earnings, key data readouts, conferences), and list what's imminent. If you discover material new catalysts, **append them to `pharma-news/catalysts.md`** so the calendar stays current. If nothing notable is due this week, name the next big one on the horizon instead.
+Maintain `pharma-news/catalysts.md`: refresh/extend it with live search (upcoming regulatory decisions — **FDA PDUFA dates AND EMA/CHMP opinions & European Commission decisions, plus MHRA/PMDA where relevant** — earnings, key data readouts, conferences). If you discover material new dated catalysts, **append them to `pharma-news/catalysts.md`** so the calendar stays current. Do NOT write a "Week Ahead" section in the digest body — an **Upcoming catalysts** list is generated automatically from `catalysts.md` and shown on the website and in the email.
 
 ## Step 3.6 — Earnings-day mode (auto)
 

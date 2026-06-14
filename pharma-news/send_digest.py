@@ -84,9 +84,14 @@ def render_market_email(md: str) -> str:
     mono = "ui-monospace,Menlo,Consolas,monospace"
     rows = []
     for x in data:
-        up = x["pct"] >= 0
-        color = "#2f6f4f" if up else "#9c3b3b"   # legible green/red on white, mail-safe
-        sign = "+" if up else ""
+        # Green up, red down, neutral grey for ~flat (rounds to 0.0%). Grey rather than
+        # literal white, which would be invisible on the email's white background.
+        if round(x["pct"], 1) == 0:
+            color, sign = "#8a8a8a", ""
+        elif x["pct"] > 0:
+            color, sign = "#2f6f4f", "+"
+        else:
+            color, sign = "#9c3b3b", ""
         rows.append(
             "<tr>"
             f'<td style="padding:6px 0;font-size:14px;border-bottom:1px solid #ececec">'
