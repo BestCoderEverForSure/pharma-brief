@@ -14,10 +14,20 @@ dlg(){  osascript -e "display dialog \"$1\" buttons {\"OK\"} default button \"OK
 ask(){  osascript -e "text returned of (display dialog \"$1\" default answer \"$2\" with title \"Pharma Command Centre\")" 2>/dev/null; }
 menu(){ local p="$1"; shift; local l=""; for it in "$@"; do l="$l,\"$it\""; done; osascript -e "choose from list {${l#,}} with prompt \"$p\"" 2>/dev/null; }
 
-pick_window(){ local w; w=$(menu "Time window?" "Today (last 24h)" "This week (7 days)" "This month (30 days)")
-  case "$w" in ""|false) return 1;; *week*) HOURS=168;; *month*) HOURS=720;; *) HOURS=24;; esac; }
-pick_edition(){ local e; e=$(menu "Edition?" "Morning (2-3 min)" "Evening (5-8 min + deep dive)")
-  case "$e" in ""|false) return 1;; *Evening*) EDITION=evening;; *) EDITION=morning;; esac; }
+pick_kind(){ local k; k=$(menu "What kind of brief?" \
+    "Daily brief (last 24h)" \
+    "Evening deep-dive (last 24h)" \
+    "Week in Review (last 7 days, retrospective)" \
+    "Week Ahead (forward look at the coming week)" \
+    "Last 30 days (daily style)")
+  case "$k" in
+    ""|false) return 1;;
+    "Daily brief"*)       HOURS=24;  EDITION=morning; MODE=daily;;
+    "Evening deep-dive"*) HOURS=24;  EDITION=evening; MODE=daily;;
+    "Week in Review"*)    HOURS=168; EDITION=evening; MODE=review;;
+    "Week Ahead"*)        HOURS=168; EDITION=evening; MODE=ahead;;
+    "Last 30 days"*)      HOURS=720; EDITION=morning; MODE=daily;;
+  esac; }
 wf_state(){ gh api "repos/$REPO/actions/workflows" --jq ".workflows[]|select(.path==\".github/workflows/$WF\")|.state" 2>/dev/null; }
 recips(){ grep '^EMAIL_TO=' "$S" 2>/dev/null | cut -d= -f2-; }
 set_recips(){ perl -i -pe "s|^EMAIL_TO=.*|EMAIL_TO=$1|" "$S"; [ -n "$REPO" ] && gh secret set EMAIL_TO --body "$1" -R "$REPO" >/dev/null 2>&1; }
@@ -27,11 +37,11 @@ status_line(){ echo "Engine: $(engine_name)      Daily send: $(sched)"; }
 
 # ---- actions ----
 act_generate(){
-  pick_window || return; pick_edition || return
+  pick_kind || return
   local em; em=$(osascript -e 'button returned of (display dialog "Also email it to the subscriber list?" buttons {"No, just the website","Yes, email it"} default button "Yes, email it" with title "Pharma Command Centre")' 2>/dev/null)
   local f=""; [ "$em" = "Yes, email it" ] && f="--email"
-  echo "Generating a $EDITION digest for the last ${HOURS}h..."
-  if python3 deepseek/run_digest.py --hours "$HOURS" --edition "$EDITION" $f; then
+  echo "Generating a $MODE/$EDITION digest for the last ${HOURS}h..."
+  if python3 deepseek/run_digest.py --hours "$HOURS" --edition "$EDITION" --mode "$MODE" $f; then
     local a; a=$(osascript -e 'button returned of (display dialog "✅ Done — digest generated and website updated." buttons {"Close","Open website"} default button "Open website" with title "Pharma Command Centre")' 2>/dev/null)
     [ "$a" = "Open website" ] && open "$DIR/site/public/index.html"
   else dlg "Something went wrong — see the Terminal text above."; fi
@@ -55,8 +65,8 @@ act_cloud(){
     "Daily auto-send: turn ON or OFF" \
     "Status & last run")
   case "$c" in
-    "Send today"*) pick_window || return; pick_edition || return
-       gh workflow run "$WF" -f hours="$HOURS" -f edition="$EDITION" >/dev/null 2>&1 \
+    "Send today"*) pick_kind || return
+       gh workflow run "$WF" -f hours="$HOURS" -f edition="$EDITION" -f mode="$MODE" >/dev/null 2>&1 \
          && dlg "☁️ Cloud run started — email, Telegram, and the online website update in ~1–2 minutes." || dlg "Couldn't start the cloud run." ;;
     "Set the daily"*) act_schedule ;;
     "Daily auto-send"*) local st; st=$(wf_state); local cur="unknown"; [ "$st" = active ] && cur=ON; [ "$st" = disabled_manually ] && cur=OFF
