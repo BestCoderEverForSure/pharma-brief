@@ -139,9 +139,11 @@ python3 deepseek/run_digest.py --engine deepseek     # force a specific engine f
 
 ## 8b. Website & cloud
 
-**Website (local):** `python3 site/build_site.py` renders every digest into a styled, browsable site at `site/public/index.html` - with an archive grid (engine badges) and a visual **catalyst timeline**. Both engines rebuild it automatically after each run. Open `index.html` in any browser.
+**Website (local):** `python3 site/build_site.py` renders every digest into a styled, browsable site at `site/public/index.html` - with an archive grid (engine badges), a visual **catalyst timeline**, and a markets strip whose %-move matches each brief's window (daily ~5-day, weekly ~7-day). It also emits a subscribe-able **RSS feed** (`feed.xml`, auto-discovered by feed readers); the archive index caps at the 30 most recent and links to a full `archive.html`. Both engines rebuild it automatically after each run. Open `index.html` in any browser.
 
 **Tests:** `python3 -m unittest discover -s tests -t tests` runs the stdlib unit-test suite (offline, no keys) over the digest, website, email, and Telegram helpers. A `Tests` GitHub workflow runs them automatically on every push/PR, so a code regression is caught before it can reach the morning send. See [`tests/README.md`](tests/README.md).
+
+**Reliability:** two small guardian workflows back the daily run - **Heartbeat** (`heartbeat.yml`, daily) fails and emails you if no digest has been archived in >2 days (catching a *silently* stalled schedule), and **Re-time** (`retime.yml`, weekly) re-pins the UTC cron to your local send time across daylight-saving changes.
 
 **Cloud (GitHub Actions + Pages):** [`.github/workflows/pharma-digest.yml`](.github/workflows/pharma-digest.yml) runs the DeepSeek digest daily at 07:00 Rome, emails it, archives it, and publishes the website to **GitHub Pages** - all without your laptop. To go live:
 1. Push this project to a (private) GitHub repo.
