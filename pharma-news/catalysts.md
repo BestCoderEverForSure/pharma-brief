@@ -28,3 +28,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 
 ## Auto-detected (from recent briefs)
 - **2026-06-17** · Concord Biotech virtual analyst meet (auto-detected 2026-06-14)
+- **2026-07-01** · India policy decision on customs duty cuts extension (auto-detected 2026-06-14)
+- **2026-07-31** · Q2 2026 earnings season begins (auto-detected 2026-06-14)
+- **2026-08-12** · European Commission decision on Vislyfa (ranibizumab biosimilar) approval (auto-detected 2026-06-14)
