@@ -222,7 +222,14 @@ def md_inline(text: str) -> str:
     # Tolerate a stray space in links the model sometimes writes as "[text] (https://…)";
     # collapse it only before a URL so citations like "[1] (a note)" stay plain text.
     text = re.sub(r"\]\s+\((?=https?://)", "](", text)
-    text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', text)
+    # Positively mark the minority of DIRECT publisher links with a ✓ (the rest go via the
+    # Google News aggregator and can redirect) — matches the website, low-noise.
+    def _emlink(m):
+        label, url = m.group(1), m.group(2)
+        mark = ('<span style="color:#466362;font-size:.8em" title="Direct link to the publisher"> ✓</span>'
+                if "news.google.com" not in url else "")
+        return f'<a href="{url}">{label}</a>{mark}'
+    text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", _emlink, text)
     text = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", text)
     text = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"<em>\1</em>", text)
     # Make bare [n] citation markers clickable, linking to their source.
