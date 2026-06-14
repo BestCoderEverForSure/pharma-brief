@@ -22,6 +22,11 @@ on:
         default: "morning"
         type: choice
         options: [morning, evening]
+      mode:
+        description: "Mode (daily brief / Sat week-in-review / Sun week-ahead)"
+        default: "daily"
+        type: choice
+        options: [daily, review, ahead]
 
 permissions:
   contents: write      # commit the archived digest back
@@ -61,13 +66,14 @@ jobs:
           #   Mon–Fri = tight daily brief · Saturday = Week in Review (7d) · Sunday = Week Ahead.
           HOURS="${{ github.event.inputs.hours }}"
           EDITION="${{ github.event.inputs.edition }}"
-          MODE="daily"
+          MODE="${{ github.event.inputs.mode }}"
           if [ -z "$HOURS" ]; then
             DOW="$(date -u +%u)"   # 1=Mon … 6=Sat, 7=Sun
             if [ "$DOW" = "6" ]; then HOURS=168; EDITION=evening; MODE=review
             elif [ "$DOW" = "7" ]; then HOURS=168; EDITION=evening; MODE=ahead
             else HOURS=24; EDITION=morning; MODE=daily; fi
           fi
+          [ -z "$MODE" ] && MODE=daily
           python3 deepseek/run_digest.py --email --telegram --hours "$HOURS" --edition "$EDITION" --mode "$MODE"
 
       - name: Archive the digest back to the repo
