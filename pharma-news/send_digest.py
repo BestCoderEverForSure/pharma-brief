@@ -287,9 +287,9 @@ def published_stamp() -> str:
     try:
         from zoneinfo import ZoneInfo
         now = datetime.datetime.now(ZoneInfo("Europe/Rome"))
-        when = now.strftime("%b %d, %Y · %H:%M %Z")
+        when = now.strftime("%a, %b %d, %Y · %H:%M %Z")
     except Exception:
-        when = datetime.datetime.now().strftime("%b %d, %Y · %H:%M")
+        when = datetime.datetime.now().strftime("%a, %b %d, %Y · %H:%M")
     return (f'<p style="font-family:ui-monospace,Menlo,monospace;font-size:12px;color:#7c7a70;'
             f'margin:2px 0 14px">Published {when} <span style="opacity:.7">'
             f'(Rome time)</span></p>')

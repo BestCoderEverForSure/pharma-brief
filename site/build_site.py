@@ -565,7 +565,7 @@ SETTINGS_JS = """(function(){
   [].forEach.call(document.querySelectorAll('time[data-utc]'),function(t){
     var d=new Date(t.getAttribute('data-utc'));
     if(isNaN(d.getTime()))return;
-    try{t.textContent=d.toLocaleString(undefined,{dateStyle:'medium',timeStyle:'short'});}
+    try{t.textContent=d.toLocaleString(undefined,{weekday:'short',day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});}
     catch(e){t.textContent=d.toLocaleString();}
   });
 })();"""
