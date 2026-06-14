@@ -63,9 +63,12 @@ _SRCMAP: dict = {}
 
 def _mk_link(m):
     label, url = m.group(1), m.group(2)
-    gnews = "news.google.com" in url
-    cls = "src gnews" if gnews else "src"
-    title = ' title="Opens via the Google News aggregator — may redirect or be region-blocked"' if gnews else ""
+    # Most links come via the Google News aggregator (can redirect / be region-blocked).
+    # Rather than flag the ~95% majority, positively mark the minority of DIRECT publisher
+    # links with a ✓ — a low-noise "this opens reliably" cue.
+    direct = url.startswith(("http://", "https://")) and "news.google.com" not in url
+    cls = "src direct" if direct else "src"
+    title = ' title="Direct link to the publisher"' if direct else ""
     return f'<a href="{url}" target="_blank" rel="noopener" class="{cls}"{title}>{label}</a>'
 
 
@@ -82,16 +85,9 @@ def md_inline(text: str) -> str:
     text = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"<em>\1</em>", text)
     text = re.sub(r"`([^`]+)`", r"<code>\1</code>", text)
     if _SRCMAP:
-        def _cite(m):
-            n = m.group(1)
-            if n not in _SRCMAP:
-                return m.group(0)
-            url = _SRCMAP[n]
-            # Mark aggregator (Google News redirect) citations with the ↗ flag too — those
-            # are the ones that can open a blank/region-blocked page.
-            cls = "cite gnews" if "news.google.com" in url else "cite"
-            return f'<a class="{cls}" href="{url}" target="_blank" rel="noopener">[{n}]</a>'
-        text = re.sub(r"\[(\d+)\]", _cite, text)
+        text = re.sub(r"\[(\d+)\]", lambda m: (
+            f'<a class="cite" href="{_SRCMAP[m.group(1)]}" target="_blank" rel="noopener">[{m.group(1)}]</a>'
+            if m.group(1) in _SRCMAP else m.group(0)), text)
     return text
 
 
@@ -709,7 +705,8 @@ h1 a,h2 a,h3 a,h1 a:visited,h2 a:visited,h3 a:visited{color:inherit !important;b
 h1 a:hover,h2 a:hover,h3 a:hover{text-decoration:underline;text-underline-offset:4px;text-decoration-thickness:1px}
 /* visited source links fade; aggregator (redirect-prone) links get a marker */
 a.src:visited{color:var(--muted)}
-a.gnews::after{content:"↗";font-size:.72em;color:var(--muted);margin-left:1px;vertical-align:super}
+/* positively mark the minority of DIRECT publisher links (the rest go via Google News) */
+a.src.direct::after{content:"✓";font-size:.7em;color:var(--accent);margin-left:2px;vertical-align:super}
 h2.major a,h3.major a,h2.major,h3.major{color:var(--major) !important}
 .major-tag{font-family:var(--mono);text-transform:uppercase;letter-spacing:.16em;font-size:10px;color:var(--major);margin:0 0 5px}
 a.cite{border-bottom:none;color:var(--accent);font-weight:600;font-size:.82em;padding:0 1px}
