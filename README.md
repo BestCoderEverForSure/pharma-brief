@@ -79,7 +79,7 @@ The morning run can email you the digest. It uses **Resend** with a **send-only*
 3. Paste it into `secrets.env` over `PASTE_YOUR_RESEND_KEY_HERE`. Save.
 4. Test: `python3 pharma-news/send_digest.py` → expect `Sent ✓`.
 
-- **Test mode** only sends to your own signup address. To send to your personal email or a custom "from," verify a domain in Resend and update `EMAIL_FROM`.
+- **Test mode** only sends to your own signup address. To send to a different address or a custom "from," verify a domain in Resend and update `EMAIL_FROM`.
 - The send script lives at [`pharma-news/send_digest.py`](pharma-news/send_digest.py) (standard library only).
 
 ---
