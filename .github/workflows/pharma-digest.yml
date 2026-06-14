@@ -46,7 +46,7 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Generate and email the digest
+      - name: Generate the digest (delivery happens later)
         env:
           # Engine switch: a repo Variable (Settings → Variables), gemini|deepseek.
           # Unset → Gemini when GEMINI_API_KEY is present, else DeepSeek.
@@ -55,19 +55,16 @@ jobs:
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
           DEEPSEEK_MODEL: ${{ secrets.DEEPSEEK_MODEL }}
-          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
-          EMAIL_TO: ${{ secrets.EMAIL_TO }}
-          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
-          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
-          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          SITE_URL: ${{ secrets.SITE_URL }}
           # Manual-run picks (empty on a scheduled run). --auto reads these; if IN_HOURS is
           # empty it derives the window/edition/mode from today's UTC weekday instead.
           # All that scheduling logic lives in run_digest.py (auto_schedule), not in shell.
           IN_HOURS: ${{ github.event.inputs.hours }}
           IN_EDITION: ${{ github.event.inputs.edition }}
           IN_MODE: ${{ github.event.inputs.mode }}
-        run: python3 deepseek/run_digest.py --email --telegram --auto
+        # Generate + ground-check + finalize + build the site, but DON'T email/Telegram
+        # yet. Delivery is a separate step AFTER archive + publish below, so a delivery
+        # outage can never cost the day's archived digest or the published website.
+        run: python3 deepseek/run_digest.py --auto
 
       - name: Archive the digest back to the repo
         run: |
@@ -94,3 +91,21 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deploy
         uses: actions/deploy-pages@v4
+
+      - name: Deliver (email + Telegram)
+        # LAST on purpose: by here the brief is already archived to the repo AND published
+        # to Pages, so even a sustained Resend/Telegram outage can't lose the day's digest.
+        # Both senders run; the step (and job) fails if EITHER failed, so GitHub still
+        # emails you about a delivery problem — just without sacrificing archive/publish.
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+          EMAIL_FROM: ${{ secrets.EMAIL_FROM }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
+          SITE_URL: ${{ secrets.SITE_URL }}
+        run: |
+          rc=0
+          python3 pharma-news/send_digest.py   || rc=1
+          python3 pharma-news/send_telegram.py || rc=1
+          exit $rc
