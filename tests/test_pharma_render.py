@@ -56,7 +56,40 @@ class TestCatalystDate(unittest.TestCase):
         self.assertIsNone(pr.catalyst_date("sometime this fall"))
 
 
+class TestShortLabel(unittest.TestCase):
+    def test_drops_unclosed_paren_from_semicolon_split(self):
+        # ';' sits INSIDE the parenthetical, so the naive split kept '(' without ')'.
+        s = pr._short_label("Q2 2026 earnings season (Lilly reports early Aug; Novo, Pfizer too).")
+        self.assertEqual(s, "Q2 2026 earnings season")
+        self.assertEqual(s.count("("), s.count(")"))     # balanced
+
+    def test_word_boundary_truncation_no_midword_no_unbalanced(self):
+        long = ("100% branded-pharma tariff takes effect for large firms (0% for MFN + "
+                "onshoring signatories). Major supply-chain and pricing catalyst.")
+        s = pr._short_label(long)
+        self.assertTrue(s.endswith("…"))
+        self.assertFalse(s.rstrip("…").endswith("-"))    # no mid-word hyphen cut
+        self.assertEqual(s.count("("), s.count(")"))      # parens balanced
+        self.assertLessEqual(len(s), 112)
+
+    def test_short_desc_unchanged(self):
+        self.assertEqual(pr._short_label("Tebipenem HBr (Spero/GSK) - FDA decision expected"),
+                         "Tebipenem HBr (Spero/GSK) - FDA decision expected")
+
+
 class TestParseCatalysts(unittest.TestCase):
+    def test_strips_auto_detected_tag(self):
+        tmp = tempfile.TemporaryDirectory()
+        path = Path(tmp.name) / "catalysts.md"
+        path.write_text("- **2026-06-17** · Concord Biotech analyst meet (auto-detected 2026-06-14)\n",
+                        encoding="utf-8")
+        try:
+            events = pr.parse_catalysts(path)
+        finally:
+            tmp.cleanup()
+        self.assertEqual(events[0]["label"], "Concord Biotech analyst meet")
+        self.assertNotIn("auto-detected", events[0]["full"])
+
     def test_iso_month_year_and_fields(self):
         tmp = tempfile.TemporaryDirectory()
         path = Path(tmp.name) / "catalysts.md"

@@ -94,10 +94,24 @@ def catalyst_date(datestr: str):
     return None
 
 
+def _short_label(desc: str, cap: int = 110) -> str:
+    """A tidy one-line catalyst label: the first clause (up to ';'), capped at a WORD
+    boundary, with any parenthesis left dangling by the split or the cap dropped — so it
+    never ends mid-word or with an unclosed '(' (e.g. a ';' inside a parenthetical)."""
+    short = re.split(r";\s", desc)[0].strip()
+    if short.count("(") > short.count(")"):              # ')' fell after the ';' split
+        short = short[:short.rfind("(")].rstrip(" ,;:-—–")
+    if len(short) > cap:                                 # word-boundary length cap
+        short = short[:cap].rsplit(" ", 1)[0].rstrip(" ,;:-—–") + "…"
+        if short.count("(") > short.count(")"):          # cap reopened a '(' -> drop it
+            short = short[:short.rfind("(")].rstrip(" ,;:-—–") + "…"
+    return short
+
+
 def parse_catalysts(path) -> list:
-    """Parse catalysts.md into sorted events: {date, label, full}. `label` is the short
-    form (clause up to the first ';', capped at 110 chars) for tidy rows; `full` is the
-    whole description (used for hover titles on the website)."""
+    """Parse catalysts.md into sorted events: {date, label, full}. `label` is the tidy
+    one-line form for rows; `full` is the whole description (hover title on the website).
+    The internal "(auto-detected …)" provenance tag is stripped from both."""
     if not path or not path.exists():
         return []
     events = []
@@ -105,13 +119,10 @@ def parse_catalysts(path) -> list:
         m = re.match(r"^- \*\*(.+?)\*\* · (.+)$", line.strip())
         if not m:
             continue
-        datestr, desc = m.group(1), m.group(2)
-        short = re.split(r";\s", desc)[0].strip()
-        if len(short) > 110:
-            short = short[:107].rstrip() + "…"
-        when = catalyst_date(datestr)
+        desc = re.sub(r"\s*\(auto-detected[^)]*\)\s*$", "", m.group(2)).strip()
+        when = catalyst_date(m.group(1))
         if when:
-            events.append({"date": when, "label": short, "full": desc})
+            events.append({"date": when, "label": _short_label(desc), "full": desc})
     return sorted(events, key=lambda e: e["date"])
 
 
