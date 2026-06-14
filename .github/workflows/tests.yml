@@ -1,0 +1,27 @@
+name: Tests
+
+# Runs the stdlib unit-test suite so a regression in the digest/site/email/Telegram
+# helpers is caught before it can reach the daily cloud run. Offline, no secrets,
+# finishes in seconds. Scoped to the code paths the tests actually cover, so the
+# daily digest-archive commit (which only touches digests/) doesn't trigger it.
+on:
+  push:
+    paths:
+      - "deepseek/**"
+      - "site/**"
+      - "pharma-news/**"
+      - "tests/**"
+      - ".github/workflows/tests.yml"
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run unit tests
+        run: python3 -m unittest discover -s tests -t tests -v
