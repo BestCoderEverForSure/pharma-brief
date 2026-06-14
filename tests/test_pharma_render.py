@@ -9,8 +9,10 @@ Run:  python3 -m unittest discover -s tests
 """
 
 import datetime as dt
+import json
 import tempfile
 import unittest
+from unittest import mock
 from pathlib import Path
 
 import fixtures as F
@@ -60,6 +62,37 @@ class TestParseCatalysts(unittest.TestCase):
 
     def test_missing_file_is_empty(self):
         self.assertEqual(pr.parse_catalysts(Path("/no/such/catalysts.md")), [])
+
+
+class _R:
+    """Stand-in for a Yahoo HTTP response (fetch_market calls .read() directly)."""
+    def __init__(self, body):
+        self._b = body
+    def read(self):
+        return self._b
+
+
+class TestFetchMarket(unittest.TestCase):
+    def _resp(self, closes):
+        return _R(json.dumps(
+            {"chart": {"result": [{"indicators": {"quote": [{"close": closes}]}}]}}).encode())
+
+    def test_parses_concurrently(self):
+        def fake_urlopen(req, timeout=15):
+            return self._resp([100.0, 110.0])   # +10%
+        with mock.patch.object(pr.urllib.request, "urlopen", fake_urlopen):
+            out = pr.fetch_market([("LLY", "Eli Lilly"), ("PFE", "Pfizer")], timeout=1)
+        self.assertEqual(len(out), 2)
+        self.assertTrue(all(round(x["pct"], 1) == 10.0 and x["last"] == 110.0 for x in out))
+
+    def test_skips_failures(self):
+        def fake_urlopen(req, timeout=15):
+            raise OSError("blocked")
+        with mock.patch.object(pr.urllib.request, "urlopen", fake_urlopen):
+            self.assertEqual(pr.fetch_market([("LLY", "Eli Lilly")]), [])
+
+    def test_empty_is_empty(self):
+        self.assertEqual(pr.fetch_market([]), [])
 
 
 class TestSelectTickers(unittest.TestCase):

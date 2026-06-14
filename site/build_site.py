@@ -12,10 +12,12 @@ Usage:  python3 site/build_site.py
 """
 
 import re
+import os
 import sys
 import json
 import html
 import datetime as dt
+from email.utils import format_datetime
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -348,6 +350,43 @@ def get_repo_url() -> str:
     return ""
 
 
+def pages_url(repo_url: str) -> str:
+    """Absolute base URL of the published site, for the RSS feed's links. SITE_URL env wins
+    (set in the workflow); otherwise derive the GitHub Pages URL from the repo
+    (https://github.com/OWNER/REPO -> https://owner.github.io/REPO/). "" if unknown."""
+    env = os.environ.get("SITE_URL", "").strip()
+    if env:
+        return env.rstrip("/") + "/"
+    m = re.match(r"https://github\.com/([^/]+)/([^/]+?)(?:\.git)?$", repo_url)
+    if m:
+        return f"https://{m.group(1).lower()}.github.io/{m.group(2)}/"
+    return ""
+
+
+def rss_feed(items: list, base_url: str, built: dt.datetime) -> str:
+    """RSS 2.0 from the most recent digests, so readers can subscribe. `items` are
+    {title, url, desc, dt} dicts (dt optional)."""
+    def esc(s: str) -> str:
+        return html.escape(s or "", quote=True)
+    parts = ['<?xml version="1.0" encoding="UTF-8"?>',
+             '<rss version="2.0"><channel>',
+             '<title>Pharma Morning Brief</title>',
+             f'<link>{esc(base_url)}</link>',
+             '<description>Balanced, fact-checked pharmaceutical-sector news — a 2–3 minute morning brief.</description>',
+             f'<lastBuildDate>{format_datetime(built)}</lastBuildDate>']
+    for it in items:
+        parts += ['<item>',
+                  f'<title>{esc(it["title"])}</title>',
+                  f'<link>{esc(it["url"])}</link>',
+                  f'<guid isPermaLink="true">{esc(it["url"])}</guid>']
+        if it.get("dt"):
+            parts.append(f'<pubDate>{format_datetime(it["dt"])}</pubDate>')
+        parts.append(f'<description>{esc(it["desc"])}</description>')
+        parts.append('</item>')
+    parts.append('</channel></rss>')
+    return "\n".join(parts)
+
+
 def page(title: str, body: str, home_link: bool = True, repo_url: str = "") -> str:
     base = "index.html" if home_link else ""
     nav = "".join(f'<a href="{base}#{i}">{n}</a>'
@@ -391,6 +430,7 @@ def page(title: str, body: str, home_link: bool = True, repo_url: str = "") -> s
 <title>{html.escape(title)}</title>
 {head_theme}
 <link rel="stylesheet" href="style.css">
+<link rel="alternate" type="application/rss+xml" title="Pharma Morning Brief" href="feed.xml">
 </head><body>{drawer}{topbar}<main>{inner}</main>{footer}
 <script src="settings.js"></script></body></html>"""
 
@@ -518,7 +558,8 @@ def build():
         return (f'<section class="block"><div class="block-label">Sources</div>'
                 f'<div class="block-body">{src_html}</div></section>') if src_html else ""
 
-    arch_items, search_index = [], []
+    base = pages_url(repo_url)
+    arch_items, search_index, feed_items = [], [], []
     for p in files:
         md = _dmy_title(p.read_text(encoding="utf-8"), p.stem)   # d/m/y title for every digest
         m = meta_of(md)
@@ -538,6 +579,15 @@ def build():
             f'<span class="arch-engine">{html.escape(engine)}</span></a>')
         search_index.append({"slug": slug, "date": p.stem, "title": html.escape(short_title),
                              "engine": html.escape(engine), "text": plain_text(md)[:4000]})
+        if len(feed_items) < 20 and base:        # newest 20 (files are sorted newest-first)
+            iso = pub.get(p.stem)
+            try:
+                when = (dt.datetime.fromisoformat(iso.replace("Z", "+00:00")) if iso
+                        else dt.datetime.strptime(p.stem, "%Y-%m-%d").replace(tzinfo=dt.timezone.utc))
+            except (ValueError, AttributeError):
+                when = None
+            feed_items.append({"title": short_title, "url": base + slug,
+                               "desc": plain_text(md)[:300], "dt": when})
 
     if files:
         slug0 = files[0].stem + ".html"
@@ -549,7 +599,21 @@ def build():
     else:
         latest_html = '<p class="muted">No digests yet.</p>'
         latest_src_section = ""
-    arch_html = "".join(arch_items) if arch_items else '<p class="muted">No digests yet.</p>'
+    # Archive: keep the index light — show the most recent ARCHIVE_ON_INDEX, and move the
+    # complete list to its own archive.html once it grows past that (no unbounded index page).
+    ARCHIVE_ON_INDEX = 30
+    if not arch_items:
+        index_arch = '<p class="muted">No digests yet.</p>'
+    elif len(arch_items) > ARCHIVE_ON_INDEX:
+        index_arch = ("".join(arch_items[:ARCHIVE_ON_INDEX])
+                      + f'<a class="arch-more" href="archive.html">'
+                        f'View the full archive ({len(arch_items)}) &rarr;</a>')
+        full_body = (f'<section class="block"><div class="block-label">Archive</div>'
+                     f'<div class="block-body"><div class="arch">{"".join(arch_items)}</div></div></section>')
+        (OUT / "archive.html").write_text(
+            page("Archive — Pharma Morning Brief", full_body, repo_url=repo_url), encoding="utf-8")
+    else:
+        index_arch = "".join(arch_items)
 
     index_body = f"""
 <div id="searchbar" class="searchbar" hidden><input id="q" type="search" placeholder="Search the archive..." autocomplete="off"></div>
@@ -567,13 +631,16 @@ def build():
 {catalysts_section}
 {market_block}
 {latest_src_section}
-<section class="block" id="archive"><div class="block-label">Archive</div><div class="block-body"><div class="arch">{arch_html}</div></div></section>
+<section class="block" id="archive"><div class="block-label">Archive</div><div class="block-body"><div class="arch">{index_arch}</div></div></section>
 <script src="search-data.js"></script><script src="search.js"></script>"""
     (OUT / "index.html").write_text(page("Pharma Morning Brief", index_body, home_link=False, repo_url=repo_url), encoding="utf-8")
     (OUT / "style.css").write_text(CSS, encoding="utf-8")
     (OUT / "search-data.js").write_text("window.DIGESTS=" + json.dumps(search_index) + ";", encoding="utf-8")
     (OUT / "search.js").write_text(SEARCH_JS, encoding="utf-8")
     (OUT / "settings.js").write_text(SETTINGS_JS, encoding="utf-8")
+    if base and feed_items:
+        (OUT / "feed.xml").write_text(
+            rss_feed(feed_items, base, dt.datetime.now(dt.timezone.utc)), encoding="utf-8")
     print(f"Site built ✓  ({len(files)} digests)  -> {OUT / 'index.html'}")
 
 
@@ -661,6 +728,8 @@ code{font-family:var(--mono);font-size:.82em;color:var(--accent);background:tran
 .arch-item{display:grid;grid-template-columns:118px 1fr auto;gap:18px;align-items:baseline;
  padding:15px 0;border-bottom:1px solid var(--line)}
 .arch-item:hover .arch-title{color:var(--accent)}
+.arch-more{display:inline-block;margin-top:18px;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.12em;color:var(--accent)}
+.arch-more:hover{text-decoration:underline;text-underline-offset:3px}
 .arch-date{font-family:var(--mono);font-size:11px;color:var(--muted);white-space:nowrap}
 .arch-title{font-family:var(--serif);font-size:19px;line-height:1.2}
 .arch-engine{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);white-space:nowrap}

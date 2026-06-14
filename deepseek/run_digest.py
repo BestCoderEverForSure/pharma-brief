@@ -284,6 +284,13 @@ def call_model(secrets: dict, system: str, user: str) -> str:
             last = e
             if delay == 8:
                 raise
+        except (ValueError, KeyError, IndexError, TypeError) as e:
+            # 200 OK but the body isn't the JSON shape we expect (truncated, an HTML error
+            # page, a changed schema). Treat as transient — retry, then fail with a clean
+            # error rather than an uncaught traceback mid-run.
+            last = RuntimeError(f"unexpected model response ({e})")
+            if delay == 8:
+                raise last
     raise last                               # exhausted retries
 
 

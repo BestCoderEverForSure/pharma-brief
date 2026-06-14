@@ -7,6 +7,7 @@ Run:  python3 -m unittest discover -s tests
 """
 
 import datetime as dt
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -145,6 +146,34 @@ class TestParseCatalysts(unittest.TestCase):
         self.assertEqual(events[0]["date"], dt.date(2026, 7, 1))
         self.assertEqual(events[0]["label"], "tirzepatide PDUFA")   # clause after ';' dropped
         self.assertEqual(events[1]["date"], dt.date(2026, 8, 15))   # month-only -> 15th
+
+
+class TestRssFeed(unittest.TestCase):
+    def setUp(self):
+        self._saved = os.environ.pop("SITE_URL", None)
+
+    def tearDown(self):
+        if self._saved is not None:
+            os.environ["SITE_URL"] = self._saved
+
+    def test_pages_url_derived_from_repo(self):
+        self.assertEqual(bs.pages_url("https://github.com/Owner/Repo"),
+                         "https://owner.github.io/Repo/")   # host lower-cased, repo kept
+
+    def test_pages_url_env_override_wins(self):
+        os.environ["SITE_URL"] = "https://example.com/site"
+        self.assertEqual(bs.pages_url("https://github.com/x/y"), "https://example.com/site/")
+
+    def test_rss_feed_structure_and_escaping(self):
+        items = [{"title": 'Brief <b> & "x"', "url": "https://s/2026-06-14.html",
+                  "desc": "desc & more", "dt": dt.datetime(2026, 6, 14, 5, tzinfo=dt.timezone.utc)}]
+        out = bs.rss_feed(items, "https://s/", dt.datetime(2026, 6, 14, 6, tzinfo=dt.timezone.utc))
+        self.assertIn('<rss version="2.0">', out)
+        self.assertIn("<item>", out)
+        self.assertIn("https://s/2026-06-14.html", out)
+        self.assertIn("&lt;b&gt;", out)     # title HTML-escaped
+        self.assertNotIn("<b>", out)         # no raw markup leaked into the XML
+        self.assertIn("<pubDate>", out)
 
 
 if __name__ == "__main__":

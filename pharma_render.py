@@ -15,6 +15,7 @@ import re
 import json
 import datetime as dt
 import urllib.request
+import concurrent.futures
 
 MONTHS = {m: i for i, m in enumerate(
     ["jan", "feb", "mar", "apr", "may", "jun",
@@ -137,20 +138,29 @@ def select_tickers(text: str) -> list:
     return tickers
 
 
+def _fetch_one(tn: tuple, timeout: int):
+    t, name = tn
+    try:
+        req = urllib.request.Request(
+            f"https://query1.finance.yahoo.com/v8/finance/chart/{t}?range=5d&interval=1d",
+            headers={"User-Agent": "Mozilla/5.0"})
+        d = json.loads(urllib.request.urlopen(req, timeout=timeout).read())
+        closes = [c for c in d["chart"]["result"][0]["indicators"]["quote"][0]["close"] if c]
+        if len(closes) >= 2:
+            return {"t": t, "name": name,
+                    "pct": (closes[-1] / closes[0] - 1) * 100, "last": closes[-1]}
+    except Exception:
+        return None
+    return None
+
+
 def fetch_market(tickers: list, timeout: int = 15) -> list:
-    """5-day % move + last close for each ticker via Yahoo Finance. Skips any ticker that
-    errors (so a flaky/blocked endpoint never breaks the caller); returns [] if all fail."""
-    out = []
-    for t, name in tickers:
-        try:
-            req = urllib.request.Request(
-                f"https://query1.finance.yahoo.com/v8/finance/chart/{t}?range=5d&interval=1d",
-                headers={"User-Agent": "Mozilla/5.0"})
-            d = json.loads(urllib.request.urlopen(req, timeout=timeout).read())
-            closes = [c for c in d["chart"]["result"][0]["indicators"]["quote"][0]["close"] if c]
-            if len(closes) >= 2:
-                out.append({"t": t, "name": name,
-                            "pct": (closes[-1] / closes[0] - 1) * 100, "last": closes[-1]})
-        except Exception:
-            continue
-    return out
+    """5-day % move + last close for each ticker via Yahoo Finance, fetched CONCURRENTLY
+    (I/O-bound) so ~10-24 tickers don't run serially. Skips any ticker that errors (a flaky/
+    blocked endpoint never breaks the caller); returns [] if all fail. Order is not
+    significant — render_market sorts by % move."""
+    if not tickers:
+        return []
+    with concurrent.futures.ThreadPoolExecutor(max_workers=min(8, len(tickers))) as ex:
+        results = ex.map(lambda tn: _fetch_one(tn, timeout), tickers)
+    return [r for r in results if r]
