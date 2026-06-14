@@ -281,7 +281,11 @@ def parse_catalysts() -> list[dict]:
         if not m:
             continue
         datestr, desc = m.group(1), m.group(2)
-        short = re.split(r" — ", desc)[0].strip()
+        # Keep the explanatory clause (up to the first ';'), not just the drug name, so a
+        # reader knows WHAT the event is — capped so rows stay tidy.
+        short = re.split(r";\s", desc)[0].strip()
+        if len(short) > 110:
+            short = short[:107].rstrip() + "…"
         when = None
         iso = re.search(r"(\d{4})-(\d{2})-(\d{2})", datestr)
         if iso:
@@ -582,13 +586,35 @@ def build():
     files = sorted([p for p in DIGESTS.glob("*.md") if p.stem != "INDEX"], reverse=True)
     pub = load_published()
 
+    # Catalysts + markets — computed once, shown on the index AND appended to every digest
+    # page (so the "read full brief" link is complete, not just the home page).
+    events = parse_catalysts()
+    timeline = render_timeline(events)
+    catalysts_section = (
+        '<section class="block" id="upcoming"><div class="block-label">Catalysts</div><div class="block-body">'
+        '<p class="meta">Dates to watch &mdash; scheduled events that can move the sector: regulatory decisions, '
+        'trial readouts, earnings, and major conferences.</p>' + timeline + "</div></section>")
+    latest_md = files[0].read_text(encoding="utf-8") if files else ""
+    _dt = plain_text(latest_md).lower()
+    tickers, have = list(MARKET_TICKERS), {t for t, _ in MARKET_TICKERS}
+    for kw, (tk, nm) in EXTRA_TICKERS.items():
+        if kw in _dt and tk not in have:
+            tickers.append((tk, nm)); have.add(tk)
+    market_html = render_market(fetch_market(tickers))
+    market_block = (
+        '<section class="block" id="markets"><div class="block-label">Markets</div><div class="block-body">'
+        + market_html + '<p class="meta">Source: Yahoo Finance, end-of-day prices (5-day change). Not investment advice.</p>'
+        + "</div></section>"
+    ) if market_html else ""
+    page_extras = catalysts_section + market_block      # appended to each digest page
+
     arch_items, search_index = [], []
     for p in files:
         md = p.read_text(encoding="utf-8")
         m = meta_of(md)
         slug = p.stem + ".html"
         (OUT / slug).write_text(
-            page(m["title"], with_published(render_digest(md), p.stem, pub.get(p.stem)), repo_url=repo_url),
+            page(m["title"], with_published(render_digest(md), p.stem, pub.get(p.stem)) + page_extras, repo_url=repo_url),
             encoding="utf-8")
         engine = m["engine"]
         short_title = m["title"].split("—")[-1].strip()
@@ -599,25 +625,8 @@ def build():
         search_index.append({"slug": slug, "date": p.stem, "title": html.escape(short_title),
                              "engine": html.escape(engine), "text": plain_text(md)[:4000]})
 
-    events = parse_catalysts()
-    timeline = render_timeline(events)
-    latest_md = files[0].read_text(encoding="utf-8") if files else ""
     latest_html = (with_published(render_digest(latest_md), files[0].stem, pub.get(files[0].stem))
                    if files else '<p class="muted">No digests yet.</p>')
-    _key = {"LLY": "lilly", "NVO": "novo", "PFE": "pfizer", "AZN": "astrazeneca", "MRK": "merck",
-            "NVS": "novartis", "GSK": "gsk", "AMGN": "amgen", "ABBV": "abbvie", "JNJ": "j&j"}
-    _dt = plain_text(latest_md).lower()
-    tickers, have, full_key = list(MARKET_TICKERS), {t for t, _ in MARKET_TICKERS}, dict(_key)
-    for kw, (tk, nm) in EXTRA_TICKERS.items():
-        if kw in _dt and tk not in have:
-            tickers.append((tk, nm)); have.add(tk); full_key[tk] = kw
-    anchors = company_anchors(renumber_sources(latest_md), full_key)
-    market_html = render_market(fetch_market(tickers), anchors)
-    market_block = (
-        '<section class="block" id="markets"><div class="block-label">Markets</div><div class="block-body">'
-        + market_html + '<p class="meta">Source: Yahoo Finance, end-of-day prices. Not investment advice.</p>'
-        + "</div></section>"
-    ) if market_html else ""
     arch_html = "".join(arch_items) if arch_items else '<p class="muted">No digests yet.</p>'
 
     index_body = f"""
@@ -629,10 +638,7 @@ def build():
 </header>
 <div id="results" style="display:none"></div>
 <section class="block" id="latest"><div class="block-label">Latest</div><div class="block-body">{latest_html}</div></section>
-<section class="block" id="upcoming"><div class="block-label">Catalysts</div><div class="block-body">
-  <p class="meta">Dates to watch &mdash; scheduled events that can move the sector: regulatory decisions, trial readouts, earnings, and major conferences.</p>
-  {timeline}
-</div></section>
+{catalysts_section}
 {market_block}
 <section class="block" id="archive"><div class="block-label">Archive</div><div class="block-body"><div class="arch">{arch_html}</div></div></section>
 <section class="block" id="about"><div class="block-label">About</div><div class="block-body">

@@ -127,7 +127,11 @@ def _parse_catalysts() -> list:
         if not m:
             continue
         datestr, desc = m.group(1), m.group(2)
-        short = re.split(r" — | - ", desc)[0].strip()
+        # Keep the explanatory clause (up to the first ';'), not just the drug name, so a
+        # reader knows WHAT the event is — capped so rows stay tidy.
+        short = re.split(r";\s", desc)[0].strip()
+        if len(short) > 110:
+            short = short[:107].rstrip() + "…"
         when = None
         iso = re.search(r"(\d{4})-(\d{2})-(\d{2})", datestr)
         if iso:
@@ -383,6 +387,8 @@ def email_html(md: str) -> str:
     Sources list LAST (moved out of the body to the very end, below markets)."""
     idx = md.find("\n## Sources")
     body_md, sources_md = (md[:idx], md[idx + 1:]) if idx != -1 else (md, "")
+    # Drop a trailing rule so we don't get a double horizontal line before catalysts.
+    body_md = re.sub(r"\n+---\s*$", "", body_md)
     extra = render_catalysts_email() + render_market_email(md)
     if sources_md.strip():
         extra += _md_fragment(sources_md)
