@@ -170,6 +170,8 @@ def render_catalysts_email() -> str:
              f'<p style="font-family:{mono};font-size:12px;color:#7c7a70;margin:-2px 0 12px">'
              "Dates to watch — scheduled events that can move the sector: regulatory decisions, "
              "trial readouts, earnings, and major conferences.</p>"]
+    rows_total = sum(len(groups[g]) for g in (0, 1, 2))
+    rendered = 0
     for gi in (0, 1, 2):
         if not groups[gi]:
             continue
@@ -177,12 +179,16 @@ def render_catalysts_email() -> str:
                      f'font-size:11px;color:#8b635c;margin:16px 0 4px">{labels[gi]}</p>')
         parts.append('<table style="width:100%;border-collapse:collapse" cellpadding="0" cellspacing="0">')
         for e in groups[gi]:
+            rendered += 1
+            # No border under the very last row — otherwise it doubles up with the Markets
+            # section's rule below and reads as an empty band.
+            bb = "" if rendered == rows_total else "border-bottom:1px solid #ececec"
             d = e["date"].strftime("%b %d, %Y")
             parts.append(
                 "<tr>"
                 f'<td style="padding:5px 12px 5px 0;font-size:12px;color:#8a8a8a;font-family:{mono};'
-                f'white-space:nowrap;vertical-align:top;border-bottom:1px solid #ececec">{d}</td>'
-                f'<td style="padding:5px 0;font-size:14px;border-bottom:1px solid #ececec">'
+                f'white-space:nowrap;vertical-align:top;{bb}">{d}</td>'
+                f'<td style="padding:5px 0;font-size:14px;{bb}">'
                 f'{_html.escape(e["label"])}</td>'
                 "</tr>")
         parts.append("</table>")
