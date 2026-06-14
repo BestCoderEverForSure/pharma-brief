@@ -169,6 +169,15 @@ class TestMergeCatalysts(unittest.TestCase):
             [(dt.date(2026, 8, 1), "tirzepatide PDUFA")], today)
         self.assertEqual(added, 0)   # shares the specific token "tirzepatide" on the same day
 
+    def test_dedups_curated_month_only_against_auto_iso(self):
+        # Regression: a curated month-only "Sep 2026" conference and an auto-detected
+        # "2026-09-15" both resolve to the 15th — they must not both appear.
+        today = dt.date(2026, 6, 14)
+        added, _ = self._run_with_temp_catalysts(
+            "# Catalysts\n\n## Conferences\n- **Sep 2026** · EASD (European diabetes) - GLP-1 data\n",
+            [(dt.date(2026, 9, 15), "EASD (European diabetes) conference")], today)
+        self.assertEqual(added, 0)
+
     def test_prunes_past_auto_events(self):
         today = dt.date(2026, 6, 14)
         initial = ("# Catalysts\n\n## Auto-detected (from recent briefs)\n"

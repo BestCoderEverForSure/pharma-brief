@@ -45,6 +45,12 @@ FEEDS_FILE = ROOT / "deepseek" / "feeds.txt"
 # the cap bounds a hostile/runaway payload (stdlib ElementTree isn't hardened for that).
 MAX_FEED_BYTES = 5 * 1024 * 1024
 
+# Shared catalyst date parser (also used by the site/email renderers) so the auto-detect
+# dedup treats a curated "Sep 2026" and an auto-detected "2026-09-15" as the same day.
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+from pharma_render import catalyst_date
+
 DEFAULT_FEEDS = [
     "https://www.fiercepharma.com/rss/xml",
     "https://www.fiercebiotech.com/rss/xml",
@@ -581,9 +587,14 @@ def merge_catalysts(events: list, today: dt.date) -> int:
     # so we skip a new event naming the same thing on the same day even if worded differently.
     seen_by_date: dict = {}
     for line in body.splitlines() + auto_lines:
-        m = re.match(r"^- \*\*~?(\d{4}-\d{2}-\d{2})\*\* · (.+)$", line.strip())
+        m = re.match(r"^- \*\*~?(.+?)\*\* · (.+)$", line.strip())
         if m:
-            seen_by_date.setdefault(m.group(1), []).append(
+            # Normalise the date the SAME way the site renders it (ISO, or month-only -> the
+            # 15th) so a curated "Sep 2026" and an auto "2026-09-15" collide and dedup.
+            d = catalyst_date(m.group(1))
+            if d is None:
+                continue
+            seen_by_date.setdefault(d.isoformat(), []).append(
                 _cat_tokens(re.sub(r"\s*\(auto-detected.*$", "", m.group(2))))
     added = 0
     for d, desc in sorted(events):

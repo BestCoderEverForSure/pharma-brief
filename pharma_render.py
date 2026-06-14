@@ -77,6 +77,23 @@ def parse_srcmap(md: str) -> dict:
 # --------------------------------------------------------------------------- #
 #  Catalyst calendar parsing (the dated "- **DATE** · desc" lines)
 # --------------------------------------------------------------------------- #
+def catalyst_date(datestr: str):
+    """A catalyst date string -> date. Accepts ISO (2026-09-15) or month+year (Sep 2026 /
+    September 2026 -> the 15th, the convention used everywhere). None if unparseable. Used
+    by BOTH the renderer and the auto-detect dedup, so "Sep 2026" and "2026-09-15" are
+    treated as the same day and don't render as duplicates."""
+    iso = re.search(r"(\d{4})-(\d{2})-(\d{2})", datestr)
+    if iso:
+        try:
+            return dt.date(int(iso[1]), int(iso[2]), int(iso[3]))
+        except ValueError:
+            return None
+    mon = re.search(r"([A-Za-z]{3})[a-z]*\s+(\d{4})", datestr)
+    if mon and mon.group(1).lower() in MONTHS:
+        return dt.date(int(mon.group(2)), MONTHS[mon.group(1).lower()], 15)
+    return None
+
+
 def parse_catalysts(path) -> list:
     """Parse catalysts.md into sorted events: {date, label, full}. `label` is the short
     form (clause up to the first ';', capped at 110 chars) for tidy rows; `full` is the
@@ -92,17 +109,7 @@ def parse_catalysts(path) -> list:
         short = re.split(r";\s", desc)[0].strip()
         if len(short) > 110:
             short = short[:107].rstrip() + "…"
-        when = None
-        iso = re.search(r"(\d{4})-(\d{2})-(\d{2})", datestr)
-        if iso:
-            try:
-                when = dt.date(int(iso[1]), int(iso[2]), int(iso[3]))
-            except ValueError:
-                when = None
-        else:
-            mon = re.search(r"([A-Za-z]{3})[a-z]*\s+(\d{4})", datestr)
-            if mon and mon.group(1).lower() in MONTHS:
-                when = dt.date(int(mon.group(2)), MONTHS[mon.group(1).lower()], 15)
+        when = catalyst_date(datestr)
         if when:
             events.append({"date": when, "label": short, "full": desc})
     return sorted(events, key=lambda e: e["date"])

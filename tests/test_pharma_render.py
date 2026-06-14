@@ -43,6 +43,19 @@ class TestParseSrcmap(unittest.TestCase):
                          {"1": "https://a.example/y", "2": "https://b.example/x"})
 
 
+class TestCatalystDate(unittest.TestCase):
+    def test_iso(self):
+        self.assertEqual(pr.catalyst_date("2026-09-15"), dt.date(2026, 9, 15))
+
+    def test_month_year_resolves_to_15th(self):
+        self.assertEqual(pr.catalyst_date("Sep 2026"), dt.date(2026, 9, 15))
+        self.assertEqual(pr.catalyst_date("September 2026"), dt.date(2026, 9, 15))
+        self.assertEqual(pr.catalyst_date("Jan 2027"), dt.date(2027, 1, 15))
+
+    def test_unparseable_is_none(self):
+        self.assertIsNone(pr.catalyst_date("sometime this fall"))
+
+
 class TestParseCatalysts(unittest.TestCase):
     def test_iso_month_year_and_fields(self):
         tmp = tempfile.TemporaryDirectory()
