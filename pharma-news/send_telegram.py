@@ -25,8 +25,10 @@ import os
 import re
 import sys
 import json
+import time
 import html as _html
 import datetime
+import http.client
 import urllib.request
 import urllib.error
 from pathlib import Path
@@ -36,6 +38,30 @@ SECRETS_PATH = Path.home() / ".config" / "pharma-news" / "secrets.env"
 DEFAULT_SITE = "https://bestcodereverforsure.github.io/pharma-brief/"
 TG_API = "https://api.telegram.org/bot{token}/sendMessage"
 MAX_LEN = 3900  # Telegram hard limit is 4096; leave headroom.
+_RETRY_DELAYS = (0, 3, 8)
+
+
+def _urlopen_retry(req, timeout: int = 30):
+    """POST with retry on transient failures (429/5xx, dropped connection). A 4xx (e.g.
+    a 400 from a malformed entity) is raised immediately so the caller can react — for
+    Telegram that means falling back to a plain-text post. Returns (status, body)."""
+    last = None
+    for delay in _RETRY_DELAYS:
+        if delay:
+            time.sleep(delay)
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return resp.status, resp.read().decode("utf-8")
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 500, 502, 503, 504) and delay != _RETRY_DELAYS[-1]:
+                last = e
+                continue          # transient — retry
+            raise                  # 4xx (e.g. 400 malformed) — caller decides
+        except (urllib.error.URLError, http.client.HTTPException, OSError) as e:
+            last = e
+            if delay == _RETRY_DELAYS[-1]:
+                raise
+    raise last                     # exhausted retries
 
 
 def load_secrets() -> dict:
@@ -142,8 +168,8 @@ def main() -> int:
         req = urllib.request.Request(
             TG_API.format(token=token), data=json.dumps(body).encode("utf-8"),
             method="POST", headers={"Content-Type": "application/json"})
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            return resp.status
+        status, _ = _urlopen_retry(req, timeout=30)
+        return status
 
     try:
         status = post(message, as_html=True)

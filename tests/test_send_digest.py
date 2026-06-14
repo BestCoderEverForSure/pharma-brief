@@ -12,11 +12,58 @@ Run:  python3 -m unittest discover -s tests
 import datetime as dt
 import tempfile
 import unittest
+import urllib.error
+from unittest import mock
 from pathlib import Path
 
 import fixtures as F
 
 sd = F.load_send_digest()
+
+
+class _Resp:
+    """Minimal stand-in for an http.client.HTTPResponse used as a context manager."""
+    def __init__(self, status, body):
+        self.status, self._body = status, body
+    def __enter__(self):
+        return self
+    def __exit__(self, *a):
+        return False
+    def read(self):
+        return self._body.encode("utf-8")
+
+
+class TestUrlopenRetry(unittest.TestCase):
+    """The delivery scripts must retry a transient blip rather than fail the run (a failed
+    send aborts the cloud job, costing the day's archive + publish)."""
+
+    def test_retries_transient_then_succeeds(self):
+        seq = [urllib.error.URLError("conn reset"), _Resp(200, "ok")]
+
+        def fake_urlopen(req, timeout=30):
+            r = seq.pop(0)
+            if isinstance(r, Exception):
+                raise r
+            return r
+
+        with mock.patch.object(sd.time, "sleep", lambda *a: None), \
+             mock.patch.object(sd.urllib.request, "urlopen", fake_urlopen):
+            status, body = sd._urlopen_retry(object(), timeout=5)
+        self.assertEqual((status, body), (200, "ok"))
+        self.assertEqual(seq, [])   # both the failure and the success were consumed
+
+    def test_4xx_raised_immediately_without_retry(self):
+        calls = {"n": 0}
+
+        def fake_urlopen(req, timeout=30):
+            calls["n"] += 1
+            raise urllib.error.HTTPError("u", 422, "Unprocessable", {}, None)
+
+        with mock.patch.object(sd.time, "sleep", lambda *a: None), \
+             mock.patch.object(sd.urllib.request, "urlopen", fake_urlopen):
+            with self.assertRaises(urllib.error.HTTPError):
+                sd._urlopen_retry(object())
+        self.assertEqual(calls["n"], 1)   # a 4xx is not retried
 
 
 class TestRenumberAndCitations(unittest.TestCase):

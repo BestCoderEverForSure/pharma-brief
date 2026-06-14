@@ -8,10 +8,49 @@ Run:  python3 -m unittest discover -s tests
 """
 
 import unittest
+import urllib.error
+from unittest import mock
 
 import fixtures as F
 
 tg = F.load_send_telegram()
+
+
+class _Resp:
+    def __init__(self, status, body):
+        self.status, self._body = status, body
+    def __enter__(self):
+        return self
+    def __exit__(self, *a):
+        return False
+    def read(self):
+        return self._body.encode("utf-8")
+
+
+class TestUrlopenRetry(unittest.TestCase):
+    def test_retries_transient_then_succeeds(self):
+        seq = [urllib.error.URLError("timeout"), _Resp(200, '{"ok":true}')]
+
+        def fake_urlopen(req, timeout=30):
+            r = seq.pop(0)
+            if isinstance(r, Exception):
+                raise r
+            return r
+
+        with mock.patch.object(tg.time, "sleep", lambda *a: None), \
+             mock.patch.object(tg.urllib.request, "urlopen", fake_urlopen):
+            status, _ = tg._urlopen_retry(object(), timeout=5)
+        self.assertEqual(status, 200)
+
+    def test_400_raised_immediately_for_plaintext_fallback(self):
+        # A 400 (malformed entity) must surface at once so main() can retry as plain text.
+        def fake_urlopen(req, timeout=30):
+            raise urllib.error.HTTPError("u", 400, "Bad Request", {}, None)
+
+        with mock.patch.object(tg.time, "sleep", lambda *a: None), \
+             mock.patch.object(tg.urllib.request, "urlopen", fake_urlopen):
+            with self.assertRaises(urllib.error.HTTPError):
+                tg._urlopen_retry(object())
 
 
 class TestTgInline(unittest.TestCase):

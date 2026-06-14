@@ -18,8 +18,10 @@ import os
 import re
 import sys
 import json
+import time
 import html as _html
 import datetime
+import http.client
 import urllib.request
 import urllib.error
 from pathlib import Path
@@ -27,6 +29,31 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 SECRETS_PATH = Path.home() / ".config" / "pharma-news" / "secrets.env"
 RESEND_ENDPOINT = "https://api.resend.com/emails"
+_RETRY_DELAYS = (0, 3, 8)
+
+
+def _urlopen_retry(req, timeout: int = 30):
+    """POST with retry on transient failures (429/5xx, dropped connection), mirroring
+    run_digest.call_model. A momentary Resend/network blip must NOT fail the send — in
+    the cloud a failed send aborts the whole job, costing the day's archive + publish.
+    Returns (status, body); raises on a 4xx or after retries are exhausted."""
+    last = None
+    for delay in _RETRY_DELAYS:
+        if delay:
+            time.sleep(delay)
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as resp:
+                return resp.status, resp.read().decode("utf-8")
+        except urllib.error.HTTPError as e:
+            if e.code in (429, 500, 502, 503, 504) and delay != _RETRY_DELAYS[-1]:
+                last = e
+                continue          # transient — retry
+            raise                  # 4xx (bad request/auth) — fail now
+        except (urllib.error.URLError, http.client.HTTPException, OSError) as e:
+            last = e
+            if delay == _RETRY_DELAYS[-1]:
+                raise
+    raise last                     # exhausted retries
 
 # Maps citation number -> source URL, so inline [n] markers become clickable links.
 # Populated by prepare_digest() right before rendering; empty otherwise.
@@ -461,15 +488,17 @@ def main() -> int:
                  "User-Agent": "pharma-digest/1.0 (+https://resend.com)"},
     )
     try:
-        with urllib.request.urlopen(req, timeout=30) as resp:
-            body = resp.read().decode("utf-8")
-            print(f"Sent ✓  ({resp.status})  -> {', '.join(recipients)}\n{body}")
-            return 0
+        status, body = _urlopen_retry(req, timeout=30)
+        print(f"Sent ✓  ({status})  -> {', '.join(recipients)}\n{body}")
+        return 0
     except urllib.error.HTTPError as e:
         print(f"ERROR {e.code}: {e.read().decode('utf-8', 'replace')}", file=sys.stderr)
         return 4
     except urllib.error.URLError as e:
         print(f"ERROR: network failure: {e.reason}", file=sys.stderr)
+        return 5
+    except (http.client.HTTPException, OSError) as e:
+        print(f"ERROR: network failure: {e}", file=sys.stderr)
         return 5
 
 
