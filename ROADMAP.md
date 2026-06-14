@@ -33,6 +33,7 @@ Where the project stands, and everything we discussed adding.
 - [x] **"Last updated" footer** on the site; renamed the Lilly section to **Eli Lilly Spotlight**; removed decorative emojis for a cleaner editorial look
 - [x] Cost: grounding + catalyst extraction share **one** review call (~3 model calls/run)
 - [x] **Gemini engine + instant switch** - automatic digest can run on **Gemini** (primary, `gemini-2.5-flash`, free tier) or **DeepSeek**, via one OpenAI-compatible `call_model()` path (with a retry on transient 5xx); switch in the Command Centre ("Choose engine") or `PHARMA_ENGINE` (local `secrets.env` + cloud repo Variable). Free Gemini key from aistudio.google.com → $0 tokens. (Gemini 2.5 **Pro** isn't free — needs billing, ~$4-5/mo.)
+- [x] **Test suite + CI (code-quality hardening)** - `tests/` (stdlib `unittest`, 62 offline tests) covers the digest, website, email, and Telegram helpers; **golden tests** lock `finalize()`/source-renumbering output; a `Tests` GitHub workflow runs them on every push/PR (green in the cloud). Also: split the long `finalize()` into a readable pipeline (proven byte-identical) and moved the workflow's day-of-week scheduling out of shell into Python (`--auto`).
 
 ## Next up / your action ⬜
 - [ ] **A/B DeepSeek v4-pro vs flash** - flip `DEEPSEEK_MODEL` secret, compare a few days *(you: send the exact model id; cost ~$1.50/mo on pro)*

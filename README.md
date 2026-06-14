@@ -141,6 +141,8 @@ python3 deepseek/run_digest.py --engine deepseek     # force a specific engine f
 
 **Website (local):** `python3 site/build_site.py` renders every digest into a styled, browsable site at `site/public/index.html` - with an archive grid (engine badges) and a visual **catalyst timeline**. Both engines rebuild it automatically after each run. Open `index.html` in any browser.
 
+**Tests:** `python3 -m unittest discover -s tests -t tests` runs the stdlib unit-test suite (offline, no keys) over the digest, website, email, and Telegram helpers. A `Tests` GitHub workflow runs them automatically on every push/PR, so a code regression is caught before it can reach the morning send. See [`tests/README.md`](tests/README.md).
+
 **Cloud (GitHub Actions + Pages):** [`.github/workflows/pharma-digest.yml`](.github/workflows/pharma-digest.yml) runs the DeepSeek digest daily at 07:00 Rome, emails it, archives it, and publishes the website to **GitHub Pages** - all without your laptop. To go live:
 1. Push this project to a (private) GitHub repo.
 2. Add repo **Secrets**: `DEEPSEEK_API_KEY`, `RESEND_API_KEY`, `EMAIL_TO`, `EMAIL_FROM`, `DEEPSEEK_MODEL`.
@@ -178,9 +180,11 @@ digests/
   INDEX.md                    ← archive index (powers look-back search)
   audio/                      ← spoken briefs
 deepseek/
-  run_digest.py               ← standalone DeepSeek version
+  run_digest.py               ← standalone Gemini/DeepSeek version
   feeds.txt                   ← RSS sources
   README.md                   ← DeepSeek guide
+tests/                        ← unit tests (stdlib only) + golden fixtures
+  README.md                   ← how to run them
 
 Secrets (outside the repo, private):
   ~/.config/pharma-news/secrets.env   ← Resend + DeepSeek keys (chmod 600)
