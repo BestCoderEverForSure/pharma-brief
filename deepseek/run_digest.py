@@ -558,6 +558,14 @@ _CAT_STOP = {"decision", "phase", "trial", "trials", "result", "results", "reado
              "meeting", "filing", "launch", "review", "update", "report", "topline",
              "interim", "primary", "endpoint", "company", "pharma"}
 
+# Generic market-column / listicle headlines that aren't real forward catalysts — the model
+# sometimes extracts them because they carry a date. Drop them so the calendar stays signal.
+_CAT_NOISE = re.compile(
+    r"\b(stocks?|shares?)\s+to\s+(watch|buy|sell)\b"
+    r"|\btop\s+(movers|gainers|losers|picks|stocks)\b"
+    r"|\bstocks?\s+in\s+(focus|news|the\s+news)\b"
+    r"|\bmarket\s+wrap\b|\bwhat\s+to\s+watch\b", re.I)
+
 
 def _cat_tokens(desc: str) -> set:
     return {w for w in re.findall(r"[a-z0-9]{5,}", desc.lower()) if w not in _CAT_STOP}
@@ -598,6 +606,8 @@ def merge_catalysts(events: list, today: dt.date) -> int:
                 _cat_tokens(re.sub(r"\s*\(auto-detected.*$", "", m.group(2))))
     added = 0
     for d, desc in sorted(events):
+        if _CAT_NOISE.search(desc):
+            continue                          # generic market column, not a real catalyst
         di, toks = d.isoformat(), _cat_tokens(desc)
         same_day = seen_by_date.get(di, [])
         if any(toks & ts for ts in same_day) or (not toks and same_day):
@@ -648,6 +658,20 @@ def resolve_auto(args) -> None:
     else:
         args.hours, args.edition, args.mode = auto_schedule(
             dt.datetime.now(dt.timezone.utc).isoweekday())
+
+
+def window_subtitle(mode: str, hours: int, today: dt.date, n_read: int) -> str:
+    """Deterministic 'Window: …' subtitle: the real date range the brief covers plus how many
+    articles were scanned. Backward editions (daily/review) show the lookback range; the Week
+    Ahead shows the coming week. Replaces the model's vague 'last N hours' with trustworthy facts."""
+    if mode == "ahead":
+        start, end = today + dt.timedelta(days=1), today + dt.timedelta(days=7)
+        return (f"Window: {start.strftime('%b %-d')} – {end.strftime('%b %-d, %Y')} "
+                f"(week ahead) · grounded in {n_read} recent articles")
+    days = max(1, round(hours / 24))
+    start = today - dt.timedelta(days=days)
+    return (f"Window: {start.strftime('%b %-d')} – {today.strftime('%b %-d, %Y')} "
+            f"· {n_read} articles scanned")
 
 
 def main() -> int:
@@ -766,6 +790,12 @@ def main() -> int:
     # title's " - "). Deterministic — doesn't rely on the model's date formatting.
     dmy = dt.date.today().strftime("%d/%m/%Y")
     digest = re.sub(r"^(#\s+\S.*?)\s+[-–—]\s+.*$", rf"\1 — {dmy}", digest, count=1, flags=re.M)
+
+    # Replace the model's vague "Window: last N hours" with the real date range + how many
+    # articles were scanned (deterministic — trustworthy, unlike the model's own wording).
+    digest = re.sub(r"Window:[^·\n*]*",
+                    window_subtitle(args.mode, args.hours, dt.date.today(), len(items)),
+                    digest, count=1)
 
     out = ROOT / "digests" / f"{today}.md"
     out.parent.mkdir(parents=True, exist_ok=True)

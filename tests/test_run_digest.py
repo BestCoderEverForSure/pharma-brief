@@ -178,12 +178,42 @@ class TestMergeCatalysts(unittest.TestCase):
             [(dt.date(2026, 9, 15), "EASD (European diabetes) conference")], today)
         self.assertEqual(added, 0)
 
+    def test_skips_generic_market_columns(self):
+        today = dt.date(2026, 6, 14)
+        added, _ = self._run_with_temp_catalysts(
+            "# Catalysts\n",
+            [(dt.date(2026, 6, 20), "Stocks to Watch: Vedanta, Aurobindo Pharma, Dr Reddy's"),
+             (dt.date(2026, 6, 21), "Top movers in pharma today")], today)
+        self.assertEqual(added, 0)   # generic market filler, not real catalysts
+
     def test_prunes_past_auto_events(self):
         today = dt.date(2026, 6, 14)
         initial = ("# Catalysts\n\n## Auto-detected (from recent briefs)\n"
                    "- **2026-01-01** · old donanemab readout (auto-detected 2025-12-01)\n")
         added, text = self._run_with_temp_catalysts(initial, [], today)
         self.assertNotIn("donanemab", text)   # past auto event pruned
+
+
+class TestWindowSubtitle(unittest.TestCase):
+    TODAY = dt.date(2026, 6, 14)
+
+    def test_review_shows_lookback_range_and_count(self):
+        s = rd.window_subtitle("review", 168, self.TODAY, 298)
+        self.assertIn("Jun 7", s)                 # 168h = 7 days back
+        self.assertIn("Jun 14, 2026", s)
+        self.assertIn("298 articles scanned", s)
+
+    def test_daily_24h_range(self):
+        s = rd.window_subtitle("daily", 24, self.TODAY, 40)
+        self.assertIn("Jun 13", s)
+        self.assertIn("40 articles scanned", s)
+
+    def test_ahead_shows_coming_week(self):
+        s = rd.window_subtitle("ahead", 168, self.TODAY, 250)
+        self.assertIn("Jun 15", s)
+        self.assertIn("Jun 21, 2026", s)
+        self.assertIn("week ahead", s)
+        self.assertIn("250", s)
 
 
 class TestAutoSchedule(unittest.TestCase):
