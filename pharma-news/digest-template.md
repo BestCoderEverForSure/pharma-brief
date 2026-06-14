@@ -52,12 +52,6 @@
 
 ---
 
-## Week Ahead
-> Catalysts due in the next ~7 days. If quiet, name the next big one.
-- **{Date}** · {event} - {why it matters}.
-
----
-
 ## Sources
 - [{outlet} - {title}]({url})
 - ...
