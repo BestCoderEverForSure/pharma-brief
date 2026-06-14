@@ -10,6 +10,7 @@ on:
       - "deepseek/**"
       - "site/**"
       - "pharma-news/**"
+      - "pharma_render.py"
       - "tests/**"
       - ".github/workflows/tests.yml"
   pull_request:
