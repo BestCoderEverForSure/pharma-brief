@@ -362,6 +362,15 @@ def finalize(digest: str, items: list[dict], engine_label: str, model: str) -> s
                "factual claim against those sources and removes anything they don't support. "
                "This catches most errors but isn't infallible — verify anything important via the "
                "linked sources. Rumours are flagged where identified. Not investment advice.*\n")
+    # 6. Read-time: actually compute it from the body word count (~200 wpm), replacing the
+    # model's guess (or adding it when absent, e.g. the Weekly Review). Count prose only
+    # (everything before the Sources list).
+    body_words = len(re.findall(r"[A-Za-z0-9']+", digest.split("## Sources")[0]))
+    mins = max(1, round(body_words / 200))
+    if re.search(r"~\s*\d+\s*min read", digest):
+        digest = re.sub(r"~\s*\d+\s*min read", f"~{mins} min read", digest, count=1)
+    else:
+        digest = re.sub(r"(\*Window[^*\n]*)\*", rf"\1 · ~{mins} min read*", digest, count=1)
     return digest
 
 
