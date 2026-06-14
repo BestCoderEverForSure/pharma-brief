@@ -785,6 +785,7 @@ code{font-family:var(--mono);font-size:.82em;color:var(--accent);background:tran
 .cat-wrap > .cat-group:first-child{margin-top:2px}
 .cat-table{width:100%;border-collapse:collapse}
 .cat-table td{padding:7px 0;border-bottom:1px solid var(--line);vertical-align:baseline}
+.cat-table tr:last-child td{border-bottom:none}  /* avoid doubling the next section's rule */
 .cat-date{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;padding-right:16px;width:1%}
 .cat-text{font-size:14.5px}
 
