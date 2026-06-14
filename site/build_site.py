@@ -589,7 +589,9 @@ def build():
                         else dt.datetime.strptime(p.stem, "%Y-%m-%d").replace(tzinfo=dt.timezone.utc))
             except (ValueError, AttributeError):
                 when = None
-            feed_items.append({"title": short_title, "url": base + slug,
+            # Feed item title keeps the date (m["title"] is "… — DD/MM/YYYY") so subscribers
+            # can tell daily entries apart; the archive grid uses the date-less short_title.
+            feed_items.append({"title": strip_lead(m["title"]), "url": base + slug,
                                "desc": plain_text(md)[:300], "dt": when})
 
     if files:
