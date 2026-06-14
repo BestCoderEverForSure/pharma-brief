@@ -25,3 +25,11 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **Jan 2027** · J.P. Morgan Healthcare Conference - the year's biggest dealmaking/strategy stage.
 
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
+
+## Auto-detected (from recent briefs)
+- **2026-06-15** · Stocks to Watch (Vedanta, Aurobindo Pharma, JSW Energy, Dr Reddy's and more) (auto-detected 2026-06-14)
+- **2026-06-17** · Concord Biotech virtual analyst meet (auto-detected 2026-06-14)
+- **2026-09-15** · EASD (European diabetes) conference (auto-detected 2026-06-14)
+- **2026-10-15** · ESMO Congress (auto-detected 2026-06-14)
+- **2026-12-15** · ASH conference (auto-detected 2026-06-14)
+- **2027-01-15** · J.P. Morgan Healthcare Conference (auto-detected 2026-06-14)
