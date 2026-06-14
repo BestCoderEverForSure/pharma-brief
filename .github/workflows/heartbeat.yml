@@ -1,0 +1,20 @@
+name: Heartbeat
+
+# Dead-man's-switch: runs a few hours after the daily digest cron and fails (so GitHub
+# emails you) if no digest has been archived recently — catching SILENT stalls the digest
+# run can't report (disabled schedule, exhausted quota for days, stuck deploy).
+on:
+  schedule:
+    - cron: "0 8 * * *"      # 08:00 UTC daily, ~3h after the 05:00 UTC digest cron
+  workflow_dispatch:
+
+jobs:
+  freshness:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Check the digest archive is fresh
+        run: python3 pharma-news/check_freshness.py

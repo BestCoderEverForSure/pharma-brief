@@ -1,0 +1,36 @@
+name: Re-time schedule (DST)
+
+# Keeps the daily send at the configured LOCAL time year-round. GitHub cron is fixed UTC,
+# so without this the brief drifts by an hour at each daylight-saving change. Weekly, this
+# re-pins the UTC cron from config.json's delivery_time + target_timezone and commits only
+# if the offset actually shifted (i.e. around a DST transition).
+on:
+  schedule:
+    - cron: "0 3 * * 1"      # Mondays 03:00 UTC (well clear of the 05:00 digest cron)
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  retime:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Re-pin the cron to the configured local time
+        run: python3 pharma-news/set_schedule.py     # no args -> reads config.json
+      - name: Commit only if the cron shifted (DST change)
+        run: |
+          git config user.name "pharma-digest-bot"
+          git config user.email "bot@users.noreply.github.com"
+          if git diff --quiet; then
+            echo "cron unchanged — no DST shift"
+          else
+            git add .github/workflows/pharma-digest.yml pharma-news/config.json
+            git commit -m "Auto re-time: re-pin cron to configured local time (DST)"
+            git pull --rebase origin main
+            git push
+          fi

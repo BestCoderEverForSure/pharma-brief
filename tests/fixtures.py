@@ -40,6 +40,14 @@ def load_pharma_render():
     return _load(ROOT / "pharma_render.py", "pharma_render_under_test")
 
 
+def load_check_freshness():
+    return _load(ROOT / "pharma-news" / "check_freshness.py", "check_freshness_under_test")
+
+
+def load_set_schedule():
+    return _load(ROOT / "pharma-news" / "set_schedule.py", "set_schedule_under_test")
+
+
 def read_golden(name: str) -> str:
     return (GOLDEN_DIR / name).read_text(encoding="utf-8")
 

@@ -25,11 +25,29 @@ CONFIG = ROOT / "pharma-news" / "config.json"
 WORKFLOW = ROOT / ".github" / "workflows" / "pharma-digest.yml"
 
 
+def config_time(config_path: Path):
+    """(delivery_time, target_timezone) from config.json, or (None, None). Lets the weekly
+    DST re-time workflow run `set_schedule.py` with no args to re-pin the configured time."""
+    if not config_path.exists():
+        return None, None
+    try:
+        cfg = json.loads(config_path.read_text(encoding="utf-8"))
+    except ValueError:
+        return None, None
+    return cfg.get("delivery_time"), cfg.get("target_timezone")
+
+
 def main() -> int:
-    if len(sys.argv) < 3:
-        print('Usage: set_schedule.py "HH:MM" "IANA/Timezone"', file=sys.stderr)
-        return 2
-    tstr, tz = sys.argv[1].strip(), sys.argv[2].strip()
+    if len(sys.argv) >= 3:
+        tstr, tz = sys.argv[1].strip(), sys.argv[2].strip()
+    else:
+        # No args → re-pin from config.json (the weekly DST re-time workflow uses this).
+        tstr, tz = config_time(CONFIG)
+        if not tstr or not tz:
+            print('Usage: set_schedule.py "HH:MM" "IANA/Timezone"  '
+                  '(or set delivery_time + target_timezone in config.json)', file=sys.stderr)
+            return 2
+        tstr, tz = tstr.strip(), tz.strip()
     m = re.match(r"^(\d{1,2}):(\d{2})$", tstr)
     if not m:
         print(f"ERROR: bad time '{tstr}' — use 24h HH:MM (e.g. 07:00)", file=sys.stderr)
