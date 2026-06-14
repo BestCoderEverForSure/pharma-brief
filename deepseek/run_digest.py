@@ -688,10 +688,14 @@ def main() -> int:
     print(f"  freshness: {n_new} new, {len(items) - n_new} previously covered (last 7 days)", file=sys.stderr)
 
     today = dt.date.today().isoformat()
+    # NB: deliberately NO link in the corpus. The model cites by [n] only (finalize
+    # re-attaches the real URL from `items`), so sending the URLs — especially the ~400-char
+    # base64 Google News links — was pure token cost (sent 2-3x/run: generate + review +
+    # revise). Dropping them shrinks the corpus ~40% with zero effect on the output.
     corpus = "\n\n".join(
         f"[{i+1}] {it['title']}\n    date: {it['when']}\n"
         f"    freshness: {'NEW' if it['fresh'] else 'previously covered (include only if a genuine new development)'}\n"
-        f"    link: {it['link']}\n    {it['summary']}"
+        f"    {it['summary']}"
         for i, it in enumerate(items)
     )
     user = (f"Today is {today}. Window: last {args.hours} hours. Edition: {args.edition}. Mode: {args.mode}.\n\n"

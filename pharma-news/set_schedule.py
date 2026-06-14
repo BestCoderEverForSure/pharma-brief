@@ -87,9 +87,10 @@ def main() -> int:
     cfg["delivery_time"] = f"{H:02d}:{M:02d}"
     cfg["target_timezone"] = tz
     cfg["cron_utc"] = f"{UH:02d}:{UM:02d} UTC (all scheduled days)"
-    cfg["note"] = (f"Automatic send {H:02d}:{M:02d} {tz} = {UH:02d}:{UM:02d} UTC. "
-                   "GitHub cron is UTC — re-run set_schedule.py after a daylight-saving "
-                   "change to keep the local time exact.")
+    cfg["note"] = (f"Automatic send {H:02d}:{M:02d} {tz} = {UH:02d}:{UM:02d} UTC. The digest "
+                   "runs in the cloud (GitHub Actions), not on this Mac; GitHub cron is UTC. The "
+                   "weekly Re-time workflow re-pins this across daylight-saving changes — or run "
+                   "set_schedule.py / the Command Centre to change the time yourself.")
     CONFIG.write_text(json.dumps(cfg, indent=2) + "\n", encoding="utf-8")
 
     # Rewrite both cron lines' minute+hour, keeping the day-of-week field intact.
