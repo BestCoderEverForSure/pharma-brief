@@ -5,10 +5,11 @@ name: Pharma Morning Digest (DeepSeek)
 on:
   schedule:
     # GitHub cron is UTC. 05:00 UTC = 07:00 Rome (summer/CEST).
-    # In winter (CET, UTC+1) this is 06:00 Rome — change to '0 6 * * *' if it matters.
-    # Mon–Sat: daily morning brief (24h window).
-    - cron: "0 5 * * 1-6"
-    # Sunday: deeper "Week in Review" — evening edition over the last 7 days.
+    # Mon–Fri: tight daily morning brief (24h window).
+    - cron: "0 5 * * 1-5"
+    # Saturday: "Week in Review" — deep 7-day retrospective.
+    - cron: "0 5 * * 6"
+    # Sunday: "Week Ahead" — forward-looking preview of the coming week's catalysts.
     - cron: "0 5 * * 0"
   workflow_dispatch:       # manual "Run workflow" button — lets you pick window + edition
     inputs:
@@ -56,14 +57,18 @@ jobs:
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           SITE_URL: ${{ secrets.SITE_URL }}
         run: |
-          # Manual run: use the chosen inputs. Scheduled run: weekly review on Sunday
-          # (deeper evening edition over 7 days), tight morning brief Mon–Sat.
+          # Manual run: use the chosen inputs (daily mode). Scheduled run branches on weekday:
+          #   Mon–Fri = tight daily brief · Saturday = Week in Review (7d) · Sunday = Week Ahead.
           HOURS="${{ github.event.inputs.hours }}"
           EDITION="${{ github.event.inputs.edition }}"
+          MODE="daily"
           if [ -z "$HOURS" ]; then
-            if [ "$(date -u +%u)" = "7" ]; then HOURS=168; EDITION=evening; else HOURS=24; EDITION=morning; fi
+            DOW="$(date -u +%u)"   # 1=Mon … 6=Sat, 7=Sun
+            if [ "$DOW" = "6" ]; then HOURS=168; EDITION=evening; MODE=review
+            elif [ "$DOW" = "7" ]; then HOURS=168; EDITION=evening; MODE=ahead
+            else HOURS=24; EDITION=morning; MODE=daily; fi
           fi
-          python3 deepseek/run_digest.py --email --telegram --hours "$HOURS" --edition "$EDITION"
+          python3 deepseek/run_digest.py --email --telegram --hours "$HOURS" --edition "$EDITION" --mode "$MODE"
 
       - name: Archive the digest back to the repo
         run: |

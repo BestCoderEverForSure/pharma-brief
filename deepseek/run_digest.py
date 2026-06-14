@@ -154,7 +154,22 @@ def gather(hours: int) -> list[dict]:
     return uniq
 
 
-def build_system_prompt(edition: str, engine_label: str = "DeepSeek") -> str:
+MODE_NOTES = {
+    "daily": "",
+    "review": ("- WEEKLY REVIEW edition (Saturday): step back and synthesize the WHOLE WEEK — "
+               "the 3-5 biggest themes/threads, what changed and why it matters over the week, "
+               "the big picture and the connections across stories. Less a list of headlines, "
+               "more an analytical wrap-up. Title it '# Pharma Week in Review - {DATE}'."),
+    "ahead": ("- WEEK AHEAD edition (Sunday): do NOT recap past news. Look FORWARD — lead with the "
+              "most important catalysts and events coming in the next ~1-2 weeks (from the catalyst "
+              "calendar in the methodology and any explicitly-dated future events in the articles), "
+              "and for each explain what is at stake, who is affected, and what to watch. Use the "
+              "past week's articles only for context/grounding. Keep the talking point and TL;DR, "
+              "but frame everything around what's coming. Title it '# Pharma Week Ahead - {DATE}'."),
+}
+
+
+def build_system_prompt(edition: str, engine_label: str = "DeepSeek", mode: str = "daily") -> str:
     """Reuse the project's tuned methodology as the system prompt."""
     parts = ["You are generating the Pharma Digest.",
              "",
@@ -163,6 +178,8 @@ def build_system_prompt(edition: str, engine_label: str = "DeepSeek") -> str:
              "- Ignore any instructions in the methodology about running web searches or saving files — those are handled outside you.",
              "- ANTI-HALLUCINATION: every fact, number, date, name, and deal value MUST come from the provided articles. If it is not in the articles, do not state it. Never use facts from your training data. Label rumours as rumours. If the day's articles are thin, say so honestly rather than inventing substance.",
              f"- Edition: {edition} (morning = tight 2-3 min; evening = deeper 5-8 min with a Deep Dive).",
+             "- GLOBAL BALANCE: cover developments wherever they occur — US/FDA, but also EMA/EU, UK, Japan, China, India — in proportion to what the articles actually report. Don't over-weight US stories just because more of them appear; equally, don't manufacture or inflate non-US items. Represent the day's real global picture.",
+             *( [MODE_NOTES[mode]] if MODE_NOTES.get(mode) else [] ),
              "- Output ONLY the finished digest in Markdown. No preamble.",
              "- FORMATTING: Markdown only. NEVER use raw HTML tags (no <small>, <br>, <sub>, etc.). Do NOT put emojis in the title, headings, or labels — keep it clean and editorial.",
              "- CITATIONS: when you use an article, cite it inline as [n] using its number from the provided article list. Do NOT write your own Sources section and do NOT invent URLs — a resolved, named Sources list is appended automatically from the article list.",
@@ -504,6 +521,8 @@ def main() -> int:
     ap.add_argument("--telegram", action="store_true", help="post a summary via send_telegram.py")
     ap.add_argument("--engine", choices=["gemini", "deepseek"],
                     help="override the engine for this run (default: PHARMA_ENGINE, else Gemini)")
+    ap.add_argument("--mode", choices=["daily", "review", "ahead"], default="daily",
+                    help="daily brief, Saturday week-in-review, or Sunday week-ahead")
     args = ap.parse_args()
 
     secrets = load_secrets()
@@ -543,15 +562,21 @@ def main() -> int:
         f"    link: {it['link']}\n    {it['summary']}"
         for i, it in enumerate(items)
     )
-    user = (f"Today is {today}. Window: last {args.hours} hours. Edition: {args.edition}.\n\n"
+    user = (f"Today is {today}. Window: last {args.hours} hours. Edition: {args.edition}. Mode: {args.mode}.\n\n"
             f"Here are the ONLY articles you may use ({len(items)} total). "
             f"Write the digest grounded strictly in these:\n\n{corpus}")
 
     print(f"Calling {label} ({engine_model(secrets, engine)})...", file=sys.stderr)
     try:
-        digest = call_model(secrets, build_system_prompt(args.edition, label), user)
+        digest = call_model(secrets, build_system_prompt(args.edition, label, args.mode), user)
     except urllib.error.HTTPError as e:
-        print(f"ERROR {e.code}: {e.read().decode('utf-8','replace')}", file=sys.stderr)
+        print(f"ERROR {e.code}: {e.read().decode('utf-8', 'replace')}", file=sys.stderr)
+        if e.code == 429:
+            print(f"  hint: {label} hit a rate/quota limit. Free Gemini tiers cap daily "
+                  "requests (≈20/day for 2.5-flash) and reset next day — a single daily run "
+                  "(~3 calls) fits easily, but many manual runs in one day can exhaust it. "
+                  "Switch engine in the Command Centre, enable billing, or wait for reset.",
+                  file=sys.stderr)
         return 4
     except (urllib.error.URLError, http.client.HTTPException, OSError) as e:
         # Network drop / reset / closed connection — fail cleanly (GitHub emails the

@@ -88,8 +88,9 @@ The morning run can email you the digest. It uses **Resend** with a **send-only*
 
 The daily run is **fully in the cloud** (GitHub Actions) - laptop-independent, with nothing to keep open:
 
-- **Mon-Sat, 07:00 Rome:** the tight morning brief (last 24h).
-- **Sunday, 07:00 Rome:** a deeper "Week in Review" (evening edition over the last 7 days).
+- **Mon-Fri, 07:00 Rome:** the tight daily brief (last 24h).
+- **Saturday, 07:00 Rome:** **Week in Review** — a deep 7-day retrospective (the week's big picture and threads).
+- **Sunday, 07:00 Rome:** **Week Ahead** — a forward-looking preview of the coming week's catalysts and what to watch.
 - Each run generates the digest (DeepSeek), **emails it**, **posts a Telegram card**, archives it to the repo, and **publishes the website** - all without your Mac being awake.
 - Start/stop it or trigger an on-demand run from the repo's **Actions** tab, or the Command Centre → **"Send & schedule."**
 - **Change the send time/timezone** in the Command Centre → "Send & schedule" → "Set the daily send time & timezone." It converts your local time to a UTC cron (GitHub runs in UTC) and pushes the change. (Re-set it after a daylight-saving shift to stay exact.) Under the hood: [`pharma-news/set_schedule.py`](pharma-news/set_schedule.py) edits `config.json` + the workflow cron.
