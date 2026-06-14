@@ -1,0 +1,14 @@
+# Pharma Week in Review - 2026-06-14
+
+*Engine: DeepSeek (deepseek-chat)*
+
+> Weekly synthesis.
+
+### Theme one
+Analysis here [1].
+
+## Sources
+1. [Lilly's tirzepatide wins (Updated) FDA nod](https://news.google.com/x?a=%281%29) · Jun 12, 2026 · 14:30 UTC
+
+---
+*Written by DeepSeek from the news sources linked above, then run through an automated **grounding check**: a second AI pass that compares each factual claim against those sources and removes anything they don't support. This catches most errors but isn't infallible — verify anything important via the linked sources. Rumours are flagged where identified. Not investment advice.*

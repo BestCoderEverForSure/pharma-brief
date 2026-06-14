@@ -61,20 +61,13 @@ jobs:
           TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
           SITE_URL: ${{ secrets.SITE_URL }}
-        run: |
-          # Manual run: use the chosen inputs (daily mode). Scheduled run branches on weekday:
-          #   Mon–Fri = tight daily brief · Saturday = Week in Review (7d) · Sunday = Week Ahead.
-          HOURS="${{ github.event.inputs.hours }}"
-          EDITION="${{ github.event.inputs.edition }}"
-          MODE="${{ github.event.inputs.mode }}"
-          if [ -z "$HOURS" ]; then
-            DOW="$(date -u +%u)"   # 1=Mon … 6=Sat, 7=Sun
-            if [ "$DOW" = "6" ]; then HOURS=168; EDITION=evening; MODE=review
-            elif [ "$DOW" = "7" ]; then HOURS=168; EDITION=evening; MODE=ahead
-            else HOURS=24; EDITION=morning; MODE=daily; fi
-          fi
-          [ -z "$MODE" ] && MODE=daily
-          python3 deepseek/run_digest.py --email --telegram --hours "$HOURS" --edition "$EDITION" --mode "$MODE"
+          # Manual-run picks (empty on a scheduled run). --auto reads these; if IN_HOURS is
+          # empty it derives the window/edition/mode from today's UTC weekday instead.
+          # All that scheduling logic lives in run_digest.py (auto_schedule), not in shell.
+          IN_HOURS: ${{ github.event.inputs.hours }}
+          IN_EDITION: ${{ github.event.inputs.edition }}
+          IN_MODE: ${{ github.event.inputs.mode }}
+        run: python3 deepseek/run_digest.py --email --telegram --auto
 
       - name: Archive the digest back to the repo
         run: |

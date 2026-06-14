@@ -1,0 +1,15 @@
+# Pharma Morning Brief - 2026-06-14
+*Window: last 24h · Engine: Gemini (gemini-2.5-flash)· morning · ~1 min read*
+
+> A sharp talking point.
+
+### Lilly scores a win {major}
+What it means: big deal [1] and also [2] [3]. note
+
+## Sources
+1. [Lilly's tirzepatide wins (Updated) FDA nod](https://news.google.com/x?a=%281%29) · Jun 12, 2026 · 14:30 UTC
+2. [Novo readout disappoints](https://www.statnews.com/y)
+3. [Pfizer deal](https://endpoints.news/z) · Jun 11, 2026 · 09:00 UTC
+
+---
+*Written by Gemini from the news sources linked above, then run through an automated **grounding check**: a second AI pass that compares each factual claim against those sources and removes anything they don't support. This catches most errors but isn't infallible — verify anything important via the linked sources. Rumours are flagged where identified. Not investment advice.*
