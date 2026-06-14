@@ -621,8 +621,14 @@ def build():
         search_index.append({"slug": slug, "date": p.stem, "title": html.escape(short_title),
                              "engine": html.escape(engine), "text": plain_text(md)[:4000]})
 
-    latest_html = (with_published(render_digest(latest_md), files[0].stem, pub.get(files[0].stem))
-                   if files else '<p class="muted">No digests yet.</p>')
+    if files:
+        slug0 = files[0].stem + ".html"
+        body0 = render_digest(latest_md)
+        # On the homepage, make the latest brief's title a permalink to its own dated page.
+        body0 = re.sub(r"<h1>(.*?)</h1>", rf'<h1><a href="{slug0}">\1</a></h1>', body0, count=1, flags=re.S)
+        latest_html = with_published(body0, files[0].stem, pub.get(files[0].stem))
+    else:
+        latest_html = '<p class="muted">No digests yet.</p>'
     arch_html = "".join(arch_items) if arch_items else '<p class="muted">No digests yet.</p>'
 
     index_body = f"""
@@ -633,14 +639,14 @@ def build():
   <p class="tagline">Balanced, fact-checked &mdash; in the time it takes to drink a coffee.</p>
 </header>
 <div id="results" style="display:none"></div>
-<section class="block" id="latest"><div class="block-label">Latest</div><div class="block-body">{latest_html}</div></section>
+<section class="block" id="about"><div class="block-label">About</div><div class="block-body">
+  <p><strong>Pharma Morning Brief</strong> turns each day's global pharmaceutical news into a fact-checked, ~3-minute executive read &mdash; for someone entering pharma who needs to stay current without scanning 20 outlets. Weekdays: a daily brief; Saturday: a <em>Week in Review</em>; Sunday: a <em>Week Ahead</em>.</p>
+  <p>Every fact is grounded in a real, linked source and passed through an automated <strong>grounding check</strong> that removes claims the sources don't support; niche terms are glossed in plain language. It runs automatically each morning on <em>Gemini</em> (free) &mdash; one click switches to <em>DeepSeek</em> &mdash; with the richest analysis available on demand via <em>Claude</em>. Each issue is labelled with the engine that wrote it.</p>
+</div></section>
+<section class="block" id="latest"><div class="block-label">Latest brief</div><div class="block-body">{latest_html}</div></section>
 {catalysts_section}
 {market_block}
 <section class="block" id="archive"><div class="block-label">Archive</div><div class="block-body"><div class="arch">{arch_html}</div></div></section>
-<section class="block" id="about"><div class="block-label">About</div><div class="block-body">
-  <p><strong>Pharma Morning Brief</strong> turns the day's pharmaceutical news into a fact-checked, 2-3 minute executive digest &mdash; for someone entering pharma who needs to stay current without reading 20 outlets every morning.</p>
-  <p>One shared editorial standard runs through two interchangeable engines &mdash; <em>Claude</em> (richest analysis, on demand) and <em>DeepSeek</em> (lean, automatic in the cloud each morning). Every fact is grounded in a real, linked source; niche terms are glossed in plain language; each issue is labelled with the engine that wrote it.</p>
-</div></section>
 <script src="search-data.js"></script><script src="search.js"></script>"""
     (OUT / "index.html").write_text(page("Pharma Morning Brief", index_body, home_link=False, repo_url=repo_url), encoding="utf-8")
     (OUT / "style.css").write_text(CSS, encoding="utf-8")
