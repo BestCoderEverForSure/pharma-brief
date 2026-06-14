@@ -121,12 +121,9 @@ class TestParseCatalysts(unittest.TestCase):
         tmp = tempfile.TemporaryDirectory()
         path = Path(tmp.name) / "catalysts.md"
         path.write_text(text, encoding="utf-8")
-        orig = bs.CATALYSTS
-        bs.CATALYSTS = path
         try:
-            return bs.parse_catalysts()
+            return bs.parse_catalysts(path)   # shared parser now takes the path explicitly
         finally:
-            bs.CATALYSTS = orig
             tmp.cleanup()
 
     def test_parses_iso_and_month_year(self):

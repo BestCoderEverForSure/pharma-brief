@@ -12,20 +12,22 @@ Usage:  python3 site/build_site.py
 """
 
 import re
+import sys
 import json
 import html
 import datetime as dt
-import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+if str(ROOT) not in sys.path:
+    sys.path.insert(0, str(ROOT))
+# Citation/markets/catalyst data logic is shared with the email renderer so the two
+# can't drift apart — see pharma_render.py.
+from pharma_render import (renumber_sources, parse_srcmap, parse_catalysts,
+                           fetch_market, select_tickers)
 DIGESTS = ROOT / "digests"
 CATALYSTS = ROOT / "pharma-news" / "catalysts.md"
 OUT = ROOT / "site" / "public"
-
-MONTHS = {m: i for i, m in enumerate(
-    ["jan", "feb", "mar", "apr", "may", "jun",
-     "jul", "aug", "sep", "oct", "nov", "dec"], start=1)}
 
 SOURCES = [
     ("Endpoints", "https://endpoints.news"),
@@ -152,45 +154,6 @@ def md_to_html(md: str) -> str:
     return "\n".join(out)
 
 
-def renumber_sources(md: str) -> str:
-    """DeepSeek cites sources by their position in the fetched feed (gappy, out of order).
-    Renumber to 1,2,3… in the order the [n] citations first appear in the body, reorder the
-    Sources list to match, and rewrite the inline citations. Uncited sources are appended
-    after the cited ones, in their original order."""
-    lines = md.splitlines()
-    start = next((i for i, l in enumerate(lines) if l.strip().lower().startswith("## sources")), None)
-    if start is None:
-        return md
-    end, src, list_order = len(lines), {}, []
-    for i in range(start + 1, len(lines)):
-        m = re.match(r"^(\d+)\.(\s.*)$", lines[i])
-        if m:
-            src[m.group(1)] = m.group(2)
-            list_order.append(m.group(1))
-        elif lines[i].strip() == "":
-            continue
-        else:                       # first non-source line (e.g. footer rule) ends the list
-            end = i
-            break
-    if not src:
-        return md
-    body = "\n".join(lines[:start])
-    order, seen = [], set()
-    for n in re.findall(r"\[(\d+)\]", body):        # citation order of first appearance
-        if n in src and n not in seen:
-            order.append(n); seen.add(n)
-    for n in list_order:                            # then any uncited sources
-        if n not in seen:
-            order.append(n); seen.add(n)
-    mapping = {old: str(i + 1) for i, old in enumerate(order)}
-    body = re.sub(r"\[(\d+)\]", lambda mm: "[" + mapping.get(mm.group(1), mm.group(1)) + "]", body)
-    rebuilt = [lines[start]] + [f"{mapping[old]}.{src[old]}" for old in order]
-    tail = lines[end:]
-    if tail:
-        rebuilt += [""] + tail
-    return body + "\n" + "\n".join(rebuilt)
-
-
 def link_headings(md: str) -> str:
     """Turn each Top Story headline into a link to its cited source.
     Uses the inline [n] citation + the numbered Sources list (DeepSeek), or leaves
@@ -225,15 +188,6 @@ def link_headings(md: str) -> str:
     return "\n".join(out)
 
 
-def _parse_srcmap(md: str) -> dict:
-    smap = {}
-    for l in md.splitlines():
-        m = re.match(r"^\s*(\d+)\.\s*\[[^\]]+\]\((https?://[^)\s]+)\)", l)
-        if m:
-            smap[m.group(1)] = m.group(2)
-    return smap
-
-
 def _dmy_title(md: str, stem: str) -> str:
     """Force the H1's trailing date to DD/MM/YYYY using the digest's own date (from its
     filename), so EVERY digest on the site shows d/m/y — including older archived ones whose
@@ -250,7 +204,7 @@ def render_digest_split(md: str) -> tuple[str, str]:
     (body_html_without_sources, sources_html) so the Sources list can be placed last."""
     global _SRCMAP
     md = renumber_sources(md)
-    _SRCMAP = _parse_srcmap(md)
+    _SRCMAP = parse_srcmap(md)
     md = link_headings(md)                       # links headlines while the Sources list is present
     idx = md.find("\n## Sources")
     body, src = (md[:idx], md[idx + 1:]) if idx != -1 else (md, "")
@@ -290,36 +244,6 @@ def company_anchors(md: str, keymap: dict) -> dict:
 # ----------------------------------------------------------------------------- #
 #  Catalyst timeline
 # ----------------------------------------------------------------------------- #
-def parse_catalysts() -> list[dict]:
-    if not CATALYSTS.exists():
-        return []
-    events = []
-    for line in CATALYSTS.read_text(encoding="utf-8").splitlines():
-        m = re.match(r"^- \*\*(.+?)\*\* · (.+)$", line.strip())
-        if not m:
-            continue
-        datestr, desc = m.group(1), m.group(2)
-        # Keep the explanatory clause (up to the first ';'), not just the drug name, so a
-        # reader knows WHAT the event is — capped so rows stay tidy.
-        short = re.split(r";\s", desc)[0].strip()
-        if len(short) > 110:
-            short = short[:107].rstrip() + "…"
-        when = None
-        iso = re.search(r"(\d{4})-(\d{2})-(\d{2})", datestr)
-        if iso:
-            try:
-                when = dt.date(int(iso[1]), int(iso[2]), int(iso[3]))
-            except ValueError:
-                when = None
-        else:
-            mon = re.search(r"([A-Za-z]{3})[a-z]*\s+(\d{4})", datestr)
-            if mon and mon.group(1).lower() in MONTHS:
-                when = dt.date(int(mon.group(2)), MONTHS[mon.group(1).lower()], 15)
-        if when:
-            events.append({"date": when, "label": short, "full": desc})
-    return sorted(events, key=lambda e: e["date"])
-
-
 def _category(text: str) -> str:
     t = text.lower()
     if any(k in t for k in ["pdufa", "chmp", "approval", "fda", "ema", "decision", "tariff", "policy", "mfn"]):
@@ -384,43 +308,9 @@ def render_catalyst_mix(events: list[dict]) -> str:
 
 
 # ----------------------------------------------------------------------------- #
-#  Markets (real prices, free Yahoo Finance endpoint — no key, no fake data)
+#  Markets (real prices, free Yahoo Finance endpoint — no key, no fake data).
+#  Ticker lists + fetch live in pharma_render.py (shared with the email renderer).
 # ----------------------------------------------------------------------------- #
-MARKET_TICKERS = [
-    ("LLY", "Eli Lilly"), ("NVO", "Novo Nordisk"), ("PFE", "Pfizer"),
-    ("AZN", "AstraZeneca"), ("MRK", "Merck"), ("NVS", "Novartis"),
-    ("GSK", "GSK"), ("AMGN", "Amgen"), ("ABBV", "AbbVie"), ("JNJ", "J&J"),
-]
-
-# Companies added to the markets strip ONLY when today's digest covers them (semi-dynamic).
-EXTRA_TICKERS = {
-    "summit": ("SMMT", "Summit Therapeutics"), "viking": ("VKTX", "Viking"),
-    "biontech": ("BNTX", "BioNTech"), "moderna": ("MRNA", "Moderna"),
-    "roche": ("RHHBY", "Roche"), "sanofi": ("SNY", "Sanofi"),
-    "takeda": ("TAK", "Takeda"), "gilead": ("GILD", "Gilead"),
-    "regeneron": ("REGN", "Regeneron"), "vertex": ("VRTX", "Vertex"),
-    "bristol": ("BMY", "Bristol Myers"), "incyte": ("INCY", "Incyte"),
-    "bayer": ("BAYRY", "Bayer"), "biogen": ("BIIB", "Biogen"),
-}
-
-
-def fetch_market(tickers: list) -> list[dict]:
-    out = []
-    for t, name in tickers:
-        try:
-            req = urllib.request.Request(
-                f"https://query1.finance.yahoo.com/v8/finance/chart/{t}?range=5d&interval=1d",
-                headers={"User-Agent": "Mozilla/5.0"})
-            d = json.loads(urllib.request.urlopen(req, timeout=15).read())
-            closes = [c for c in d["chart"]["result"][0]["indicators"]["quote"][0]["close"] if c]
-            if len(closes) >= 2:
-                out.append({"t": t, "name": name,
-                            "pct": (closes[-1] / closes[0] - 1) * 100, "last": closes[-1]})
-        except Exception:
-            continue
-    return out
-
-
 def render_market(data: list[dict], anchors: dict | None = None) -> str:
     """Clean table (Name · ticker · last · 5-day %), matching the email's formatting."""
     if not data:
@@ -606,7 +496,7 @@ def build():
 
     # Catalysts + markets — computed once, shown on the index AND appended to every digest
     # page (so the "read full brief" link is complete, not just the home page).
-    events = parse_catalysts()
+    events = parse_catalysts(CATALYSTS)
     timeline = render_timeline(events)
     catalysts_section = (
         '<section class="block" id="upcoming"><div class="block-label">Catalysts</div><div class="block-body">'
@@ -614,11 +504,7 @@ def build():
         'trial readouts, earnings, and major conferences.</p>' + timeline + "</div></section>")
     latest_md = files[0].read_text(encoding="utf-8") if files else ""
     _dt = plain_text(latest_md).lower()
-    tickers, have = list(MARKET_TICKERS), {t for t, _ in MARKET_TICKERS}
-    for kw, (tk, nm) in EXTRA_TICKERS.items():
-        if kw in _dt and tk not in have:
-            tickers.append((tk, nm)); have.add(tk)
-    market_html = render_market(fetch_market(tickers))
+    market_html = render_market(fetch_market(select_tickers(_dt)))
     market_block = (
         '<section class="block" id="markets"><div class="block-label">Markets</div><div class="block-body">'
         + market_html + '<p class="meta">Source: Yahoo Finance, end-of-day prices (5-day change). Not investment advice.</p>'

@@ -169,12 +169,9 @@ class TestParseCatalysts(unittest.TestCase):
         path = Path(tmp.name) / "catalysts.md"
         path.write_text("- **2026-07-01** · tirzepatide PDUFA; clause\n"
                         "- **Aug 2026** · donanemab readout\n", encoding="utf-8")
-        orig = sd.CATALYSTS_PATH
-        sd.CATALYSTS_PATH = path
         try:
-            events = sd._parse_catalysts()
+            events = sd.parse_catalysts(path)   # shared parser (pharma_render), takes the path
         finally:
-            sd.CATALYSTS_PATH = orig
             tmp.cleanup()
         self.assertEqual(events[0]["date"], dt.date(2026, 7, 1))
         self.assertEqual(events[0]["label"], "tirzepatide PDUFA")

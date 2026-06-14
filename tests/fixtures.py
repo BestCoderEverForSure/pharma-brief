@@ -36,6 +36,10 @@ def load_send_telegram():
     return _load(ROOT / "pharma-news" / "send_telegram.py", "send_telegram_under_test")
 
 
+def load_pharma_render():
+    return _load(ROOT / "pharma_render.py", "pharma_render_under_test")
+
+
 def read_golden(name: str) -> str:
     return (GOLDEN_DIR / name).read_text(encoding="utf-8")
 
