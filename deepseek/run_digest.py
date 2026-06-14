@@ -292,35 +292,51 @@ def _fmt_source_dt(iso: str) -> str:
     return d.strftime("%b %d, %Y · %H:%M UTC")
 
 
-def finalize(digest: str, items: list[dict], engine_label: str, model: str) -> str:
-    """Clean the model's output: strip stray HTML, label the engine, and append a
-    real, resolved Sources list built from the actual fetched articles."""
-    # 1. Strip leaked raw HTML tags (e.g. <small>) — Markdown only.
-    digest = re.sub(r"</?(small|br|sub|sup|span|div|font|u|b|i)\b[^>]*>", "",
-                    digest, flags=re.I)
-    # 1b. Strip pseudo-citations of the internal methodology files (e.g. "[catalysts.md]")
-    # the model sometimes appends — they are guidance, not sources. The negative lookahead
-    # leaves any real "[label.md](url)" link untouched.
-    digest = re.sub(r"\s*\[[^\[\]]*\.md\](?!\()", "", digest, flags=re.I)
-    # 1c. Drop any "Week Ahead" section the model still writes — the Upcoming-catalysts list
-    # is appended automatically (site + email), so an inline one is redundant and was
-    # rendering as an empty "-". Remove from its heading up to the next section/rule.
-    digest = re.sub(r"\n#{1,3}\s*Week Ahead\b.*?(?=\n#{1,3}\s|\n---|\Z)", "\n", digest, flags=re.S | re.I)
-    # 2. Normalise the engine label in the subtitle (or inject it after the title).
+# --------------------------------------------------------------------------- #
+#  finalize(): turn the model's raw draft into the shippable article. It's a
+#  pipeline of small, independent text transforms — each is its own helper below,
+#  so the steps read top-to-bottom and can be unit-tested in isolation. The order
+#  matters and is fixed by finalize(); the helpers don't depend on each other.
+# --------------------------------------------------------------------------- #
+def _strip_leaked_html(digest: str) -> str:
+    """Drop leaked raw HTML tags (e.g. <small>) — the digest is Markdown only."""
+    return re.sub(r"</?(small|br|sub|sup|span|div|font|u|b|i)\b[^>]*>", "",
+                  digest, flags=re.I)
+
+
+def _strip_methodology_citations(digest: str) -> str:
+    """Strip pseudo-citations of the internal methodology files (e.g. "[catalysts.md]")
+    the model sometimes appends — they are guidance, not sources. The negative lookahead
+    leaves any real "[label.md](url)" link untouched."""
+    return re.sub(r"\s*\[[^\[\]]*\.md\](?!\()", "", digest, flags=re.I)
+
+
+def _drop_week_ahead(digest: str) -> str:
+    """Drop any "Week Ahead" section the model still writes — the Upcoming-catalysts list
+    is appended automatically (site + email), so an inline one is redundant and was
+    rendering as an empty "-". Remove from its heading up to the next section/rule."""
+    return re.sub(r"\n#{1,3}\s*Week Ahead\b.*?(?=\n#{1,3}\s|\n---|\Z)", "\n",
+                  digest, flags=re.S | re.I)
+
+
+def _label_engine(digest: str, engine_label: str, model: str) -> str:
+    """Normalise the engine label in the subtitle (or inject it after the title)."""
     if re.search(r"Engine:", digest):
         # Stop before · and * so we don't swallow the subtitle's closing '*' when Engine is
         # the last element (e.g. the Weekly Review subtitle has no '~N min read').
-        digest = re.sub(r"Engine:\s*[^·\n*]*", f"Engine: {engine_label} ({model})", digest)
-    else:
-        lines = digest.splitlines()
-        for i, l in enumerate(lines):
-            if l.startswith("# "):
-                lines.insert(i + 1, f"\n*Engine: {engine_label} ({model})*")
-                break
-        digest = "\n".join(lines)
-    # 2b. Reorder the subtitle so Edition sits just before the read-time, making the
-    # edition↔length link obvious: Window · Engine · Edition · ~N min read.
-    def _reorder_subtitle(m):
+        return re.sub(r"Engine:\s*[^·\n*]*", f"Engine: {engine_label} ({model})", digest)
+    lines = digest.splitlines()
+    for i, l in enumerate(lines):
+        if l.startswith("# "):
+            lines.insert(i + 1, f"\n*Engine: {engine_label} ({model})*")
+            break
+    return "\n".join(lines)
+
+
+def _reorder_subtitle(digest: str) -> str:
+    """Reorder the subtitle so Edition sits just before the read-time, making the
+    edition↔length link obvious: Window · Engine · Edition · ~N min read."""
+    def repl(m):
         parts = [p.strip() for p in m.group(1).split("·") if p.strip()]
         ed = next((p for p in parts if p.lower().startswith("edition")), None)
         if not ed:
@@ -330,47 +346,82 @@ def finalize(digest: str, items: list[dict], engine_label: str, model: str) -> s
         # Place Edition right AFTER Engine (so: Window · Engine · Edition · ~N min read).
         parts.insert(eng + 1 if eng is not None else max(len(parts) - 1, 0), ed)
         return "*" + " · ".join(parts) + "*"
-    digest = re.sub(r"\*(Window[^*\n]*)\*", _reorder_subtitle, digest, count=1)
-    # 3. Drop any Sources section / footer the model wrote — we rebuild them cleanly.
+    return re.sub(r"\*(Window[^*\n]*)\*", repl, digest, count=1)
+
+
+def _drop_model_sources(digest: str) -> str:
+    """Drop any Sources section / footer the model wrote — we rebuild them cleanly."""
     idx = digest.find("## Sources")
     if idx != -1:
         digest = digest[:idx].rstrip()
-    digest = re.sub(r"\n+[*_]*Facts (verified|grounded).*$", "", digest, flags=re.S).rstrip()
-    # 3b. Split grouped citations like "[3, 7]" into "[3] [7]" so every source is
-    # captured — every renderer (and step 4 below) only matches single [n] markers.
-    digest = re.sub(r"\[(\d+(?:\s*,\s*\d+)+)\]",
-                    lambda m: " ".join(f"[{n.strip()}]" for n in m.group(1).split(",")),
-                    digest)
-    # 4. Build a resolved Sources list from the [n] citations actually used.
+    return re.sub(r"\n+[*_]*Facts (verified|grounded).*$", "", digest, flags=re.S).rstrip()
+
+
+def _split_grouped_citations(digest: str) -> str:
+    """Split grouped citations like "[3, 7]" into "[3] [7]" so every source is captured —
+    every renderer (and _append_sources below) only matches single [n] markers."""
+    return re.sub(r"\[(\d+(?:\s*,\s*\d+)+)\]",
+                  lambda m: " ".join(f"[{n.strip()}]" for n in m.group(1).split(",")),
+                  digest)
+
+
+def _append_sources(digest: str, items: list[dict]) -> str:
+    """Append a resolved Sources list built from the [n] citations actually used."""
     cited = sorted({int(n) for n in re.findall(r"\[(\d+)\]", digest)})
     cited = [n for n in cited if 1 <= n <= len(items)]
-    if cited:
-        # Square brackets in a feed title (e.g. "[Updated] ...") or parens in a URL
-        # would break the markdown link — and with it the renderers' citation maps.
-        def md_safe(s: str) -> str:
-            return s.replace("[", "(").replace("]", ")")
-        def src_line(n: int) -> str:
-            it = items[n - 1]
-            url = it["link"].replace("(", "%28").replace(")", "%29")
-            when = _fmt_source_dt(it.get("when", ""))
-            tail = f" · {when}" if when else ""   # factual feed timestamp, or nothing
-            return f"{n}. [{md_safe(it['title'])}]({url}){tail}"
-        digest += "\n\n## Sources\n" + "\n".join(src_line(n) for n in cited)
-    # 5. Standard footer — honest about what the automated check does and doesn't guarantee.
-    digest += (f"\n\n---\n*Written by {engine_label} from the news sources linked above, then run "
-               "through an automated **grounding check**: a second AI pass that compares each "
-               "factual claim against those sources and removes anything they don't support. "
-               "This catches most errors but isn't infallible — verify anything important via the "
-               "linked sources. Rumours are flagged where identified. Not investment advice.*\n")
-    # 6. Read-time: actually compute it from the body word count (~200 wpm), replacing the
-    # model's guess (or adding it when absent, e.g. the Weekly Review). Count prose only
-    # (everything before the Sources list).
+    if not cited:
+        return digest
+
+    # Square brackets in a feed title (e.g. "[Updated] ...") or parens in a URL
+    # would break the markdown link — and with it the renderers' citation maps.
+    def md_safe(s: str) -> str:
+        return s.replace("[", "(").replace("]", ")")
+
+    def src_line(n: int) -> str:
+        it = items[n - 1]
+        url = it["link"].replace("(", "%28").replace(")", "%29")
+        when = _fmt_source_dt(it.get("when", ""))
+        tail = f" · {when}" if when else ""   # factual feed timestamp, or nothing
+        return f"{n}. [{md_safe(it['title'])}]({url}){tail}"
+
+    return digest + "\n\n## Sources\n" + "\n".join(src_line(n) for n in cited)
+
+
+def _append_footer(digest: str, engine_label: str) -> str:
+    """Standard footer — honest about what the automated check does and doesn't guarantee."""
+    return digest + (
+        f"\n\n---\n*Written by {engine_label} from the news sources linked above, then run "
+        "through an automated **grounding check**: a second AI pass that compares each "
+        "factual claim against those sources and removes anything they don't support. "
+        "This catches most errors but isn't infallible — verify anything important via the "
+        "linked sources. Rumours are flagged where identified. Not investment advice.*\n")
+
+
+def _apply_read_time(digest: str) -> str:
+    """Compute the read-time from the body word count (~200 wpm), replacing the model's
+    guess (or adding it when absent, e.g. the Weekly Review). Count prose only
+    (everything before the Sources list)."""
     body_words = len(re.findall(r"[A-Za-z0-9']+", digest.split("## Sources")[0]))
     mins = max(1, round(body_words / 200))
     if re.search(r"~\s*\d+\s*min read", digest):
-        digest = re.sub(r"~\s*\d+\s*min read", f"~{mins} min read", digest, count=1)
-    else:
-        digest = re.sub(r"(\*Window[^*\n]*)\*", rf"\1 · ~{mins} min read*", digest, count=1)
+        return re.sub(r"~\s*\d+\s*min read", f"~{mins} min read", digest, count=1)
+    return re.sub(r"(\*Window[^*\n]*)\*", rf"\1 · ~{mins} min read*", digest, count=1)
+
+
+def finalize(digest: str, items: list[dict], engine_label: str, model: str) -> str:
+    """Clean the model's output: strip stray HTML, label the engine, and append a real,
+    resolved Sources list built from the actual fetched articles. A fixed-order pipeline
+    of the independent transforms above (see each helper for what it does)."""
+    digest = _strip_leaked_html(digest)
+    digest = _strip_methodology_citations(digest)
+    digest = _drop_week_ahead(digest)
+    digest = _label_engine(digest, engine_label, model)
+    digest = _reorder_subtitle(digest)
+    digest = _drop_model_sources(digest)
+    digest = _split_grouped_citations(digest)
+    digest = _append_sources(digest, items)
+    digest = _append_footer(digest, engine_label)
+    digest = _apply_read_time(digest)
     return digest
 
 
@@ -540,6 +591,37 @@ def merge_catalysts(events: list, today: dt.date) -> int:
     return added
 
 
+# --------------------------------------------------------------------------- #
+#  Scheduling: map a UTC weekday to the run's window/edition/mode. This used to
+#  live as `if`/`elif` bash in the GitHub workflow; keeping it here (a) makes it
+#  testable and (b) leaves the workflow free of logic. The cloud job calls
+#  run_digest.py with --auto; everything else still passes explicit flags.
+# --------------------------------------------------------------------------- #
+def auto_schedule(weekday: int) -> tuple[int, str, str]:
+    """(hours, edition, mode) for a scheduled run, by ISO weekday (1=Mon … 7=Sun):
+    Saturday = Week in Review (168h), Sunday = Week Ahead (168h), Mon–Fri = daily brief."""
+    if weekday == 6:        # Saturday
+        return 168, "evening", "review"
+    if weekday == 7:        # Sunday
+        return 168, "evening", "ahead"
+    return 24, "morning", "daily"
+
+
+def resolve_auto(args) -> None:
+    """Fill args.hours/edition/mode for --auto, mutating `args` in place. A *manual*
+    workflow run passes the picks through the IN_HOURS/IN_EDITION/IN_MODE env vars;
+    a *scheduled* run leaves IN_HOURS empty, so we derive them from today's UTC weekday
+    (this is exactly what the workflow's shell `if` used to do)."""
+    in_hours = (os.environ.get("IN_HOURS") or "").strip()
+    if in_hours:
+        args.hours = int(in_hours)
+        args.edition = (os.environ.get("IN_EDITION") or "morning").strip()
+        args.mode = (os.environ.get("IN_MODE") or "daily").strip()
+    else:
+        args.hours, args.edition, args.mode = auto_schedule(
+            dt.datetime.now(dt.timezone.utc).isoweekday())
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--hours", type=int, default=24)
@@ -550,7 +632,13 @@ def main() -> int:
                     help="override the engine for this run (default: PHARMA_ENGINE, else Gemini)")
     ap.add_argument("--mode", choices=["daily", "review", "ahead"], default="daily",
                     help="daily brief, Saturday week-in-review, or Sunday week-ahead")
+    ap.add_argument("--auto", action="store_true",
+                    help="scheduled-run mode: pick hours/edition/mode from IN_HOURS/IN_EDITION/IN_MODE "
+                         "env vars if set (manual cloud run), else from today's UTC weekday "
+                         "(Sat=review, Sun=ahead, else daily). Used by the GitHub workflow.")
     args = ap.parse_args()
+    if args.auto:
+        resolve_auto(args)
 
     secrets = load_secrets()
     if args.engine:

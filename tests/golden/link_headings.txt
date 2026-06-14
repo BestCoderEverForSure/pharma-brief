@@ -1,0 +1,13 @@
+# Pharma Brief - 2026-06-14
+*Window: last 24h · Engine: Gemini*
+
+### [First story](https://a.example/y)
+Body text [1].
+
+### [Second story](https://b.example/x)
+More [2].
+
+## Sources
+1. [Title A](https://a.example/y)
+2. [Title B](https://b.example/x)
+3. [Uncited C](https://c.example/z)
