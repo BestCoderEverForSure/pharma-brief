@@ -145,29 +145,50 @@ def select_tickers(text: str) -> list:
     return tickers
 
 
-def _fetch_one(tn: tuple, timeout: int):
+def _fetch_one(tn: tuple, days: int, timeout: int):
     t, name = tn
     try:
         req = urllib.request.Request(
-            f"https://query1.finance.yahoo.com/v8/finance/chart/{t}?range=5d&interval=1d",
+            f"https://query1.finance.yahoo.com/v8/finance/chart/{t}?range=1mo&interval=1d",
             headers={"User-Agent": "Mozilla/5.0"})
-        d = json.loads(urllib.request.urlopen(req, timeout=timeout).read())
-        closes = [c for c in d["chart"]["result"][0]["indicators"]["quote"][0]["close"] if c]
-        if len(closes) >= 2:
-            return {"t": t, "name": name,
-                    "pct": (closes[-1] / closes[0] - 1) * 100, "last": closes[-1]}
+        res = json.loads(urllib.request.urlopen(req, timeout=timeout).read())["chart"]["result"][0]
+        closes = res["indicators"]["quote"][0]["close"]
+        ts = res.get("timestamp") or []
+        pairs = [(tt, c) for tt, c in zip(ts, closes) if c is not None]
+        if len(pairs) >= 2:
+            last_ts, last_close = pairs[-1]
+            target = last_ts - days * 86400        # `days` CALENDAR days before the latest close
+            prior = [p for p in pairs if p[0] <= target]
+            base = (prior[-1] if prior else pairs[0])[1]   # nearest prior trading close (handles weekends)
+        else:                                       # no usable timestamps -> span of valid closes
+            vc = [c for c in closes if c is not None]
+            if len(vc) < 2:
+                return None
+            last_close, base = vc[-1], vc[0]
+        return {"t": t, "name": name, "pct": (last_close / base - 1) * 100, "last": last_close}
     except Exception:
         return None
-    return None
 
 
-def fetch_market(tickers: list, timeout: int = 15) -> list:
-    """5-day % move + last close for each ticker via Yahoo Finance, fetched CONCURRENTLY
-    (I/O-bound) so ~10-24 tickers don't run serially. Skips any ticker that errors (a flaky/
-    blocked endpoint never breaks the caller); returns [] if all fail. Order is not
-    significant — render_market sorts by % move."""
+def fetch_market(tickers: list, days: int = 7, timeout: int = 15) -> list:
+    """% move over the last `days` CALENDAR days (latest close vs the nearest trading close
+    `days` ago) + last close, per ticker, fetched CONCURRENTLY (I/O-bound). Picks the nearest
+    prior close so weekends/holidays are handled. Skips tickers that error; [] if all fail.
+    Order isn't significant — render_market sorts by % move."""
     if not tickers:
         return []
     with concurrent.futures.ThreadPoolExecutor(max_workers=min(8, len(tickers))) as ex:
-        results = ex.map(lambda tn: _fetch_one(tn, timeout), tickers)
+        results = ex.map(lambda tn: _fetch_one(tn, days, timeout), tickers)
     return [r for r in results if r]
+
+
+def brief_market_days(md: str):
+    """Markets %-move lookback (calendar days) matching the brief, keyed off the H1 title
+    (deterministic): daily -> 5 (a smoothed trailing week), Week in Review -> 7 (the week),
+    Week Ahead -> None (a forward-looking brief shows no backward move)."""
+    title = next((l for l in md.splitlines() if l.startswith("# ")), "").lower()
+    if "week ahead" in title:
+        return None
+    if "week in review" in title:
+        return 7
+    return 5

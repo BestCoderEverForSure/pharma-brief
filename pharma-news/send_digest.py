@@ -34,7 +34,7 @@ if str(PROJECT_ROOT) not in sys.path:
 # Citation/markets/catalyst data logic is shared with the website renderer so the email
 # and site can't drift apart — see pharma_render.py.
 from pharma_render import (renumber_sources, parse_srcmap, parse_catalysts,
-                           fetch_market, select_tickers)
+                           fetch_market, select_tickers, brief_market_days)
 _RETRY_DELAYS = (0, 3, 8)
 
 
@@ -71,7 +71,10 @@ def render_market_email(md: str) -> str:
     """Markets section for the email: the website's core tickers plus any extra company
     named in today's digest. Inline styles only (mail clients ignore <style>/classes).
     Returns "" if no quotes come back, so a flaky/blocked endpoint never breaks the email."""
-    data = fetch_market(select_tickers(md.lower()), timeout=8)
+    days = brief_market_days(md)
+    if days is None:
+        return ""                       # forward-looking brief: no backward % move
+    data = fetch_market(select_tickers(md.lower()), days=days, timeout=8)
     if not data:
         return ""
     data = sorted(data, key=lambda x: x["pct"], reverse=True)
@@ -101,7 +104,7 @@ def render_market_email(md: str) -> str:
         '<table style="width:100%;border-collapse:collapse" cellpadding="0" cellspacing="0">'
         + "".join(rows) + "</table>"
         f'<p style="font-family:{mono};font-size:11px;color:#8a8a8a;margin:10px 0 0">'
-        "Source: Yahoo Finance, end-of-day prices (5-day change). Not investment advice.</p>")
+        f"Source: Yahoo Finance, end-of-day prices ({days}-day change). Not investment advice.</p>")
 
 
 # --- Catalyst timeline: same dated events as the website, grouped the same way,

@@ -86,26 +86,52 @@ class _R:
 
 
 class TestFetchMarket(unittest.TestCase):
-    def _resp(self, closes):
-        return _R(json.dumps(
-            {"chart": {"result": [{"indicators": {"quote": [{"close": closes}]}}]}}).encode())
+    DAY = 86400
+
+    def _resp(self, closes, timestamps):
+        return _R(json.dumps({"chart": {"result": [
+            {"timestamp": timestamps, "indicators": {"quote": [{"close": closes}]}}]}}).encode())
 
     def test_parses_concurrently(self):
-        def fake_urlopen(req, timeout=15):
-            return self._resp([100.0, 110.0])   # +10%
-        with mock.patch.object(pr.urllib.request, "urlopen", fake_urlopen):
-            out = pr.fetch_market([("LLY", "Eli Lilly"), ("PFE", "Pfizer")], timeout=1)
+        ts = [1_700_000_000, 1_700_000_000 + 7 * self.DAY]
+        def fake(req, timeout=15):
+            return self._resp([100.0, 110.0], ts)   # +10% over the 7-day span
+        with mock.patch.object(pr.urllib.request, "urlopen", fake):
+            out = pr.fetch_market([("LLY", "Eli Lilly"), ("PFE", "Pfizer")], days=7, timeout=1)
         self.assertEqual(len(out), 2)
         self.assertTrue(all(round(x["pct"], 1) == 10.0 and x["last"] == 110.0 for x in out))
 
+    def test_days_selects_the_right_base_close(self):
+        base = 1_700_000_000
+        ts = [base + i * self.DAY for i in range(8)]        # 8 consecutive daily closes
+        closes = [100, 101, 102, 103, 104, 105, 106, 107]    # latest 107 at ts[7]
+        def fake(req, timeout=15):
+            return self._resp(closes, ts)
+        with mock.patch.object(pr.urllib.request, "urlopen", fake):
+            out7 = pr.fetch_market([("X", "X")], days=7)
+            out5 = pr.fetch_market([("X", "X")], days=5)
+        self.assertAlmostEqual(out7[0]["pct"], 7.0, places=1)                 # vs ts[0]=100
+        self.assertAlmostEqual(out5[0]["pct"], (107 / 102 - 1) * 100, places=1)  # vs ts[2]=102
+
     def test_skips_failures(self):
-        def fake_urlopen(req, timeout=15):
+        def fake(req, timeout=15):
             raise OSError("blocked")
-        with mock.patch.object(pr.urllib.request, "urlopen", fake_urlopen):
+        with mock.patch.object(pr.urllib.request, "urlopen", fake):
             self.assertEqual(pr.fetch_market([("LLY", "Eli Lilly")]), [])
 
     def test_empty_is_empty(self):
         self.assertEqual(pr.fetch_market([]), [])
+
+
+class TestBriefMarketDays(unittest.TestCase):
+    def test_daily(self):
+        self.assertEqual(pr.brief_market_days("# Pharma Morning Digest — 14/06/2026\nx"), 5)
+
+    def test_review(self):
+        self.assertEqual(pr.brief_market_days("# Pharma Week in Review — 14/06/2026\nx"), 7)
+
+    def test_ahead_is_none(self):
+        self.assertIsNone(pr.brief_market_days("# Pharma Week Ahead — 14/06/2026\nx"))
 
 
 class TestSelectTickers(unittest.TestCase):

@@ -26,7 +26,7 @@ if str(ROOT) not in sys.path:
 # Citation/markets/catalyst data logic is shared with the email renderer so the two
 # can't drift apart — see pharma_render.py.
 from pharma_render import (renumber_sources, parse_srcmap, parse_catalysts,
-                           fetch_market, select_tickers)
+                           fetch_market, select_tickers, brief_market_days)
 DIGESTS = ROOT / "digests"
 CATALYSTS = ROOT / "pharma-news" / "catalysts.md"
 OUT = ROOT / "site" / "public"
@@ -546,10 +546,13 @@ def build():
         'trial readouts, earnings, and major conferences.</p>' + timeline + "</div></section>")
     latest_md = files[0].read_text(encoding="utf-8") if files else ""
     _dt = plain_text(latest_md).lower()
-    market_html = render_market(fetch_market(select_tickers(_dt)))
+    # Markets % matches the latest brief's window (daily=5d, review=7d); a forward brief on
+    # the homepage has no backward window, so default the shared site strip to a week.
+    mkt_days = brief_market_days(latest_md) or 7
+    market_html = render_market(fetch_market(select_tickers(_dt), days=mkt_days))
     market_block = (
         '<section class="block" id="markets"><div class="block-label">Markets</div><div class="block-body">'
-        + market_html + '<p class="meta">Source: Yahoo Finance, end-of-day prices (5-day change). Not investment advice.</p>'
+        + market_html + f'<p class="meta">Source: Yahoo Finance, end-of-day prices ({mkt_days}-day change). Not investment advice.</p>'
         + "</div></section>"
     ) if market_html else ""
     page_extras = catalysts_section + market_block      # appended to each digest page
