@@ -349,6 +349,30 @@ class TestReviewDigest(unittest.TestCase):
         self.assertEqual(result, (True, "", []))
 
 
+class TestFinalizeReadTime(unittest.TestCase):
+    def test_replaces_ranged_read_time_without_duplicating(self):
+        # The evening template writes a RANGE ('~5-8 min read'); finalize must replace it
+        # with the computed value, not append a second read-time next to it.
+        md = ("# Pharma Week Ahead - 2026-06-14\n"
+              "*Window: last 168 hours · Engine: X · Edition: evening · ~5-8 min read*\n\n"
+              "> point.\n\n### Story\nBody [1].\n")
+        out = rd.finalize(md, F.FINALIZE_ITEMS, "Gemini", "gemini-2.5-flash")
+        self.assertNotIn("5-8 min read", out)        # the range was replaced
+        self.assertEqual(out.count("min read"), 1)    # exactly one read-time
+
+
+class TestApplyWindowSubtitle(unittest.TestCase):
+    TODAY = dt.date(2026, 6, 14)
+
+    def test_replaces_window_and_preserves_separator(self):
+        sub = ("# Pharma Week Ahead — 14/06/2026\n"
+               "*Window: last 168 hours · Engine: Gemini · Edition: evening · ~12 min read*\n")
+        out = rd.apply_window_subtitle(sub, "ahead", 168, self.TODAY, 304)
+        self.assertIn("recent articles · Engine", out)   # ' · ' separator kept (no 'articles· Engine')
+        self.assertNotIn("articles· Engine", out)
+        self.assertNotIn("last 168 hours", out)          # model's vague text gone
+
+
 class TestParseFeedEntityGuard(unittest.TestCase):
     def test_feed_declaring_entities_is_skipped(self):
         # "billion laughs" style payload — must be refused, not parsed.

@@ -422,12 +422,13 @@ def _append_footer(digest: str, engine_label: str) -> str:
 
 def _apply_read_time(digest: str) -> str:
     """Compute the read-time from the body word count (~200 wpm), replacing the model's
-    guess (or adding it when absent, e.g. the Weekly Review). Count prose only
-    (everything before the Sources list)."""
+    guess — including a copy-pasted RANGE like '~5-8 min read' — or adding it when absent
+    (e.g. the Weekly Review). Count prose only (everything before the Sources list)."""
     body_words = len(re.findall(r"[A-Za-z0-9']+", digest.split("## Sources")[0]))
     mins = max(1, round(body_words / 200))
-    if re.search(r"~\s*\d+\s*min read", digest):
-        return re.sub(r"~\s*\d+\s*min read", f"~{mins} min read", digest, count=1)
+    rt = r"~?\s*\d+(?:\s*[–-]\s*\d+)?\s*min read"   # matches '~12 min read' AND '~5-8 min read'
+    if re.search(rt, digest):
+        return re.sub(rt, f"~{mins} min read", digest, count=1)
     return re.sub(r"(\*Window[^*\n]*)\*", rf"\1 · ~{mins} min read*", digest, count=1)
 
 
@@ -674,6 +675,15 @@ def window_subtitle(mode: str, hours: int, today: dt.date, n_read: int) -> str:
             f"· {n_read} articles scanned")
 
 
+def apply_window_subtitle(digest: str, mode: str, hours: int, today: dt.date, n_read: int) -> str:
+    """Swap the model's 'Window: …' subtitle segment for the deterministic one, preserving the
+    ' · ' separator to the next field (so it doesn't read 'articles· Engine')."""
+    ws = window_subtitle(mode, hours, today, n_read)
+    return re.sub(r"Window:[^·\n*]*(·[ \t]*)?",
+                  lambda m: ws + (" · " if m.group(1) else ""),
+                  digest, count=1)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--hours", type=int, default=24)
@@ -793,9 +803,7 @@ def main() -> int:
 
     # Replace the model's vague "Window: last N hours" with the real date range + how many
     # articles were scanned (deterministic — trustworthy, unlike the model's own wording).
-    digest = re.sub(r"Window:[^·\n*]*",
-                    window_subtitle(args.mode, args.hours, dt.date.today(), len(items)),
-                    digest, count=1)
+    digest = apply_window_subtitle(digest, args.mode, args.hours, dt.date.today(), len(items))
 
     out = ROOT / "digests" / f"{today}.md"
     out.parent.mkdir(parents=True, exist_ok=True)
