@@ -27,7 +27,13 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
+- **2026-06-16** · AstraZeneca Pharma India trading window closes (auto-detected 2026-06-15)
 - **2026-06-17** · Concord Biotech virtual analyst meet (auto-detected 2026-06-14)
+- **2026-06-18** · Sudarshan Pharma board meeting to consider fund raising (auto-detected 2026-06-15)
 - **2026-07-01** · India policy decision on customs duty cuts extension (auto-detected 2026-06-14)
+- **2026-07-01** · Medicare to offer GLP-1 weight-loss drugs for $50 (auto-detected 2026-06-15)
+- **2026-07-16** · Ajanta Pharma 47th annual general meeting (auto-detected 2026-06-15)
 - **2026-07-31** · Q2 2026 earnings season begins (auto-detected 2026-06-14)
 - **2026-08-12** · European Commission decision on Vislyfa (ranibizumab biosimilar) approval (auto-detected 2026-06-14)
+- **2027-01-15** · India Pharma Expo (auto-detected 2026-06-15)
+- **2029-01-15** · Federal rule proposes closing "loophole" for IV-to-subcutaneous drugs (auto-detected 2026-06-15)
