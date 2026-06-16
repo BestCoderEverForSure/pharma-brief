@@ -452,6 +452,17 @@ class TestArchiveCorpus(unittest.TestCase):
         items, timeline = rd.gather_from_archive(today, 30, archive_dir=d)
         self.assertEqual((items, timeline), ([], ""))
 
+    def test_malformed_brief_degrades_quietly(self):
+        # A junk brief (no title/sources) and a bad-date filename must not break the run: the
+        # good briefs still contribute, the junk contributes nothing, nothing raises.
+        today = dt.date(2026, 6, 30)
+        d = self._make_archive([today - dt.timedelta(days=k) for k in (1, 2, 3)])
+        (d / f"{(today - dt.timedelta(days=4)).isoformat()}.md").write_text("garbage, no title or sources")
+        (d / "2026-06-99.md").write_text("invalid date in filename")
+        items, timeline = rd.gather_from_archive(today, 30, archive_dir=d)
+        self.assertEqual(len(items), 6)              # 3 good briefs × 2 sources; junk adds none
+        self.assertEqual(timeline.count("Thesis:"), 3)
+
 
 class TestCallModelRetry(unittest.TestCase):
     """call_model is the one network call the whole pipeline depends on — its retry/backoff
@@ -533,6 +544,19 @@ class TestReviewDigest(unittest.TestCase):
         with mock.patch.object(rd, "call_model", boom):
             result = rd.review_digest({}, "d", "c", self.TODAY)
         self.assertEqual(result, (True, "", []))
+
+    def test_revision_keeps_original_when_result_is_thin(self):
+        # A revision that comes back hollow must NOT ship — fall back to the (already-guarded)
+        # original, since the empty-output guard runs before this step and won't re-check it.
+        original = "x" * 500
+        with mock.patch.object(rd, "call_model", lambda *a, **k: "too short"):
+            self.assertEqual(rd.revise_for_grounding({}, original, "corpus", "issues"), original)
+
+    def test_revision_failure_keeps_original(self):
+        def boom(*a, **k):
+            raise RuntimeError("down")
+        with mock.patch.object(rd, "call_model", boom):
+            self.assertEqual(rd.revise_for_grounding({}, "y" * 500, "c", "i"), "y" * 500)
 
 
 class TestFinalizeReadTime(unittest.TestCase):
