@@ -180,6 +180,113 @@ def gather(hours: int) -> list[dict]:
     return uniq
 
 
+# --------------------------------------------------------------------------- #
+#  Archive-as-corpus: for the backward review editions (week/month/year in review)
+#  the richest, most-grounded source for the period is the project's OWN archive of
+#  daily briefs — each already fact-checked and distilled. We synthesise the review
+#  from those instead of a few days of live RSS, and fall back to RSS if the archive
+#  is too thin (e.g. early on, before it has filled up).
+# --------------------------------------------------------------------------- #
+ARCHIVE_REVIEW_MODES = {"review", "month_review", "year_review"}
+MIN_ARCHIVE_BRIEFS = 3      # below this the archive can't carry a review → use live RSS
+ARCHIVE_MAX_DAILY = 60      # cap daily briefs kept (token budget); rollup reviews are always kept
+ARCHIVE_MAX_SOURCES = 350   # cap the deduped citeable-source list
+
+
+def _brief_date(name: str):
+    """Date encoded in an archived digest filename (YYYY-MM-DD.md), or None."""
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2})\.md$", name)
+    if not m:
+        return None
+    try:
+        return dt.date(int(m.group(1)), int(m.group(2)), int(m.group(3)))
+    except ValueError:
+        return None
+
+
+def _is_review_brief(md: str) -> bool:
+    """True if an archived brief is itself a rollup review (week/month in review) — those are
+    compact summaries we always keep, regardless of the daily-brief cap."""
+    title = next((l for l in md.splitlines() if l.startswith("# ")), "").lower()
+    return "in review" in title
+
+
+def _brief_timeline_entry(md: str) -> str:
+    """Distil an archived brief to its signal: title, talking-point thesis, and TL;DR bullets.
+    This is what the model synthesises the retrospective from — the body/sources are dropped."""
+    lines = md.splitlines()
+    title = next((l[2:].strip() for l in lines if l.startswith("# ")), "(untitled)")
+    thesis, bullets, in_tldr = "", [], False
+    for l in lines:
+        s = l.strip()
+        if not thesis and "talking point" in s.lower():
+            thesis = re.sub(r"^>?\s*\**\s*talking point:?\**\s*", "", s, flags=re.I).strip("* ")
+        if re.match(r"^##\s+TL;DR", s, re.I):
+            in_tldr = True
+            continue
+        if in_tldr:
+            if s.startswith("#") or s in ("---", "***", "___"):
+                in_tldr = False
+            elif s.startswith(("- ", "* ")):
+                bullets.append(re.sub(r"\[\d+\]", "", s[2:]).strip())
+    parts = [f"### {title}"]
+    if thesis:
+        parts.append(f"Thesis: {thesis}")
+    if bullets:
+        parts.append("Key points: " + " | ".join(bullets[:5]))
+    return "\n".join(parts)
+
+
+def _brief_sources(md: str) -> list[dict]:
+    """Parse an archived brief's Sources list into citeable items {title, link, summary, when} —
+    the same shape gather() produces, so the corpus/citation/finalize pipeline is reused as-is."""
+    items = []
+    for l in md.splitlines():
+        m = re.match(r"^\s*\d+\.\s*\[([^\]]+)\]\((https?://[^)\s]+)\)(?:\s*·\s*(.+?))?\s*$", l)
+        if m:
+            items.append({"title": m.group(1).strip(), "link": m.group(2).strip(),
+                          "summary": "", "when": (m.group(3) or "n/a").strip()})
+    return items
+
+
+def gather_from_archive(today: dt.date, window_days: int, archive_dir=None) -> tuple[list[dict], str]:
+    """Build a review corpus from the archived briefs covering the window. Returns
+    (items, timeline): `items` = deduped original source articles (title+URL+date) for citation;
+    `timeline` = each brief's distilled summary oldest→newest, for the model to synthesise from.
+    Returns ([], "") when fewer than MIN_ARCHIVE_BRIEFS exist, so the caller falls back to RSS."""
+    archive_dir = archive_dir or (ROOT / "digests")
+    start = today - dt.timedelta(days=window_days)
+    briefs = []
+    for p in sorted(archive_dir.glob("*.md")):
+        d = _brief_date(p.name)
+        if d and start < d <= today:
+            try:
+                briefs.append((d, p.read_text(encoding="utf-8")))
+            except OSError:
+                continue
+    if len(briefs) < MIN_ARCHIVE_BRIEFS:
+        return [], ""
+    # Always keep the rollup reviews (few, rich); cap the dailies to the most recent N.
+    reviews = [(d, md) for d, md in briefs if _is_review_brief(md)]
+    dailies = [(d, md) for d, md in briefs if not _is_review_brief(md)]
+    dailies.sort(key=lambda b: b[0])
+    chosen = sorted(reviews + dailies[-ARCHIVE_MAX_DAILY:], key=lambda b: b[0])
+    timeline = "\n\n".join(_brief_timeline_entry(md) for _, md in chosen)
+    # Deduped union of sources, newest brief first, capped.
+    items, seen = [], set()
+    for _, md in sorted(chosen, key=lambda b: b[0], reverse=True):
+        for it in _brief_sources(md):
+            if it["link"] in seen:
+                continue
+            seen.add(it["link"])
+            items.append(it)
+            if len(items) >= ARCHIVE_MAX_SOURCES:
+                break
+        if len(items) >= ARCHIVE_MAX_SOURCES:
+            break
+    return items, timeline
+
+
 MODE_NOTES = {
     "daily": "",
     "review": ("- WEEKLY REVIEW edition (Saturday): step back and synthesize the WHOLE WEEK — "
@@ -812,25 +919,37 @@ def main() -> int:
         print(f"ERROR: engine '{engine}' needs {keyname} (env or {SECRETS_PATH})", file=sys.stderr)
         return 2
 
-    print("Gathering news from RSS feeds...", file=sys.stderr)
-    items = gather(args.hours)
-    # Thin-digest guard: too few articles usually means feeds are down, not a quiet
-    # news day. Abort with a non-zero exit so GitHub's failure email surfaces it,
-    # rather than silently emailing a hollow digest. Override with MIN_ARTICLES.
+    # Backward review editions synthesise from the project's OWN archive of fact-checked daily
+    # briefs covering the period — far richer than a few days of live RSS. gather_from_archive
+    # returns ([], "") when the archive is too thin, and we fall back to live RSS so the run never
+    # breaks (e.g. before the archive has filled up). Daily/ahead editions always use live RSS.
+    timeline = ""
+    if args.mode in ARCHIVE_REVIEW_MODES:
+        window = max(1, round(args.hours / 24))
+        print(f"Building review corpus from the archive (last {window}d)...", file=sys.stderr)
+        items, timeline = gather_from_archive(dt.date.today(), window)
+    if timeline:
+        for it in items:
+            it["fresh"] = True       # a retrospective covers the whole period — no NEW/old split
+        print(f"  archive: {len(items)} sources across the period's briefs", file=sys.stderr)
+    else:
+        print("Gathering news from RSS feeds...", file=sys.stderr)
+        items = gather(args.hours)
+        # #1 Freshness: tag each article NEW vs. already-covered in a recent digest.
+        seen_urls, seen_titles = recent_seen()
+        for it in items:
+            it["fresh"] = it["link"] not in seen_urls and _norm_title(it["title"]) not in seen_titles
+        n_new = sum(1 for it in items if it["fresh"])
+        print(f"  {len(items)} articles in the last {args.hours}h; {n_new} new", file=sys.stderr)
+
+    # Thin guard: too few items usually means feeds are down (or the archive is empty), not a
+    # quiet day. Abort non-zero so GitHub's failure email surfaces it. Override with MIN_ARTICLES.
     min_articles = int(os.environ.get("MIN_ARTICLES", "5"))
     if len(items) < min_articles:
-        print(f"ERROR: only {len(items)} articles fetched (< {min_articles}); "
-              "feeds are likely down or the window too narrow. Aborting so the "
-              "failure is visible instead of sending a thin digest.", file=sys.stderr)
+        print(f"ERROR: only {len(items)} items gathered (< {min_articles}); feeds/archive likely "
+              "unavailable. Aborting so the failure is visible instead of shipping a thin digest.",
+              file=sys.stderr)
         return 3
-    print(f"  {len(items)} articles in the last {args.hours}h", file=sys.stderr)
-
-    # #1 Freshness: tag each article NEW vs. already-covered in a recent digest.
-    seen_urls, seen_titles = recent_seen()
-    for it in items:
-        it["fresh"] = it["link"] not in seen_urls and _norm_title(it["title"]) not in seen_titles
-    n_new = sum(1 for it in items if it["fresh"])
-    print(f"  freshness: {n_new} new, {len(items) - n_new} previously covered (last 7 days)", file=sys.stderr)
 
     today = dt.date.today().isoformat()
     # NB: deliberately NO link in the corpus. The model cites by [n] only (finalize
@@ -843,9 +962,25 @@ def main() -> int:
         f"    {it['summary']}"
         for i, it in enumerate(items)
     )
-    user = (f"Today is {today}. Window: last {args.hours} hours. Edition: {args.edition}. Mode: {args.mode}.\n\n"
-            f"Here are the ONLY articles you may use ({len(items)} total). "
-            f"Write the digest grounded strictly in these:\n\n{corpus}")
+    if timeline:
+        # Review editions: the period's own daily briefs (the timeline) carry the analysis; the
+        # numbered list is the citeable ORIGINAL sources behind them, so [n] still links to a real
+        # article (finalize re-attaches the URL from `items`).
+        user = (f"Today is {today}. Edition: {args.edition}. Mode: {args.mode}.\n\n"
+                f"This is a RETROSPECTIVE over the whole period. Below is the PERIOD TIMELINE — the "
+                f"distilled thesis and key points from each of the period's daily briefs — followed "
+                f"by the numbered SOURCE ARTICLES behind them. Synthesise the review from the timeline "
+                f"(the big throughlines and how things developed across the period, NOT a day-by-day "
+                f"log); cite specific facts with [n] from the source list. The timeline is a SUMMARY: "
+                f"do NOT invent precise figures, percentages, dollar amounts, or superlatives ('largest', "
+                f"'first-ever') that aren't actually present — prefer qualitative synthesis over invented "
+                f"precision.\n\n"
+                f"=== PERIOD TIMELINE (oldest → newest) ===\n{timeline}\n\n"
+                f"=== SOURCE ARTICLES ({len(items)}) ===\n{corpus}")
+    else:
+        user = (f"Today is {today}. Window: last {args.hours} hours. Edition: {args.edition}. Mode: {args.mode}.\n\n"
+                f"Here are the ONLY articles you may use ({len(items)} total). "
+                f"Write the digest grounded strictly in these:\n\n{corpus}")
 
     print(f"Calling {label} ({engine_model(secrets, engine)})...", file=sys.stderr)
     try:
@@ -883,9 +1018,13 @@ def main() -> int:
         # so the grounding check doesn't strip the Week Ahead's calendar dates as "unsupported"
         # (it otherwise only sees the articles). Genuine outcome speculation is still flagged.
         cat_file = ROOT / "pharma-news" / "catalysts.md"
-        review_corpus = corpus
+        # For review editions the timeline carries the analysis the draft is grounded in, so the
+        # grounding check must see it too (otherwise it would flag well-supported synthesis as
+        # unsupported and strip it).
+        review_corpus = (f"=== PERIOD TIMELINE ===\n{timeline}\n\n=== SOURCE ARTICLES ===\n{corpus}"
+                         if timeline else corpus)
         if cat_file.exists():
-            review_corpus = (corpus + "\n\n=== CATALYST CALENDAR (curated; its dated entries are "
+            review_corpus = (review_corpus + "\n\n=== CATALYST CALENDAR (curated; its dated entries are "
                              "valid sources for upcoming events) ===\n" + cat_file.read_text(encoding="utf-8"))
         ok, issues, cat_events = review_digest(secrets, digest, review_corpus, dt.date.today())
         if ok:

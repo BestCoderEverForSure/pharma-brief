@@ -389,6 +389,70 @@ class TestForceTitle(unittest.TestCase):
         self.assertTrue(out.startswith("# Pharma Evening Digest — 16/06/2026"))
 
 
+class TestArchiveCorpus(unittest.TestCase):
+    """The backward review editions synthesise from the archived briefs covering the window
+    instead of live RSS, falling back to RSS when the archive is too thin."""
+
+    DAILY = ("# Pharma Morning Digest — {date}\n\n"
+             "> **Talking point:** Thesis for {date}.\n\n"
+             "## TL;DR\n- First point [1]\n- Second point [2]\n\n"
+             "## Top Stories\nbody\n\n"
+             "## Sources\n"
+             "1. [Headline A {date}](https://ex.com/a-{n}) · {date} · 10:00 UTC\n"
+             "2. [Headline B {date}](https://ex.com/b-{n}) · {date} · 11:00 UTC\n")
+
+    def _make_archive(self, dates):
+        d = Path(tempfile.mkdtemp())
+        for i, day in enumerate(dates):
+            (d / f"{day}.md").write_text(
+                self.DAILY.format(date=day.isoformat(), n=i), encoding="utf-8")
+        (d / "published.json").write_text("{}", encoding="utf-8")   # must be ignored
+        return d
+
+    def test_filename_date_parsing(self):
+        self.assertEqual(rd._brief_date("2026-06-15.md"), dt.date(2026, 6, 15))
+        self.assertIsNone(rd._brief_date("published.json"))
+        self.assertIsNone(rd._brief_date("notes.md"))
+
+    def test_review_brief_detection(self):
+        self.assertTrue(rd._is_review_brief("# Pharma Month in Review — 27/06/2026\n"))
+        self.assertFalse(rd._is_review_brief("# Pharma Morning Digest — 15/06/2026\n"))
+
+    def test_sources_parse_into_items(self):
+        items = rd._brief_sources(self.DAILY.format(date="2026-06-10", n=0))
+        self.assertEqual(len(items), 2)
+        self.assertEqual(items[0]["link"], "https://ex.com/a-0")
+        self.assertTrue(items[0]["title"].startswith("Headline A"))
+
+    def test_timeline_entry_has_thesis_and_points(self):
+        entry = rd._brief_timeline_entry(self.DAILY.format(date="2026-06-10", n=0))
+        self.assertIn("Thesis: Thesis for 2026-06-10", entry)
+        self.assertIn("First point", entry)
+        self.assertNotIn("[1]", entry)             # citation markers stripped from the timeline
+
+    def test_gather_from_archive_builds_items_and_timeline(self):
+        today = dt.date(2026, 6, 30)
+        dates = [today - dt.timedelta(days=k) for k in range(1, 11)]   # 10 briefs in-window
+        d = self._make_archive(dates)
+        items, timeline = rd.gather_from_archive(today, 30, archive_dir=d)
+        self.assertEqual(len(items), 20)            # 10 briefs × 2 unique sources
+        self.assertTrue(all(it["link"].startswith("https://") for it in items))
+        self.assertEqual(timeline.count("Thesis:"), 10)
+
+    def test_gather_from_archive_respects_window(self):
+        today = dt.date(2026, 6, 30)
+        dates = [today - dt.timedelta(days=k) for k in (1, 2, 3, 100, 200)]  # 2 are out of window
+        d = self._make_archive(dates)
+        items, timeline = rd.gather_from_archive(today, 30, archive_dir=d)
+        self.assertEqual(timeline.count("Thesis:"), 3)   # only the 3 within 30 days
+
+    def test_thin_archive_falls_back(self):
+        today = dt.date(2026, 6, 30)
+        d = self._make_archive([today - dt.timedelta(days=1)])   # 1 brief < MIN_ARCHIVE_BRIEFS
+        items, timeline = rd.gather_from_archive(today, 30, archive_dir=d)
+        self.assertEqual((items, timeline), ([], ""))
+
+
 class TestCallModelRetry(unittest.TestCase):
     """call_model is the one network call the whole pipeline depends on — its retry/backoff
     and fail-fast-on-4xx behaviour were previously untested."""
