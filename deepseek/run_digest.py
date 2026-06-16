@@ -204,11 +204,25 @@ def _brief_date(name: str):
         return None
 
 
-def _is_review_brief(md: str) -> bool:
-    """True if an archived brief is itself a rollup review (week/month in review) — those are
-    compact summaries we always keep, regardless of the daily-brief cap."""
-    title = next((l for l in md.splitlines() if l.startswith("# ")), "").lower()
-    return "in review" in title
+def _brief_title(md: str) -> str:
+    return next((l for l in md.splitlines() if l.startswith("# ")), "").lower()
+
+
+def _brief_is_forward(md: str) -> bool:
+    """A forward-looking brief (week/month/year ahead). Excluded from a RETROSPECTIVE corpus —
+    its content is predictions, not what actually happened."""
+    return "ahead" in _brief_title(md)
+
+
+def _brief_window_days(md: str) -> int:
+    """Days a rollup review summarises (year 365 / month 30 / week 7), else 0 for a daily brief.
+    A coarser rollup subsumes the finer briefs inside its span, so the timeline doesn't
+    double-count the same period (a Month in Review already distils that month's weeklies/dailies)."""
+    t = _brief_title(md)
+    for kw, days in (("year in review", 365), ("month in review", 30), ("week in review", 7)):
+        if kw in t:
+            return days
+    return 0
 
 
 def _brief_timeline_entry(md: str) -> str:
@@ -259,18 +273,31 @@ def gather_from_archive(today: dt.date, window_days: int, archive_dir=None) -> t
     briefs = []
     for p in sorted(archive_dir.glob("*.md")):
         d = _brief_date(p.name)
-        if d and start < d <= today:
-            try:
-                briefs.append((d, p.read_text(encoding="utf-8")))
-            except OSError:
-                continue
+        if not (d and start < d <= today):
+            continue
+        try:
+            md = p.read_text(encoding="utf-8")
+        except OSError:
+            continue
+        if _brief_is_forward(md):       # a retrospective doesn't synthesise from forward briefs
+            continue
+        briefs.append((d, md))
     if len(briefs) < MIN_ARCHIVE_BRIEFS:
         return [], ""
-    # Always keep the rollup reviews (few, rich); cap the dailies to the most recent N.
-    reviews = [(d, md) for d, md in briefs if _is_review_brief(md)]
-    dailies = [(d, md) for d, md in briefs if not _is_review_brief(md)]
-    dailies.sort(key=lambda b: b[0])
-    chosen = sorted(reviews + dailies[-ARCHIVE_MAX_DAILY:], key=lambda b: b[0])
+    # Drop briefs already summarised by a COARSER rollup, so the timeline doesn't double-count the
+    # same period (process widest window first; skip any brief whose date falls in a kept span).
+    kept, covered = [], []
+    for d, md in sorted(briefs, key=lambda b: -_brief_window_days(b[1])):
+        if any(s < d <= e for s, e in covered):
+            continue
+        kept.append((d, md))
+        w = _brief_window_days(md)
+        if w:
+            covered.append((d - dt.timedelta(days=w), d))
+    # Keep all surviving rollups; cap the uncovered daily tail to the most recent N (token budget).
+    rollups = [(d, md) for d, md in kept if _brief_window_days(md)]
+    dailies = sorted([(d, md) for d, md in kept if not _brief_window_days(md)], key=lambda b: b[0])
+    chosen = sorted(rollups + dailies[-ARCHIVE_MAX_DAILY:], key=lambda b: b[0])
     timeline = "\n\n".join(_brief_timeline_entry(md) for _, md in chosen)
     # Deduped union of sources, newest brief first, capped.
     items, seen = [], set()
@@ -284,6 +311,8 @@ def gather_from_archive(today: dt.date, window_days: int, archive_dir=None) -> t
                 break
         if len(items) >= ARCHIVE_MAX_SOURCES:
             break
+    if not items:                       # briefs present but no citeable sources → fall back to RSS
+        return [], ""
     return items, timeline
 
 
@@ -942,11 +971,13 @@ def main() -> int:
         n_new = sum(1 for it in items if it["fresh"])
         print(f"  {len(items)} articles in the last {args.hours}h; {n_new} new", file=sys.stderr)
 
-    # Thin guard: too few items usually means feeds are down (or the archive is empty), not a
-    # quiet day. Abort non-zero so GitHub's failure email surfaces it. Override with MIN_ARTICLES.
+    # Thin guard (RSS path only): too few articles usually means feeds are down, not a quiet day —
+    # abort non-zero so GitHub's failure email surfaces it. Archive reviews aren't subject to this
+    # source count: they already cleared their own floor (>= MIN_ARCHIVE_BRIEFS) in
+    # gather_from_archive, and a review synthesises from the timeline, not a raw article count.
     min_articles = int(os.environ.get("MIN_ARTICLES", "5"))
-    if len(items) < min_articles:
-        print(f"ERROR: only {len(items)} items gathered (< {min_articles}); feeds/archive likely "
+    if not timeline and len(items) < min_articles:
+        print(f"ERROR: only {len(items)} articles gathered (< {min_articles}); feeds likely "
               "unavailable. Aborting so the failure is visible instead of shipping a thin digest.",
               file=sys.stderr)
         return 3

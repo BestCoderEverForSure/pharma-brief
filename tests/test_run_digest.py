@@ -409,14 +409,24 @@ class TestArchiveCorpus(unittest.TestCase):
         (d / "published.json").write_text("{}", encoding="utf-8")   # must be ignored
         return d
 
+    def _brief(self, title, date, n=0):
+        """A minimal valid brief with an arbitrary title (for review/ahead/daily mixes)."""
+        return (f"# {title} — {date}\n\n> **Talking point:** Thesis for {title}.\n\n"
+                f"## TL;DR\n- A point [1]\n\n## Sources\n"
+                f"1. [Headline {date}](https://ex.com/x-{n}) · {date}\n")
+
     def test_filename_date_parsing(self):
         self.assertEqual(rd._brief_date("2026-06-15.md"), dt.date(2026, 6, 15))
         self.assertIsNone(rd._brief_date("published.json"))
         self.assertIsNone(rd._brief_date("notes.md"))
 
-    def test_review_brief_detection(self):
-        self.assertTrue(rd._is_review_brief("# Pharma Month in Review — 27/06/2026\n"))
-        self.assertFalse(rd._is_review_brief("# Pharma Morning Digest — 15/06/2026\n"))
+    def test_brief_window_days_and_forward_detection(self):
+        self.assertEqual(rd._brief_window_days("# Pharma Year in Review — x\n"), 365)
+        self.assertEqual(rd._brief_window_days("# Pharma Month in Review — x\n"), 30)
+        self.assertEqual(rd._brief_window_days("# Pharma Week in Review — x\n"), 7)
+        self.assertEqual(rd._brief_window_days("# Pharma Morning Digest — x\n"), 0)
+        self.assertTrue(rd._brief_is_forward("# Pharma Month Ahead — x\n"))
+        self.assertFalse(rd._brief_is_forward("# Pharma Month in Review — x\n"))
 
     def test_sources_parse_into_items(self):
         items = rd._brief_sources(self.DAILY.format(date="2026-06-10", n=0))
@@ -462,6 +472,25 @@ class TestArchiveCorpus(unittest.TestCase):
         items, timeline = rd.gather_from_archive(today, 30, archive_dir=d)
         self.assertEqual(len(items), 6)              # 3 good briefs × 2 sources; junk adds none
         self.assertEqual(timeline.count("Thesis:"), 3)
+
+    def test_rollup_subsumes_finer_briefs_and_excludes_forward(self):
+        # A Month in Review subsumes that month's weekly + daily briefs (no double-counting), a
+        # forward 'Ahead' brief is excluded from a retrospective, and the uncovered tail is kept.
+        today = dt.date(2026, 7, 20)
+        d = Path(tempfile.mkdtemp())
+        (d / "2026-06-30.md").write_text(self._brief("Pharma Month in Review", "2026-06-30", 1))
+        (d / "2026-06-18.md").write_text(self._brief("Pharma Week in Review", "2026-06-18", 2))
+        (d / "2026-06-10.md").write_text(self._brief("Pharma Morning Digest", "2026-06-10", 3))
+        (d / "2026-07-05.md").write_text(self._brief("Pharma Month Ahead", "2026-07-05", 4))
+        (d / "2026-07-08.md").write_text(self._brief("Pharma Morning Digest", "2026-07-08", 5))
+        (d / "2026-07-15.md").write_text(self._brief("Pharma Morning Digest", "2026-07-15", 6))
+        items, timeline = rd.gather_from_archive(today, 365, archive_dir=d)
+        self.assertIn("Month in Review", timeline)
+        self.assertNotIn("Week in Review", timeline)    # subsumed by the month rollup
+        self.assertNotIn("Ahead", timeline)             # forward-looking brief excluded
+        self.assertNotIn("2026-06-10", timeline)        # daily inside the month, subsumed
+        self.assertIn("2026-07-15", timeline)           # uncovered tail daily kept
+        self.assertEqual(timeline.count("###"), 3)      # month review + 2 tail dailies
 
 
 class TestCallModelRetry(unittest.TestCase):
