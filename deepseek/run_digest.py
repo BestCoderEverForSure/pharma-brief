@@ -266,8 +266,10 @@ def _brief_sources(md: str) -> list[dict]:
 def gather_from_archive(today: dt.date, window_days: int, archive_dir=None) -> tuple[list[dict], str]:
     """Build a review corpus from the archived briefs covering the window. Returns
     (items, timeline): `items` = deduped original source articles (title+URL+date) for citation;
-    `timeline` = each brief's distilled summary oldest→newest, for the model to synthesise from.
-    Returns ([], "") when fewer than MIN_ARCHIVE_BRIEFS exist, so the caller falls back to RSS."""
+    `timeline` = each kept brief's distilled summary oldest→newest, for the model to synthesise
+    from. Forward (*ahead) briefs are skipped, and a coarser rollup subsumes the finer briefs
+    inside its span (no double-counting). Returns ([], "") — so the caller falls back to live RSS —
+    when fewer than MIN_ARCHIVE_BRIEFS retrospective briefs exist, or none yield a citeable source."""
     archive_dir = archive_dir or (ROOT / "digests")
     start = today - dt.timedelta(days=window_days)
     briefs = []
@@ -860,11 +862,13 @@ def resolve_auto(args) -> None:
             dt.datetime.now(dt.timezone.utc).date())
 
 
-def window_subtitle(mode: str, hours: int, today: dt.date, n_read: int) -> str:
+def window_subtitle(mode: str, hours: int, today: dt.date, n_read: int, from_archive: bool = False) -> str:
     """Deterministic 'Window: …' subtitle: the real date range the brief covers plus how many
-    articles were scanned. Backward editions (daily/review/month_review/year_review) show the
-    lookback range; forward editions (week/month/year ahead) show the coming span. Replaces the
-    model's vague 'last N hours' with trustworthy facts."""
+    articles/sources underlie it. Backward editions (daily/review/month_review/year_review) show
+    the lookback range; forward editions (week/month/year ahead) show the coming span. When a
+    review was synthesised from the archive (from_archive), the count is labelled as sources drawn
+    from the period's briefs rather than articles freshly 'scanned'. Replaces the model's vague
+    'last N hours' with trustworthy facts."""
     # Show the start's year only when it differs from the end's (keeps weekly/monthly tight,
     # but disambiguates the year editions and any window that straddles New Year — otherwise a
     # trailing 12 months would render as the bare, typo-looking 'Dec 26 – Dec 26, 2026').
@@ -878,13 +882,15 @@ def window_subtitle(mode: str, hours: int, today: dt.date, n_read: int) -> str:
         label = {"month_ahead": "month ahead", "year_ahead": "year ahead"}.get(mode, "week ahead")
         return f"Window: {_span(start, end)} ({label}) · grounded in {n_read} recent articles"
     start = today - dt.timedelta(days=days)
-    return f"Window: {_span(start, today)} · {n_read} articles scanned"
+    tail = "sources across the period's briefs" if from_archive else "articles scanned"
+    return f"Window: {_span(start, today)} · {n_read} {tail}"
 
 
-def apply_window_subtitle(digest: str, mode: str, hours: int, today: dt.date, n_read: int) -> str:
+def apply_window_subtitle(digest: str, mode: str, hours: int, today: dt.date, n_read: int,
+                          from_archive: bool = False) -> str:
     """Swap the model's 'Window: …' subtitle segment for the deterministic one, preserving the
     ' · ' separator to the next field (so it doesn't read 'articles· Engine')."""
-    ws = window_subtitle(mode, hours, today, n_read)
+    ws = window_subtitle(mode, hours, today, n_read, from_archive)
     return re.sub(r"Window:[^·\n*]*(·[ \t]*)?",
                   lambda m: ws + (" · " if m.group(1) else ""),
                   digest, count=1)
@@ -1072,8 +1078,10 @@ def main() -> int:
     digest = force_title(digest, args.mode, dt.date.today())
 
     # Replace the model's vague "Window: last N hours" with the real date range + how many
-    # articles were scanned (deterministic — trustworthy, unlike the model's own wording).
-    digest = apply_window_subtitle(digest, args.mode, args.hours, dt.date.today(), len(items))
+    # articles/sources underlie it (deterministic — trustworthy, unlike the model's own wording).
+    # `timeline` is truthy only when the review was built from the archive, not live RSS.
+    digest = apply_window_subtitle(digest, args.mode, args.hours, dt.date.today(),
+                                   len(items), from_archive=bool(timeline))
 
     out = ROOT / "digests" / f"{today}.md"
     out.parent.mkdir(parents=True, exist_ok=True)

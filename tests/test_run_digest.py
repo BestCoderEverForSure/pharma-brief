@@ -241,6 +241,14 @@ class TestWindowSubtitle(unittest.TestCase):
         self.assertIn("year ahead", s)
         self.assertIn("700", s)
 
+    def test_archive_review_labels_count_as_sources(self):
+        # Archive-sourced reviews say "sources across the period's briefs", not "articles scanned".
+        s = rd.window_subtitle("month_review", 720, self.TODAY, 133, from_archive=True)
+        self.assertIn("133 sources across the period's briefs", s)
+        self.assertNotIn("scanned", s)
+        # RSS-sourced (default) keeps the original wording.
+        self.assertIn("articles scanned", rd.window_subtitle("month_review", 720, self.TODAY, 133))
+
 
 class TestAutoSchedule(unittest.TestCase):
     """Locks the date->(hours, edition, mode) table that used to be shell `if`s in the
