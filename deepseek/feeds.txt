@@ -9,6 +9,8 @@ https://www.pharmaceutical-technology.com/feed/
 # Breadth layer: Google News aggregates ~100 recent headlines per edition from MANY outlets
 # the curated feeds can't pull directly. Three regional editions for GLOBAL balance (US +
 # Europe + India) so coverage genuinely represents the industry, not just the US/FDA.
+# NOTE: the 'when:2d' below is the DAILY window; run_digest._window_feed_url widens it to match
+# longer runs (week->8d, month->31d, year->366d) so Week/Month/Year reviews get real breadth.
 # United States (FDA, US market):
 https://news.google.com/rss/search?q=%28pharmaceutical%20OR%20biotech%20OR%20FDA%20OR%20%22drug%20approval%22%29%20when%3A2d&hl=en-US&gl=US&ceid=US%3Aen
 # Europe (EMA/CHMP, UK/EU pharma — Novo, AZ, Sanofi, Roche, Novartis, GSK, Bayer):

@@ -152,10 +152,20 @@ def parse_feed(xml_bytes: bytes, since: dt.datetime) -> list[dict]:
     return items
 
 
+def _window_feed_url(url: str, hours: int) -> str:
+    """Widen a Google News 'when:Nd' recency filter to match the run's window, so a
+    Week/Month/Year in Review pulls breadth headlines from the whole period instead of the
+    feed's hardcoded 2 days. Daily (24h) resolves back to when:2d — byte-identical to before.
+    Google News caps each query at ~100 items but spreads them across the requested span."""
+    days = max(2, round(hours / 24) + 1)   # 24h→2d, 168h→8d, 720h→31d, 8760h→366d
+    return re.sub(r"(when(?:%3A|:))\d+d", lambda m: f"{m.group(1)}{days}d", url)
+
+
 def gather(hours: int) -> list[dict]:
     since = dt.datetime.now(dt.timezone.utc) - dt.timedelta(hours=hours)
     all_items = []
     for url in get_feeds():
+        url = _window_feed_url(url, hours)
         print(f"  fetching {url}", file=sys.stderr)
         raw = fetch(url)
         if raw:
@@ -744,6 +754,31 @@ def apply_window_subtitle(digest: str, mode: str, hours: int, today: dt.date, n_
                   digest, count=1)
 
 
+# Canonical H1 titles for the non-daily editions. The market scale (brief_market_days) and the
+# site/email "which edition is this" detection are keyed off the title TEXT, so we force it
+# deterministically rather than trust the model to echo the prompt's title verbatim.
+_EDITION_TITLES = {
+    "review":       "Pharma Week in Review",
+    "ahead":        "Pharma Week Ahead",
+    "month_review": "Pharma Month in Review",
+    "month_ahead":  "Pharma Month Ahead",
+    "year_review":  "Pharma Year in Review",
+    "year_ahead":   "Pharma Year Ahead",
+}
+
+
+def force_title(digest: str, mode: str, today: dt.date) -> str:
+    """Normalise the H1 title. The date is always forced to DD/MM/YYYY. For the special editions
+    the WHOLE title is forced to its canonical phrase too, so downstream title-keyed logic can't
+    be thrown off by the model paraphrasing the heading. The daily/evening title (Morning/Evening
+    Digest) is the model's to choose — only its date is normalised."""
+    dmy = today.strftime("%d/%m/%Y")
+    canonical = _EDITION_TITLES.get(mode)
+    if canonical:
+        return re.sub(r"^#\s+.*$", lambda m: f"# {canonical} — {dmy}", digest, count=1, flags=re.M)
+    return re.sub(r"^(#\s+\S.*?)\s+[-–—]\s+.*$", rf"\1 — {dmy}", digest, count=1, flags=re.M)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--hours", type=int, default=24)
@@ -861,10 +896,10 @@ def main() -> int:
 
     digest = finalize(digest, items, label, engine_model(secrets, engine))
 
-    # Force the title's date to DD/MM/YYYY (replace whatever date the model wrote after the
-    # title's " - "). Deterministic — doesn't rely on the model's date formatting.
-    dmy = dt.date.today().strftime("%d/%m/%Y")
-    digest = re.sub(r"^(#\s+\S.*?)\s+[-–—]\s+.*$", rf"\1 — {dmy}", digest, count=1, flags=re.M)
+    # Stamp the title deterministically: always normalise the date to DD/MM/YYYY, and for the
+    # special editions force the whole canonical title so the market scale and edition detection
+    # (both keyed off the title text) never depend on the model echoing the prompt exactly.
+    digest = force_title(digest, args.mode, dt.date.today())
 
     # Replace the model's vague "Window: last N hours" with the real date range + how many
     # articles were scanned (deterministic — trustworthy, unlike the model's own wording).

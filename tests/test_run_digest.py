@@ -281,6 +281,23 @@ class TestAutoSchedule(unittest.TestCase):
         self.assertEqual(rd.auto_schedule(dt.date(2026, 12, 19)), (168, "evening", "review"))
         self.assertEqual(rd.auto_schedule(dt.date(2026, 12, 20)), (168, "evening", "ahead"))
 
+    def test_full_year_distribution(self):
+        # Walk every day of a year: never raises, and exactly one last-Saturday per month is
+        # upgraded (December's to year_review, the other 11 to month_review) — same for Sundays.
+        sat, sun = {}, {}
+        d = dt.date(2027, 1, 1)
+        while d.year == 2027:
+            _, _, mode = rd.auto_schedule(d)              # must not raise on any date
+            if d.isoweekday() == 6:
+                sat[mode] = sat.get(mode, 0) + 1
+            elif d.isoweekday() == 7:
+                sun[mode] = sun.get(mode, 0) + 1
+            d += dt.timedelta(days=1)
+        self.assertEqual(sat.get("year_review"), 1)       # only December's last Saturday
+        self.assertEqual(sat.get("month_review"), 11)     # the other eleven months
+        self.assertEqual(sun.get("year_ahead"), 1)
+        self.assertEqual(sun.get("month_ahead"), 11)
+
 
 class TestResolveAuto(unittest.TestCase):
     """resolve_auto mutates args from env (manual cloud run) or the weekday (scheduled)."""
@@ -308,6 +325,15 @@ class TestResolveAuto(unittest.TestCase):
         rd.resolve_auto(a)
         self.assertEqual((a.hours, a.edition, a.mode), (168, "evening", "review"))
 
+    def test_manual_month_review_from_env(self):
+        # A workflow_dispatch can request the new editions explicitly.
+        os.environ["IN_HOURS"] = "720"
+        os.environ["IN_EDITION"] = "evening"
+        os.environ["IN_MODE"] = "month_review"
+        a = self._args()
+        rd.resolve_auto(a)
+        self.assertEqual((a.hours, a.edition, a.mode), (720, "evening", "month_review"))
+
     def test_manual_inputs_default_edition_mode_when_blank(self):
         os.environ["IN_HOURS"] = "48"   # hours given, edition/mode left empty
         a = self._args()
@@ -320,6 +346,47 @@ class TestResolveAuto(unittest.TestCase):
         rd.resolve_auto(a)
         expected = rd.auto_schedule(dt.datetime.now(dt.timezone.utc).date())
         self.assertEqual((a.hours, a.edition, a.mode), expected)
+
+
+class TestWindowFeedUrl(unittest.TestCase):
+    """The Google News breadth feed's 'when:Nd' recency cap must widen to match the run's
+    window, so reviews aren't grounded in only the hardcoded 2 days."""
+
+    GN = "https://news.google.com/rss/search?q=x%20when%3A2d&hl=en-US"
+
+    def test_daily_is_byte_identical(self):
+        self.assertEqual(rd._window_feed_url(self.GN, 24), self.GN)   # 24h -> when:2d, unchanged
+
+    def test_widens_for_week_month_year(self):
+        self.assertIn("when%3A8d", rd._window_feed_url(self.GN, 168))     # week
+        self.assertIn("when%3A31d", rd._window_feed_url(self.GN, 720))    # month
+        self.assertIn("when%3A366d", rd._window_feed_url(self.GN, 8760))  # year
+
+    def test_non_google_url_untouched(self):
+        u = "https://www.fiercepharma.com/rss/xml"
+        self.assertEqual(rd._window_feed_url(u, 720), u)
+
+    def test_handles_raw_colon_form(self):
+        self.assertIn("when:31d", rd._window_feed_url("https://x.test/?q=a%20when:2d", 720))
+
+
+class TestForceTitle(unittest.TestCase):
+    """force_title normalises the H1: date always, and the whole canonical title for the
+    special editions (so market scale / edition detection don't depend on the model)."""
+
+    D = dt.date(2026, 6, 27)
+
+    def test_special_edition_title_is_forced_regardless_of_model_wording(self):
+        out = rd.force_title("# Pharma Monthly Wrap-Up - whenever\n\nbody", "month_review", self.D)
+        self.assertTrue(out.startswith("# Pharma Month in Review — 27/06/2026"))
+
+    def test_year_edition_title_forced(self):
+        out = rd.force_title("# some creative heading the model invented\n", "year_review", self.D)
+        self.assertTrue(out.startswith("# Pharma Year in Review — 27/06/2026"))
+
+    def test_daily_keeps_model_prefix_and_only_fixes_date(self):
+        out = rd.force_title("# Pharma Evening Digest - 1 Jan 1999\nx", "daily", dt.date(2026, 6, 16))
+        self.assertTrue(out.startswith("# Pharma Evening Digest — 16/06/2026"))
 
 
 class TestCallModelRetry(unittest.TestCase):
