@@ -629,7 +629,7 @@ def build():
 </header>
 <div id="results" style="display:none"></div>
 <section class="block" id="about"><div class="block-label">About</div><div class="block-body">
-  <p><strong>Pharma Morning Brief</strong> turns each day's global pharmaceutical news into a fact-checked, ~3-minute executive read &mdash; for someone entering pharma who needs to stay current without scanning 20 outlets. Weekdays: a daily brief; Saturday: a <em>Week in Review</em>; Sunday: a <em>Week Ahead</em>.</p>
+  <p><strong>Pharma Morning Brief</strong> turns each day's global pharmaceutical news into a fact-checked, ~3-minute executive read &mdash; for someone entering pharma who needs to stay current without scanning 20 outlets. Weekdays: a daily brief; Saturday: a <em>Week in Review</em>; Sunday: a <em>Week Ahead</em>. On the last weekend of each month these widen to a <em>Month in Review</em> and <em>Month Ahead</em>, and at the close of December to a <em>Year in Review</em> and <em>Year Ahead</em>.</p>
   <p>Every fact is grounded in a real, linked source and passed through an automated <strong>grounding check</strong> that removes claims the sources don't support; niche terms are glossed in plain language. It runs automatically each morning on <em>Gemini</em> (free) &mdash; one click switches to <em>DeepSeek</em> &mdash; with the richest analysis available on demand via <em>Claude</em>. Each issue is labelled with the engine that wrote it.</p>
 </div></section>
 <section class="block" id="latest"><div class="block-label">Latest brief</div><div class="block-body">{latest_html}</div></section>

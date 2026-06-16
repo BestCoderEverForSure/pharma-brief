@@ -182,6 +182,31 @@ MODE_NOTES = {
               "and for each explain what is at stake, who is affected, and what to watch. Use the "
               "past week's articles only for context/grounding. Keep the talking point and TL;DR, "
               "but frame everything around what's coming. Title it '# Pharma Week Ahead - {DATE}'."),
+    "month_review": ("- MONTH IN REVIEW edition (last Saturday of the month): zoom all the way out to "
+                     "the WHOLE MONTH. Synthesize the 3-5 defining themes/threads of the month, what "
+                     "materially changed and why it matters, the through-lines connecting stories, and "
+                     "how the competitive landscape shifted. An analytical monthly retrospective, not a "
+                     "list of headlines — think bigger and more selective than the weekly review. "
+                     "Title it '# Pharma Month in Review - {DATE}'."),
+    "month_ahead": ("- MONTH AHEAD edition (last Sunday of the month): do NOT recap past news. Look "
+                    "FORWARD across the COMING MONTH — lead with the most important catalysts and events "
+                    "in the next ~4 weeks (from the catalyst calendar in the methodology and any "
+                    "explicitly-dated future events in the articles), and for each explain what is at "
+                    "stake, who is affected, and what to watch. Use the past month's articles only for "
+                    "context/grounding. Keep the talking point and TL;DR, but frame everything around "
+                    "what's coming. Title it '# Pharma Month Ahead - {DATE}'."),
+    "year_review": ("- YEAR IN REVIEW edition (last Saturday of December): the big annual retrospective. "
+                    "Step all the way back and tell the story of the WHOLE YEAR in pharma — the defining "
+                    "themes, the landmark approvals, failures and deals, the winners and losers, and how "
+                    "the competitive landscape shifted over the year. Highly selective and analytical: "
+                    "the 5-7 things that actually mattered, not a month-by-month log. Title it "
+                    "'# Pharma Year in Review - {DATE}'."),
+    "year_ahead": ("- YEAR AHEAD edition (last Sunday of December): do NOT recap the past. Look FORWARD "
+                   "across the COMING YEAR — the major catalysts, readouts, launches, patent cliffs and "
+                   "regulatory decisions expected over the next ~12 months (from the catalyst calendar "
+                   "in the methodology and any explicitly-dated future events in the articles), and for "
+                   "each explain what is at stake and what to watch. Frame everything around what's "
+                   "coming. Title it '# Pharma Year Ahead - {DATE}'."),
 }
 
 
@@ -636,12 +661,40 @@ def merge_catalysts(events: list, today: dt.date) -> int:
 #  testable and (b) leaves the workflow free of logic. The cloud job calls
 #  run_digest.py with --auto; everything else still passes explicit flags.
 # --------------------------------------------------------------------------- #
-def auto_schedule(weekday: int) -> tuple[int, str, str]:
-    """(hours, edition, mode) for a scheduled run, by ISO weekday (1=Mon … 7=Sun):
-    Saturday = Week in Review (168h), Sunday = Week Ahead (168h), Mon–Fri = daily brief."""
+def _is_last_weekday_of_month(d: dt.date) -> bool:
+    """True if d is the LAST occurrence of its weekday in its month — i.e. the same weekday
+    seven days later spills into the next month. (Used to upgrade the last Sat/Sun of the
+    month to the monthly editions.)"""
+    return (d + dt.timedelta(days=7)).month != d.month
+
+
+def auto_schedule(today: dt.date) -> tuple[int, str, str]:
+    """(hours, edition, mode) for a scheduled run, derived from the run's UTC date. Editions
+    widen as the calendar rolls over — the last weekend of December beats the last weekend of
+    a month, which beats an ordinary weekend:
+      • last Saturday of December → Year in Review  (8760h)
+      • last Saturday of a month  → Month in Review (720h)   — else Saturday → Week in Review (168h)
+      • last Sunday  of December → Year Ahead      (8760h)
+      • last Sunday  of a month  → Month Ahead     (720h)   — else Sunday   → Week Ahead    (168h)
+      • Mon–Fri                  → daily brief (24h)
+    Retrospectives (review/month_review/year_review) and forward previews (ahead/month_ahead/
+    year_ahead) all run as the deeper 'evening' edition. The last Sat/Sun are computed
+    independently, so a month whose last Saturday and last Sunday fall in different weekends
+    (and the December year-end, which can likewise split) is handled correctly."""
+    weekday = today.isoweekday()
+    last_of_month = _is_last_weekday_of_month(today)
+    year_end = last_of_month and today.month == 12   # last Sat/Sun of the whole year
     if weekday == 6:        # Saturday
+        if year_end:
+            return 8760, "evening", "year_review"
+        if last_of_month:
+            return 720, "evening", "month_review"
         return 168, "evening", "review"
     if weekday == 7:        # Sunday
+        if year_end:
+            return 8760, "evening", "year_ahead"
+        if last_of_month:
+            return 720, "evening", "month_ahead"
         return 168, "evening", "ahead"
     return 24, "morning", "daily"
 
@@ -649,7 +702,7 @@ def auto_schedule(weekday: int) -> tuple[int, str, str]:
 def resolve_auto(args) -> None:
     """Fill args.hours/edition/mode for --auto, mutating `args` in place. A *manual*
     workflow run passes the picks through the IN_HOURS/IN_EDITION/IN_MODE env vars;
-    a *scheduled* run leaves IN_HOURS empty, so we derive them from today's UTC weekday
+    a *scheduled* run leaves IN_HOURS empty, so we derive them from today's UTC date
     (this is exactly what the workflow's shell `if` used to do)."""
     in_hours = (os.environ.get("IN_HOURS") or "").strip()
     if in_hours:
@@ -658,21 +711,28 @@ def resolve_auto(args) -> None:
         args.mode = (os.environ.get("IN_MODE") or "daily").strip()
     else:
         args.hours, args.edition, args.mode = auto_schedule(
-            dt.datetime.now(dt.timezone.utc).isoweekday())
+            dt.datetime.now(dt.timezone.utc).date())
 
 
 def window_subtitle(mode: str, hours: int, today: dt.date, n_read: int) -> str:
     """Deterministic 'Window: …' subtitle: the real date range the brief covers plus how many
-    articles were scanned. Backward editions (daily/review) show the lookback range; the Week
-    Ahead shows the coming week. Replaces the model's vague 'last N hours' with trustworthy facts."""
-    if mode == "ahead":
-        start, end = today + dt.timedelta(days=1), today + dt.timedelta(days=7)
-        return (f"Window: {start.strftime('%b %-d')} – {end.strftime('%b %-d, %Y')} "
-                f"(week ahead) · grounded in {n_read} recent articles")
-    days = max(1, round(hours / 24))
+    articles were scanned. Backward editions (daily/review/month_review/year_review) show the
+    lookback range; forward editions (week/month/year ahead) show the coming span. Replaces the
+    model's vague 'last N hours' with trustworthy facts."""
+    # Show the start's year only when it differs from the end's (keeps weekly/monthly tight,
+    # but disambiguates the year editions and any window that straddles New Year — otherwise a
+    # trailing 12 months would render as the bare, typo-looking 'Dec 26 – Dec 26, 2026').
+    def _span(start: dt.date, end: dt.date) -> str:
+        start_fmt = "%b %-d, %Y" if start.year != end.year else "%b %-d"
+        return f"{start.strftime(start_fmt)} – {end.strftime('%b %-d, %Y')}"
+
+    days = max(1, round(hours / 24))   # 168h → ~1 week, 720h → ~1 month, 8760h → ~1 year
+    if mode in ("ahead", "month_ahead", "year_ahead"):
+        start, end = today + dt.timedelta(days=1), today + dt.timedelta(days=days)
+        label = {"month_ahead": "month ahead", "year_ahead": "year ahead"}.get(mode, "week ahead")
+        return f"Window: {_span(start, end)} ({label}) · grounded in {n_read} recent articles"
     start = today - dt.timedelta(days=days)
-    return (f"Window: {start.strftime('%b %-d')} – {today.strftime('%b %-d, %Y')} "
-            f"· {n_read} articles scanned")
+    return f"Window: {_span(start, today)} · {n_read} articles scanned"
 
 
 def apply_window_subtitle(digest: str, mode: str, hours: int, today: dt.date, n_read: int) -> str:
@@ -692,12 +752,17 @@ def main() -> int:
     ap.add_argument("--telegram", action="store_true", help="post a summary via send_telegram.py")
     ap.add_argument("--engine", choices=["gemini", "deepseek"],
                     help="override the engine for this run (default: PHARMA_ENGINE, else Gemini)")
-    ap.add_argument("--mode", choices=["daily", "review", "ahead"], default="daily",
-                    help="daily brief, Saturday week-in-review, or Sunday week-ahead")
+    ap.add_argument("--mode",
+                    choices=["daily", "review", "ahead",
+                             "month_review", "month_ahead", "year_review", "year_ahead"],
+                    default="daily",
+                    help="daily brief, week/month/year in-review (retrospective), or "
+                         "week/month/year ahead (forward)")
     ap.add_argument("--auto", action="store_true",
                     help="scheduled-run mode: pick hours/edition/mode from IN_HOURS/IN_EDITION/IN_MODE "
-                         "env vars if set (manual cloud run), else from today's UTC weekday "
-                         "(Sat=review, Sun=ahead, else daily). Used by the GitHub workflow.")
+                         "env vars if set (manual cloud run), else from today's UTC date (last Sat of "
+                         "Dec=year_review, other last Sat=month_review, other Sat=review; the Sunday "
+                         "equivalents for *_ahead; else daily). Used by the GitHub workflow.")
     args = ap.parse_args()
     if args.auto:
         resolve_auto(args)

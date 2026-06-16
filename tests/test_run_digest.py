@@ -215,16 +215,71 @@ class TestWindowSubtitle(unittest.TestCase):
         self.assertIn("week ahead", s)
         self.assertIn("250", s)
 
+    def test_month_review_shows_30day_lookback(self):
+        s = rd.window_subtitle("month_review", 720, self.TODAY, 612)
+        self.assertIn("May 15", s)                # 720h ≈ 30 days back from Jun 14
+        self.assertIn("Jun 14, 2026", s)
+        self.assertIn("612 articles scanned", s)
+
+    def test_month_ahead_shows_coming_month(self):
+        s = rd.window_subtitle("month_ahead", 720, self.TODAY, 400)
+        self.assertIn("Jun 15", s)                # day after today
+        self.assertIn("Jul 14, 2026", s)          # +30 days
+        self.assertIn("month ahead", s)
+        self.assertIn("400", s)
+
+    def test_year_review_shows_trailing_year_with_start_year(self):
+        s = rd.window_subtitle("year_review", 8760, self.TODAY, 900)
+        self.assertIn("Jun 14, 2025", s)          # ~365 days back — start carries its year
+        self.assertIn("Jun 14, 2026", s)
+        self.assertIn("900 articles scanned", s)
+
+    def test_year_ahead_shows_coming_year(self):
+        s = rd.window_subtitle("year_ahead", 8760, self.TODAY, 700)
+        self.assertIn("Jun 15, 2026", s)          # start carries its year (span crosses into 2027)
+        self.assertIn("Jun 14, 2027", s)
+        self.assertIn("year ahead", s)
+        self.assertIn("700", s)
+
 
 class TestAutoSchedule(unittest.TestCase):
-    """Locks the weekday->(hours, edition, mode) table that used to be shell `if`s in
-    the workflow. Mon-Fri = daily brief, Sat = Week in Review, Sun = Week Ahead."""
+    """Locks the date->(hours, edition, mode) table that used to be shell `if`s in the
+    workflow. Mon-Fri = daily brief; Saturday = Week in Review, but the LAST Saturday of the
+    month = Month in Review; Sunday = Week Ahead, but the LAST Sunday = Month Ahead."""
 
-    def test_weekday_table(self):
-        for wd in (1, 2, 3, 4, 5):  # Mon-Fri
-            self.assertEqual(rd.auto_schedule(wd), (24, "morning", "daily"))
-        self.assertEqual(rd.auto_schedule(6), (168, "evening", "review"))   # Sat
-        self.assertEqual(rd.auto_schedule(7), (168, "evening", "ahead"))    # Sun
+    def test_weekdays_are_daily(self):
+        for day in (15, 16, 17, 18, 19):    # Mon-Fri, Jun 2026
+            self.assertEqual(rd.auto_schedule(dt.date(2026, 6, day)), (24, "morning", "daily"))
+
+    def test_ordinary_saturday_is_week_review(self):
+        self.assertEqual(rd.auto_schedule(dt.date(2026, 6, 6)), (168, "evening", "review"))
+
+    def test_ordinary_sunday_is_week_ahead(self):
+        self.assertEqual(rd.auto_schedule(dt.date(2026, 6, 14)), (168, "evening", "ahead"))
+
+    def test_last_saturday_is_month_review(self):
+        # Jun 27, 2026 is the last Saturday of June.
+        self.assertEqual(rd.auto_schedule(dt.date(2026, 6, 27)), (720, "evening", "month_review"))
+
+    def test_last_sunday_is_month_ahead(self):
+        # Jun 28, 2026 is the last Sunday of June.
+        self.assertEqual(rd.auto_schedule(dt.date(2026, 6, 28)), (720, "evening", "month_ahead"))
+
+    def test_last_sat_and_sun_resolved_independently(self):
+        # Feb 2026: last Saturday (28th) and last Sunday (22nd) fall in DIFFERENT weekends.
+        self.assertEqual(rd.auto_schedule(dt.date(2026, 2, 28)), (720, "evening", "month_review"))
+        self.assertEqual(rd.auto_schedule(dt.date(2026, 2, 22)), (720, "evening", "month_ahead"))
+        self.assertEqual(rd.auto_schedule(dt.date(2026, 2, 21)), (168, "evening", "review"))
+
+    def test_last_weekend_of_december_is_year_not_month(self):
+        # Dec 2026: last Sat = 26th, last Sun = 27th. Year-end beats the monthly upgrade.
+        self.assertEqual(rd.auto_schedule(dt.date(2026, 12, 26)), (8760, "evening", "year_review"))
+        self.assertEqual(rd.auto_schedule(dt.date(2026, 12, 27)), (8760, "evening", "year_ahead"))
+
+    def test_ordinary_december_weekend_is_still_weekly(self):
+        # An earlier-December Saturday/Sunday is just a normal week edition.
+        self.assertEqual(rd.auto_schedule(dt.date(2026, 12, 19)), (168, "evening", "review"))
+        self.assertEqual(rd.auto_schedule(dt.date(2026, 12, 20)), (168, "evening", "ahead"))
 
 
 class TestResolveAuto(unittest.TestCase):
@@ -260,10 +315,10 @@ class TestResolveAuto(unittest.TestCase):
         self.assertEqual((a.hours, a.edition, a.mode), (48, "morning", "daily"))
 
     def test_scheduled_falls_back_to_weekday(self):
-        # No IN_HOURS -> derive from today's UTC weekday (same call resolve_auto makes).
+        # No IN_HOURS -> derive from today's UTC date (same call resolve_auto makes).
         a = self._args()
         rd.resolve_auto(a)
-        expected = rd.auto_schedule(dt.datetime.now(dt.timezone.utc).isoweekday())
+        expected = rd.auto_schedule(dt.datetime.now(dt.timezone.utc).date())
         self.assertEqual((a.hours, a.edition, a.mode), expected)
 
 

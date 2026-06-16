@@ -7,9 +7,13 @@ on:
     # GitHub cron is UTC. 05:00 UTC = 07:00 Rome (summer/CEST).
     # Mon–Fri: tight daily morning brief (24h window).
     - cron: "0 5 * * 1-5"
-    # Saturday: "Week in Review" — deep 7-day retrospective.
+    # Saturday: "Week in Review" (7-day) — the LAST Saturday of each month upgrades to
+    # "Month in Review" (30-day), and the last Saturday of DECEMBER to "Year in Review"
+    # (12-month). run_digest.py --auto picks which from the date.
     - cron: "0 5 * * 6"
-    # Sunday: "Week Ahead" — forward-looking preview of the coming week's catalysts.
+    # Sunday: "Week Ahead" (coming week) — the LAST Sunday of each month upgrades to
+    # "Month Ahead", and the last Sunday of DECEMBER to "Year Ahead" (coming 12 months).
+    # run_digest.py --auto picks which from the date.
     - cron: "0 5 * * 0"
   workflow_dispatch:       # manual "Run workflow" button — lets you pick window + edition
     inputs:
@@ -23,10 +27,10 @@ on:
         type: choice
         options: [morning, evening]
       mode:
-        description: "Mode (daily brief / Sat week-in-review / Sun week-ahead)"
+        description: "Mode (daily / week|month|year in-review / week|month|year ahead)"
         default: "daily"
         type: choice
-        options: [daily, review, ahead]
+        options: [daily, review, ahead, month_review, month_ahead, year_review, year_ahead]
 
 permissions:
   contents: write      # commit the archived digest back

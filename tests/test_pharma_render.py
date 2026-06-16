@@ -166,6 +166,30 @@ class TestBriefMarketDays(unittest.TestCase):
     def test_ahead_is_none(self):
         self.assertIsNone(pr.brief_market_days("# Pharma Week Ahead — 14/06/2026\nx"))
 
+    def test_month_review(self):
+        self.assertEqual(pr.brief_market_days("# Pharma Month in Review — 27/06/2026\nx"), 30)
+
+    def test_month_ahead_is_none(self):
+        self.assertIsNone(pr.brief_market_days("# Pharma Month Ahead — 28/06/2026\nx"))
+
+    def test_year_review(self):
+        self.assertEqual(pr.brief_market_days("# Pharma Year in Review — 26/12/2026\nx"), 365)
+
+    def test_year_ahead_is_none(self):
+        self.assertIsNone(pr.brief_market_days("# Pharma Year Ahead — 27/12/2026\nx"))
+
+
+class TestYahooRange(unittest.TestCase):
+    """The fetch window must comfortably exceed the requested lookback, or a long move
+    silently collapses to whatever short span range=1mo happened to return."""
+
+    def test_picks_a_range_that_covers_the_lookback(self):
+        self.assertEqual(pr._yahoo_range(5), "1mo")     # daily
+        self.assertEqual(pr._yahoo_range(7), "1mo")     # week
+        self.assertEqual(pr._yahoo_range(30), "3mo")    # month
+        self.assertEqual(pr._yahoo_range(365), "2y")    # year — must reach past 365 days
+        self.assertEqual(pr._yahoo_range(99999), "max")
+
 
 class TestSelectTickers(unittest.TestCase):
     def test_core_always_present(self):

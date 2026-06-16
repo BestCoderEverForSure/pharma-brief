@@ -4,7 +4,9 @@ Set the automatic send time + timezone for the cloud digest.
 
 Updates `pharma-news/config.json` and the GitHub Actions cron in
 `.github/workflows/pharma-digest.yml` (GitHub cron is UTC, so the local time is
-converted). Preserves each cron's day-of-week (Mon–Sat brief + Sunday weekly).
+converted). Rewrites every cron's hour/minute and preserves each one's day-of-week
+(Mon–Fri daily, Saturday review, Sunday ahead — which auto_schedule widens to the
+monthly/yearly editions on the last weekend of the month/year).
 
 Usage:
     python3 pharma-news/set_schedule.py "07:00" "Europe/Rome"

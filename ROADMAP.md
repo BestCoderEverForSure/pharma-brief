@@ -23,6 +23,7 @@ Where the project stands, and everything we discussed adding.
 - [x] Viewer-local publish time on the website; fixed Rome stamp in email
 - [x] **Telegram delivery** - summary card + "read full brief" link to a public channel (free, no domain)
 - [x] **Sunday "Week in Review"** - deeper evening edition over 7 days, in the cloud
+- [x] **Monthly + yearly editions** - the last Saturday/Sunday of each month widen to a **Month in Review / Month Ahead** (30-day), and the last weekend of December to a **Year in Review / Year Ahead** (12-month); same crons, the edition is chosen from the date in `auto_schedule`
 - [x] Thin-digest guard - aborts (so GitHub emails you) instead of sending a hollow brief
 - [x] **Reliability hardening** - fail-loud on failed email/Telegram send, empty model output, or a failed git push (no more silent losses); one flaky feed no longer kills the run
 - [x] **Email parity with the site** - clickable links + `[n]` citations, a Markets table, and an Upcoming-catalysts list in the email

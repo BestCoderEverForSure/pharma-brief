@@ -156,11 +156,22 @@ def select_tickers(text: str) -> list:
     return tickers
 
 
+def _yahoo_range(days: int) -> str:
+    """Smallest Yahoo chart `range` that comfortably spans `days`, so the 'close `days` ago'
+    anchor is real data, not the oldest point we happened to fetch. (range=1mo only holds ~30
+    days, so a 365-day move would silently collapse to ~1 month without this.)"""
+    for limit, rng in ((7, "1mo"), (31, "3mo"), (93, "6mo"), (186, "1y"), (366, "2y")):
+        if days <= limit:
+            return rng
+    return "max"
+
+
 def _fetch_one(tn: tuple, days: int, timeout: int):
     t, name = tn
     try:
         req = urllib.request.Request(
-            f"https://query1.finance.yahoo.com/v8/finance/chart/{t}?range=1mo&interval=1d",
+            f"https://query1.finance.yahoo.com/v8/finance/chart/{t}"
+            f"?range={_yahoo_range(days)}&interval=1d",
             headers={"User-Agent": "Mozilla/5.0"})
         res = json.loads(urllib.request.urlopen(req, timeout=timeout).read())["chart"]["result"][0]
         closes = res["indicators"]["quote"][0]["close"]
@@ -196,10 +207,15 @@ def fetch_market(tickers: list, days: int = 7, timeout: int = 15) -> list:
 def brief_market_days(md: str):
     """Markets %-move lookback (calendar days) matching the brief, keyed off the H1 title
     (deterministic): daily -> 5 (a smoothed trailing week), Week in Review -> 7 (the week),
-    Week Ahead -> None (a forward-looking brief shows no backward move)."""
+    Month in Review -> 30 (the month), Year in Review -> 365 (the year); any forward 'ahead'
+    edition (week/month/year) -> None (a forward-looking brief shows no backward move)."""
     title = next((l for l in md.splitlines() if l.startswith("# ")), "").lower()
-    if "week ahead" in title:
+    if "week ahead" in title or "month ahead" in title or "year ahead" in title:
         return None
+    if "year in review" in title:
+        return 365
+    if "month in review" in title:
+        return 30
     if "week in review" in title:
         return 7
     return 5

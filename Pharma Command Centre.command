@@ -19,14 +19,22 @@ pick_kind(){ local k; k=$(menu "What kind of brief?" \
     "Evening deep-dive (last 24h)" \
     "Week in Review (last 7 days, retrospective)" \
     "Week Ahead (forward look at the coming week)" \
+    "Month in Review (last 30 days, retrospective)" \
+    "Month Ahead (forward look at the coming month)" \
+    "Year in Review (last 12 months, retrospective)" \
+    "Year Ahead (forward look at the coming year)" \
     "Last 30 days (daily style)")
   case "$k" in
     ""|false) return 1;;
-    "Daily brief"*)       HOURS=24;  EDITION=morning; MODE=daily;;
-    "Evening deep-dive"*) HOURS=24;  EDITION=evening; MODE=daily;;
-    "Week in Review"*)    HOURS=168; EDITION=evening; MODE=review;;
-    "Week Ahead"*)        HOURS=168; EDITION=evening; MODE=ahead;;
-    "Last 30 days"*)      HOURS=720; EDITION=morning; MODE=daily;;
+    "Daily brief"*)       HOURS=24;   EDITION=morning; MODE=daily;;
+    "Evening deep-dive"*) HOURS=24;   EDITION=evening; MODE=daily;;
+    "Week in Review"*)    HOURS=168;  EDITION=evening; MODE=review;;
+    "Week Ahead"*)        HOURS=168;  EDITION=evening; MODE=ahead;;
+    "Month in Review"*)   HOURS=720;  EDITION=evening; MODE=month_review;;
+    "Month Ahead"*)       HOURS=720;  EDITION=evening; MODE=month_ahead;;
+    "Year in Review"*)    HOURS=8760; EDITION=evening; MODE=year_review;;
+    "Year Ahead"*)        HOURS=8760; EDITION=evening; MODE=year_ahead;;
+    "Last 30 days"*)      HOURS=720;  EDITION=morning; MODE=daily;;
   esac; }
 wf_state(){ gh api "repos/$REPO/actions/workflows" --jq ".workflows[]|select(.path==\".github/workflows/$WF\")|.state" 2>/dev/null; }
 recips(){ grep '^EMAIL_TO=' "$S" 2>/dev/null | cut -d= -f2-; }
