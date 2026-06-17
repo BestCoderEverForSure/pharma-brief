@@ -27,11 +27,12 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-06-16** · AstraZeneca Pharma India trading window closes (auto-detected 2026-06-15)
 - **2026-06-17** · Concord Biotech virtual analyst meet (auto-detected 2026-06-14)
 - **2026-06-18** · Sudarshan Pharma board meeting to consider fund raising (auto-detected 2026-06-15)
 - **2026-06-18** · Moderna flu vaccine advisory panel meeting (auto-detected 2026-06-16)
 - **2026-06-19** · Gland Pharma analyst meeting (auto-detected 2026-06-16)
+- **2026-06-22** · Fermenta Biotech investor meet (auto-detected 2026-06-17)
+- **2026-06-22** · Gland Pharma analyst meeting (auto-detected 2026-06-17)
 - **2026-06-25** · Gland Pharma analyst meeting (auto-detected 2026-06-16)
 - **2026-07-01** · India policy decision on customs duty cuts extension (auto-detected 2026-06-14)
 - **2026-07-01** · Medicare to offer GLP-1 weight-loss drugs for $50 (auto-detected 2026-06-15)
