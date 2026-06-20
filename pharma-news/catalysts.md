@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-06-19** · Gland Pharma analyst meeting (auto-detected 2026-06-16)
 - **2026-06-22** · Fermenta Biotech investor meet (auto-detected 2026-06-17)
 - **2026-06-22** · Gland Pharma analyst meeting (auto-detected 2026-06-17)
 - **2026-06-24** · Concord Biotech officials meet investors (auto-detected 2026-06-19)
