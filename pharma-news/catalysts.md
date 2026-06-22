@@ -33,6 +33,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-06-24** · Concord Biotech officials meet investors (auto-detected 2026-06-19)
 - **2026-06-25** · Gland Pharma analyst meeting (auto-detected 2026-06-16)
 - **2026-06-25** · Concord Biotech officials meet investors (auto-detected 2026-06-19)
+- **2026-06-26** · Fermenta Biotech investor meet (auto-detected 2026-06-22)
 - **2026-06-30** · Aurobindo Pharma's $250M Lannett acquisition expected to close (auto-detected 2026-06-19)
 - **2026-07-01** · India policy decision on customs duty cuts extension (auto-detected 2026-06-14)
 - **2026-07-01** · Medicare to offer GLP-1 weight-loss drugs for $50 (auto-detected 2026-06-15)
