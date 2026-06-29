@@ -575,15 +575,17 @@ class TestCallModelRetry(unittest.TestCase):
 
 
 class TestCallModelFallback(unittest.TestCase):
-    """If the primary engine stays down, regenerate on the other configured engine so a busy
-    Gemini doesn't sink the run. call_model is mocked — no network, no sleeps."""
+    """Cross-engine fallback is OPT-IN (PHARMA_ENGINE_FALLBACK). When on, a busy primary
+    regenerates on the other configured engine; when off (default), it fails. call_model is
+    mocked — no network, no sleeps."""
 
     @staticmethod
     def _overloaded(*a, **k):
         raise urllib.error.HTTPError("u", 503, "model is overloaded", {}, None)
 
-    def test_falls_back_to_other_engine(self):
-        secrets = {"GEMINI_API_KEY": "g", "DEEPSEEK_API_KEY": "d", "PHARMA_ENGINE": "gemini"}
+    def test_falls_back_when_enabled(self):
+        secrets = {"GEMINI_API_KEY": "g", "DEEPSEEK_API_KEY": "d",
+                   "PHARMA_ENGINE": "gemini", "PHARMA_ENGINE_FALLBACK": "1"}
         seen = []
 
         def fake(s, system, user):
@@ -600,8 +602,24 @@ class TestCallModelFallback(unittest.TestCase):
         self.assertEqual(seen, ["gemini", "deepseek"])     # tried primary, then the fallback
         self.assertEqual(secrets["PHARMA_ENGINE"], "gemini")   # caller's dict untouched
 
-    def test_primary_success_skips_fallback(self):
+    def test_disabled_by_default_does_not_fall_back(self):
+        # Both engines have keys, but no PHARMA_ENGINE_FALLBACK -> stay on Gemini and raise
+        # (so the run fails and emails, never silently spending on the paid engine).
         secrets = {"GEMINI_API_KEY": "g", "DEEPSEEK_API_KEY": "d", "PHARMA_ENGINE": "gemini"}
+        seen = []
+
+        def fake(s, system, user):
+            seen.append(rd.resolve_engine(s))
+            self._overloaded()
+
+        with mock.patch.object(rd, "call_model", fake):
+            with self.assertRaises(urllib.error.HTTPError):
+                rd.call_model_with_fallback(secrets, "s", "u")
+        self.assertEqual(seen, ["gemini"])                 # never touched DeepSeek
+
+    def test_primary_success_skips_fallback(self):
+        secrets = {"GEMINI_API_KEY": "g", "DEEPSEEK_API_KEY": "d",
+                   "PHARMA_ENGINE": "gemini", "PHARMA_ENGINE_FALLBACK": "1"}
         seen = []
 
         def fake(s, system, user):
@@ -611,10 +629,11 @@ class TestCallModelFallback(unittest.TestCase):
         with mock.patch.object(rd, "call_model", fake):
             engine, text = rd.call_model_with_fallback(secrets, "s", "u")
         self.assertEqual((engine, text), ("gemini", "ok"))
-        self.assertEqual(seen, ["gemini"])                 # never touched the fallback
+        self.assertEqual(seen, ["gemini"])                 # enabled, but a healthy primary suffices
 
-    def test_reraises_when_no_other_key(self):
-        secrets = {"GEMINI_API_KEY": "g", "PHARMA_ENGINE": "gemini"}   # only one engine has a key
+    def test_reraises_when_enabled_but_no_other_key(self):
+        secrets = {"GEMINI_API_KEY": "g", "PHARMA_ENGINE": "gemini",
+                   "PHARMA_ENGINE_FALLBACK": "1"}   # fallback on, but only one engine has a key
         with mock.patch.object(rd, "call_model", self._overloaded):
             with self.assertRaises(urllib.error.HTTPError):
                 rd.call_model_with_fallback(secrets, "s", "u")

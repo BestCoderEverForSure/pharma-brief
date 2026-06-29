@@ -41,7 +41,8 @@ recips(){ grep '^EMAIL_TO=' "$S" 2>/dev/null | cut -d= -f2-; }
 set_recips(){ perl -i -pe "s|^EMAIL_TO=.*|EMAIL_TO=$1|" "$S"; [ -n "$REPO" ] && gh secret set EMAIL_TO --body "$1" -R "$REPO" >/dev/null 2>&1; }
 sched(){ python3 -c "import json;c=json.load(open('pharma-news/config.json'));print(c.get('delivery_time','07:00'),c.get('target_timezone','Europe/Rome'))" 2>/dev/null || echo "07:00 Europe/Rome"; }
 engine_name(){ local e; e=$(grep '^PHARMA_ENGINE=' "$S" 2>/dev/null | cut -d= -f2- | sed "s/[\"' ]//g"); [ -z "$e" ] && e="gemini (default)"; echo "$e"; }
-status_line(){ echo "Engine: $(engine_name)      Daily send: $(sched)"; }
+fallback_state(){ local v; v=$(grep '^PHARMA_ENGINE_FALLBACK=' "$S" 2>/dev/null | cut -d= -f2- | sed "s/[\"' ]//g" | tr 'A-Z' 'a-z'); case "$v" in 1|on|true|yes) echo on;; *) echo off;; esac; }
+status_line(){ echo "Engine: $(engine_name)   Fallback if busy: $(fallback_state)   Daily send: $(sched)"; }
 
 # ---- actions ----
 act_generate(){
@@ -106,9 +107,10 @@ act_schedule(){
 }
 
 act_settings(){
-  local c; c=$(menu "Settings:" "Choose engine (Gemini / DeepSeek)" "Edit watchlist, news sources, or catalysts")
+  local c; c=$(menu "Settings:" "Choose engine (Gemini / DeepSeek)" "Engine fallback if busy (currently: $(fallback_state))" "Edit watchlist, news sources, or catalysts")
   case "$c" in
     "Choose engine"*) act_engine ;;
+    "Engine fallback"*) act_fallback ;;
     "Edit watchlist"*) act_customise ;;
   esac
 }
@@ -128,6 +130,24 @@ act_engine(){
   [ -n "$REPO" ] && gh variable set PHARMA_ENGINE --body "$ENG" -R "$REPO" >/dev/null 2>&1 && cloud="cloud updated ✓"
   local warn=""; [ "$ENG" = gemini ] && warn="\n\nGemini needs GEMINI_API_KEY set locally and as a GitHub Secret."
   dlg "✅ Engine set to: $ENG\n\nThis Mac: updated ✓\nDaily cloud run: $cloud$warn"
+}
+
+act_fallback(){
+  local cur; cur=$(fallback_state)
+  local e; e=$(menu "If your engine is busy/overloaded, fall back to the OTHER engine so the brief still ships?  (currently: $cur)" "Off — stay on my engine, email me if it fails (recommended)" "On — use the other engine if mine is down")
+  local VAL
+  case "$e" in ""|false) return;; Off*) VAL=0;; On*) VAL=1;; *) return;; esac
+  # Local runs (this Mac): set PHARMA_ENGINE_FALLBACK in the secrets file.
+  if grep -q '^PHARMA_ENGINE_FALLBACK=' "$S" 2>/dev/null; then
+    perl -i -pe "s|^PHARMA_ENGINE_FALLBACK=.*|PHARMA_ENGINE_FALLBACK=$VAL|" "$S"
+  else
+    printf 'PHARMA_ENGINE_FALLBACK=%s\n' "$VAL" >> "$S"
+  fi
+  # Daily cloud run: a repo Variable (not a secret).
+  local cloud="(cloud not connected)"
+  [ -n "$REPO" ] && gh variable set PHARMA_ENGINE_FALLBACK --body "$VAL" -R "$REPO" >/dev/null 2>&1 && cloud="cloud updated ✓"
+  local note=""; [ "$VAL" = 1 ] && note="\n\nNeeds the OTHER engine's key configured (e.g. DEEPSEEK_API_KEY) to engage — DeepSeek bills per token."
+  dlg "✅ Engine fallback: $([ "$VAL" = 1 ] && echo ON || echo OFF)\n\nThis Mac: updated ✓\nDaily cloud run: $cloud$note"
 }
 
 act_customise(){

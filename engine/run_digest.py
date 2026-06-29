@@ -70,7 +70,8 @@ def load_secrets() -> dict:
                 k, v = line.split("=", 1)
                 s[k.strip()] = v.strip().strip('"').strip("'")
     for k in ("DEEPSEEK_API_KEY", "DEEPSEEK_MODEL", "DEEPSEEK_BASE_URL",
-              "GEMINI_API_KEY", "GEMINI_MODEL", "GEMINI_BASE_URL", "PHARMA_ENGINE"):
+              "GEMINI_API_KEY", "GEMINI_MODEL", "GEMINI_BASE_URL", "PHARMA_ENGINE",
+              "PHARMA_ENGINE_FALLBACK"):
         if os.environ.get(k):
             s[k] = os.environ[k]
     return s
@@ -491,15 +492,23 @@ def call_model(secrets: dict, system: str, user: str) -> str:
     raise last                               # exhausted retries
 
 
+def _fallback_enabled(secrets: dict) -> bool:
+    """Cross-engine fallback is OFF by default — the scheduled run stays on the chosen engine
+    (Gemini) and fails loudly if it's down, rather than silently spending on the paid engine.
+    Opt in with PHARMA_ENGINE_FALLBACK (Command Centre -> 'Engine fallback', or a repo Variable)."""
+    return str(secrets.get("PHARMA_ENGINE_FALLBACK", "")).strip().lower() in ("1", "on", "true", "yes")
+
+
 def call_model_with_fallback(secrets: dict, system: str, user: str) -> tuple[str, str]:
-    """Call the resolved engine; if it stays down (overload/rate-limit/network/bad key) AND the
-    OTHER provider has a key configured, transparently retry the whole call on it — so a busy
-    Gemini doesn't sink the day's run; the brief still ships, on DeepSeek, on time. Returns
-    (engine_used, text). Raises the last error only if EVERY keyed engine fails — a genuine,
-    persistent outage that main() turns into a non-zero exit (GitHub then emails you)."""
+    """Call the resolved engine and return (engine_used, text). If PHARMA_ENGINE_FALLBACK is on
+    AND the OTHER provider has a key, a primary that stays down (overload/rate-limit/network) is
+    retried on the other engine so a busy Gemini doesn't sink the run. With fallback OFF (the
+    default) this is just call_model on the chosen engine: it raises on failure, and main() turns
+    that into a non-zero exit so GitHub emails you (no silent spend on the paid engine)."""
     primary = resolve_engine(secrets)
-    order = [primary] + [e for e in PROVIDERS
-                         if e != primary and secrets.get(PROVIDERS[e]["key"])]
+    order = [primary]
+    if _fallback_enabled(secrets):
+        order += [e for e in PROVIDERS if e != primary and secrets.get(PROVIDERS[e]["key"])]
     last = None
     for i, eng in enumerate(order):
         forced = {**secrets, "PHARMA_ENGINE": eng}   # force this engine; don't mutate caller's dict
@@ -1015,11 +1024,9 @@ def main() -> int:
         secrets["PHARMA_ENGINE"] = args.engine
     engine = resolve_engine(secrets)
     label = PROVIDERS[engine]["label"]
-    # Either engine can carry the run, so only abort if NEITHER key is configured —
-    # call_model_with_fallback() uses whichever provider(s) have a key.
-    if not any(secrets.get(PROVIDERS[e]["key"]) for e in PROVIDERS):
-        print(f"ERROR: no engine key configured — set GEMINI_API_KEY or DEEPSEEK_API_KEY "
-              f"(env or {SECRETS_PATH})", file=sys.stderr)
+    keyname = PROVIDERS[engine]["key"]
+    if not secrets.get(keyname):
+        print(f"ERROR: engine '{engine}' needs {keyname} (env or {SECRETS_PATH})", file=sys.stderr)
         return 2
 
     # Backward review editions synthesise from the project's OWN archive of fact-checked daily

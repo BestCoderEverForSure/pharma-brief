@@ -56,6 +56,9 @@ jobs:
           # Engine switch: a repo Variable (Settings → Variables), gemini|deepseek.
           # Unset → Gemini when GEMINI_API_KEY is present, else DeepSeek.
           PHARMA_ENGINE: ${{ vars.PHARMA_ENGINE }}
+          # Cross-engine fallback is opt-in (off by default): a Gemini outage fails loudly
+          # rather than silently spending on the paid engine. Toggle via the Command Centre.
+          PHARMA_ENGINE_FALLBACK: ${{ vars.PHARMA_ENGINE_FALLBACK }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
           GEMINI_MODEL: ${{ vars.GEMINI_MODEL }}
           DEEPSEEK_API_KEY: ${{ secrets.DEEPSEEK_API_KEY }}
