@@ -287,6 +287,12 @@ class TestSelectTickers(unittest.TestCase):
         sel = pr.select_tickers("summit summit summit")
         self.assertEqual([t for t, _ in sel].count("SMMT"), 1)
 
+    def test_word_boundary_not_substring(self):
+        # A key embedded in a LONGER word must not add the ticker (a bare-substring test did)...
+        self.assertNotIn("SMMT", [t for t, _ in pr.select_tickers("post-summitry recap")])
+        # ...while the standalone word still matches (single-word company matching is intended).
+        self.assertIn("SMMT", [t for t, _ in pr.select_tickers("summit therapeutics rose")])
+
 
 if __name__ == "__main__":
     unittest.main()

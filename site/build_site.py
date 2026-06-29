@@ -218,33 +218,6 @@ def render_digest_split(md: str) -> tuple[str, str]:
     return body_html, src_html
 
 
-def render_digest(md: str) -> str:
-    """Full digest -> HTML (body + sources inline), for any caller that wants the whole thing."""
-    body, src = render_digest_split(md)
-    return body + ("\n" + src if src else "")
-
-
-def company_anchors(md: str, keymap: dict) -> dict:
-    """Map each ticker to the anchor of the digest section that mentions it — a Top Story
-    (#sN) if possible, else a ## section — so a markets note jumps straight to it."""
-    stories, sections, cur, h3n = [], [], None, 0
-    for l in md.splitlines():
-        if l.startswith("### "):
-            h3n += 1; stories.append([f"s{h3n}", strip_lead(l[4:])]); cur = ("S", len(stories) - 1)
-        elif l.startswith("## "):
-            t = strip_lead(l[3:]); sections.append([_slug(t), t]); cur = ("H", len(sections) - 1)
-        elif l.startswith("# "):
-            cur = None
-        elif cur:
-            (stories if cur[0] == "S" else sections)[cur[1]][1] += " " + l
-    out = {}
-    for tk, kw in keymap.items():
-        kw = kw.lower()
-        out[tk] = next((s[0] for s in stories if kw in s[1].lower()),
-                       next((s[0] for s in sections if kw in s[1].lower()), None))
-    return out
-
-
 # ----------------------------------------------------------------------------- #
 #  Catalyst timeline
 # ----------------------------------------------------------------------------- #
@@ -314,7 +287,7 @@ def render_catalyst_mix(events: list[dict], ref_date: dt.date | None = None) -> 
 #  Markets (real prices, free Yahoo Finance endpoint — no key, no fake data).
 #  Ticker lists + fetch live in pharma_render.py (shared with the email renderer).
 # ----------------------------------------------------------------------------- #
-def render_market(data: list[dict], anchors: dict | None = None) -> str:
+def render_market(data: list[dict]) -> str:
     """Clean table (Name · ticker · last · 5-day %), matching the email's formatting."""
     if not data:
         return ""

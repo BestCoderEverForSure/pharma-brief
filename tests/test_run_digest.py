@@ -355,6 +355,14 @@ class TestResolveAuto(unittest.TestCase):
         expected = rd.auto_schedule(dt.datetime.now(dt.timezone.utc).date())
         self.assertEqual((a.hours, a.edition, a.mode), expected)
 
+    def test_non_numeric_hours_falls_back_to_schedule(self):
+        # A typo'd manual input ("24h") must not crash the run — fall back to the schedule.
+        os.environ["IN_HOURS"] = "24h"
+        a = self._args()
+        rd.resolve_auto(a)
+        self.assertEqual((a.hours, a.edition, a.mode),
+                         rd.auto_schedule(dt.datetime.now(dt.timezone.utc).date()))
+
 
 class TestWindowFeedUrl(unittest.TestCase):
     """The Google News breadth feed's 'when:Nd' recency cap must widen to match the run's
@@ -618,6 +626,14 @@ class TestApplyWindowSubtitle(unittest.TestCase):
         self.assertIn("recent articles · Engine", out)   # ' · ' separator kept (no 'articles· Engine')
         self.assertNotIn("articles· Engine", out)
         self.assertNotIn("last 168 hours", out)          # model's vague text gone
+
+    def test_inserts_subtitle_when_window_missing(self):
+        # Model omitted the 'Window:' line entirely — the deterministic subtitle must still be
+        # injected (after the H1) rather than silently dropped.
+        sub = "# Pharma Week Ahead — 14/06/2026\n\nSome body text.\n"
+        out = rd.apply_window_subtitle(sub, "ahead", 168, self.TODAY, 304)
+        self.assertIn(rd.window_subtitle("ahead", 168, self.TODAY, 304), out)
+        self.assertTrue(out.startswith("# Pharma Week Ahead"))   # H1 still leads
 
 
 class TestParseFeedEntityGuard(unittest.TestCase):

@@ -188,10 +188,13 @@ EXTRA_TICKERS = {
 
 
 def select_tickers(text: str) -> list:
-    """Core tickers plus any EXTRA company named in today's digest text (lower-cased)."""
+    """Core tickers plus any EXTRA company named in today's digest text (lower-cased). Match on
+    WORD boundaries so a key can't match INSIDE a longer word (e.g. "summit" within "summitry",
+    "bayer" within "betrayer") — a bare-substring test injected spurious tickers. A standalone
+    ambiguous word (e.g. "summit") still matches: single-word company matching is intended."""
     tickers, have = list(MARKET_TICKERS), {t for t, _ in MARKET_TICKERS}
     for kw, (tk, nm) in EXTRA_TICKERS.items():
-        if kw in text and tk not in have:
+        if tk not in have and re.search(rf"\b{re.escape(kw)}\b", text):
             tickers.append((tk, nm)); have.add(tk)
     return tickers
 

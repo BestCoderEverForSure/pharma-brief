@@ -17,7 +17,7 @@ Usage:
 Secrets (env var or ~/.config/pharma-news/secrets.env):
     PHARMA_ENGINE      (optional, "gemini" | "deepseek"; default: Gemini if keyed, else DeepSeek)
     GEMINI_API_KEY     (for the Gemini engine; free key at aistudio.google.com)
-    GEMINI_MODEL       (optional, default "gemini-2.5-pro")
+    GEMINI_MODEL       (optional, default "gemini-2.5-flash"; the free tier — Pro needs billing)
     DEEPSEEK_API_KEY   (for the DeepSeek engine)
     DEEPSEEK_MODEL     (optional, default "deepseek-chat")
 
@@ -863,7 +863,13 @@ def resolve_auto(args) -> None:
     (this is exactly what the workflow's shell `if` used to do)."""
     in_hours = (os.environ.get("IN_HOURS") or "").strip()
     if in_hours:
-        args.hours = int(in_hours)
+        try:
+            args.hours = int(in_hours)
+        except ValueError:        # a typo'd manual input ("24h") must not crash the run
+            print(f"  ! IN_HOURS={in_hours!r} is not a number — deriving from the schedule instead",
+                  file=sys.stderr)
+            in_hours = ""         # fall through to the scheduled branch below
+    if in_hours:
         args.edition = (os.environ.get("IN_EDITION") or "morning").strip()
         args.mode = (os.environ.get("IN_MODE") or "daily").strip()
     else:
@@ -898,11 +904,21 @@ def window_subtitle(mode: str, hours: int, today: dt.date, n_read: int, from_arc
 def apply_window_subtitle(digest: str, mode: str, hours: int, today: dt.date, n_read: int,
                           from_archive: bool = False) -> str:
     """Swap the model's 'Window: …' subtitle segment for the deterministic one, preserving the
-    ' · ' separator to the next field (so it doesn't read 'articles· Engine')."""
+    ' · ' separator to the next field (so it doesn't read 'articles· Engine'). If the model
+    omitted the 'Window:' line entirely, inject the subtitle after the H1 (mirrors _label_engine)
+    so the trustworthy date-range/article-count is never silently lost."""
     ws = window_subtitle(mode, hours, today, n_read, from_archive)
-    return re.sub(r"Window:[^·\n*]*(·[ \t]*)?",
-                  lambda m: ws + (" · " if m.group(1) else ""),
-                  digest, count=1)
+    out, n = re.subn(r"Window:[^·\n*]*(·[ \t]*)?",
+                     lambda m: ws + (" · " if m.group(1) else ""),
+                     digest, count=1)
+    if n:
+        return out
+    lines = digest.splitlines()
+    for i, l in enumerate(lines):
+        if l.startswith("# "):
+            lines.insert(i + 1, f"\n*{ws}*")
+            break
+    return "\n".join(lines)
 
 
 # Canonical H1 titles for the non-daily editions. The market scale (brief_market_days) and the

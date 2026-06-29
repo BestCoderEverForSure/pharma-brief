@@ -109,9 +109,9 @@ For a richer read any time, run `/pharma-news` (Claude) by hand - it uses your C
 
 A spoken version you can listen to on the commute - free, offline, via the macOS `say` engine.
 
-- Turn on: set `"audio": true` in [`config.json`](pharma-news/config.json) (voice via `"audio_voice"`; list voices with `say -v '?'`).
+- Produced on demand: run `python3 pharma-news/make_audio.py`, or click **Listen to the audio brief** in the Command Centre.
+- Voice: set `"audio_voice"` in [`config.json`](pharma-news/config.json) (list voices with `say -v '?'`).
 - Output: `digests/audio/YYYY-MM-DD.m4a`.
-- Manual: `python3 pharma-news/make_audio.py`.
 
 ---
 
@@ -147,9 +147,9 @@ python3 deepseek/run_digest.py --engine deepseek     # force a specific engine f
 
 **Reliability:** two small guardian workflows back the daily run - **Heartbeat** (`heartbeat.yml`, daily) fails and emails you if no digest has been archived in >2 days (catching a *silently* stalled schedule), and **Re-time** (`retime.yml`, weekly) re-pins the UTC cron to your local send time across daylight-saving changes.
 
-**Cloud (GitHub Actions + Pages):** [`.github/workflows/pharma-digest.yml`](.github/workflows/pharma-digest.yml) runs the DeepSeek digest daily at 07:00 Rome, emails it, archives it, and publishes the website to **GitHub Pages** - all without your laptop. To go live:
+**Cloud (GitHub Actions + Pages):** [`.github/workflows/pharma-digest.yml`](.github/workflows/pharma-digest.yml) runs the digest daily at 07:00 Rome (Gemini by default), emails it, archives it, and publishes the website to **GitHub Pages** - all without your laptop. To go live:
 1. Push this project to a (private) GitHub repo.
-2. Add repo **Secrets**: `DEEPSEEK_API_KEY`, `RESEND_API_KEY`, `EMAIL_TO`, `EMAIL_FROM`, `DEEPSEEK_MODEL`.
+2. Add repo **Secrets**: `GEMINI_API_KEY`, `RESEND_API_KEY`, `EMAIL_TO`, `EMAIL_FROM` (and, to enable each option: `DEEPSEEK_API_KEY` + `DEEPSEEK_MODEL` for the fallback engine, `TELEGRAM_BOT_TOKEN` + `TELEGRAM_CHAT_ID` for Telegram, `SITE_URL` for absolute RSS links). Add repo **Variables**: `PHARMA_ENGINE` (`gemini` | `deepseek`) and `GEMINI_MODEL` (default `gemini-2.5-flash`; note `DEEPSEEK_MODEL` is a Secret, not a Variable).
 3. **Settings → Actions → Workflow permissions → Read and write**; and **Settings → Pages → Source: GitHub Actions**.
 4. The workflow runs on schedule, on the **Run workflow** button on demand, and can be paused/resumed from the Actions tab ("activate when I want").
 
