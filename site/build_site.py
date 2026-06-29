@@ -566,8 +566,9 @@ SETTINGS_JS = """(function(){
 })();"""
 
 
-# Read-aloud: a "Listen" button per brief using the browser's built-in speech synthesis (no
-# audio files, no keys). It reads ONLY the brief prose — citations ([n] links), the Window/Engine
+# Read-aloud: a "Listen" button per brief using the browser's built-in speech synthesis (no audio
+# files, no keys). The button cycles Listen -> Pause (keeps its place) -> Resume; clicking another
+# brief hands off. It reads ONLY the brief prose — citations ([n] links), the Window/Engine
 # subtitle, the Published line, the button itself, and the "Major story" tag are all stripped — and
 # chunks into sentences so long briefs don't hit the browsers' ~15s/long-utterance cutoff.
 LISTEN_JS = """(function(){
@@ -591,21 +592,25 @@ LISTEN_JS = """(function(){
       if(buf&&(buf+' '+s).length>220){out.push(buf);buf=s;}else{buf=buf?buf+' '+s:s;}});
     if(buf)out.push(buf);return out;
   }
-  var active=null;
-  function reset(btn){btn.setAttribute('aria-pressed','false');
-    btn.querySelector('.listen-i').textContent='\\u25B6';btn.querySelector('.listen-t').textContent='Listen';}
-  function stop(){var b=active;active=null;synth.cancel();if(b)reset(b);}
+  var active=null, paused=false;     // play -> pause (keeps place) -> resume; one brief at a time
+  function setBtn(btn,icon,text,pressed){
+    btn.setAttribute('aria-pressed',pressed?'true':'false');
+    btn.querySelector('.listen-i').textContent=icon;
+    btn.querySelector('.listen-t').textContent=text;
+  }
+  function reset(){var b=active;active=null;paused=false;if(b)setBtn(b,'\\u25B6','Listen',false);}
+  function stop(){synth.cancel();reset();}
   function play(btn,brief){
-    stop();
-    var text=extract(brief);if(!text)return;
-    var voice=pickVoice(),parts=chunk(text),i=0;active=btn;
-    btn.setAttribute('aria-pressed','true');
-    btn.querySelector('.listen-i').textContent='\\u25A0';btn.querySelector('.listen-t').textContent='Stop';
+    if(active&&active!==btn)setBtn(active,'\\u25B6','Listen',false);   // hand off from another brief
+    synth.cancel();
+    var text=extract(brief);if(!text){active=null;paused=false;return;}
+    var voice=pickVoice(),parts=chunk(text),i=0;active=btn;paused=false;
+    setBtn(btn,'\\u23F8','Pause',true);
     (function next(){
       if(active!==btn)return;
-      if(i>=parts.length){stop();return;}
+      if(i>=parts.length){reset();return;}              // finished -> back to Listen
       var u=new SpeechSynthesisUtterance(parts[i++]);if(voice)u.voice=voice;u.rate=1;u.pitch=1;
-      u.onend=next;u.onerror=function(){stop();};synth.speak(u);
+      u.onend=next;u.onerror=function(){if(active===btn)reset();};synth.speak(u);
     })();
   }
   [].forEach.call(document.querySelectorAll('.brief'),function(brief){
@@ -614,7 +619,11 @@ LISTEN_JS = """(function(){
     var btn=document.createElement('button');btn.type='button';btn.className='listen';
     btn.setAttribute('aria-pressed','false');btn.setAttribute('aria-label','Listen to this brief');
     btn.innerHTML='<span class="listen-i" aria-hidden="true">\\u25B6</span><span class="listen-t">Listen</span>';
-    btn.onclick=function(){active===btn?stop():play(btn,brief);};
+    btn.onclick=function(){
+      if(active!==btn){play(btn,brief);}                                          // start
+      else if(paused){synth.resume();paused=false;setBtn(btn,'\\u23F8','Pause',true);}   // resume where it left off
+      else{synth.pause();paused=true;setBtn(btn,'\\u25B6','Resume',true);}        // pause (keeps place)
+    };
     bar.appendChild(btn);
     var h1=brief.querySelector('h1');
     if(h1)h1.insertAdjacentElement('afterend',bar);else brief.insertBefore(bar,brief.firstChild);
