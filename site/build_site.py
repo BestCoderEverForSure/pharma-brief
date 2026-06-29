@@ -402,7 +402,7 @@ def page(title: str, body: str, home_link: bool = True, repo_url: str = "") -> s
 <link rel="stylesheet" href="style.css">
 <link rel="alternate" type="application/rss+xml" title="Pharma Morning Brief" href="feed.xml">
 </head><body>{drawer}{topbar}<main>{inner}</main>{footer}
-<script src="settings.js"></script></body></html>"""
+<script src="settings.js"></script><script src="listen.js"></script></body></html>"""
 
 
 def published_line(date_str: str, iso: str | None = None) -> str:
@@ -500,6 +500,63 @@ SETTINGS_JS = """(function(){
 })();"""
 
 
+# Read-aloud: a "Listen" button per brief using the browser's built-in speech synthesis (no
+# audio files, no keys). It reads ONLY the brief prose — citations ([n] links), the Window/Engine
+# subtitle, the Published line, the button itself, and the "Major story" tag are all stripped — and
+# chunks into sentences so long briefs don't hit the browsers' ~15s/long-utterance cutoff.
+LISTEN_JS = """(function(){
+  var synth=window.speechSynthesis;
+  if(!synth||typeof SpeechSynthesisUtterance==='undefined')return;   // unsupported -> no button
+  function score(v){var s=0,n=v.name||'';if(/en[-_]US/i.test(v.lang))s+=2;if(/en[-_]GB/i.test(v.lang))s+=1;
+    if(/Samantha|Daniel|Siri|Natural|Google/i.test(n))s+=3;if(v.localService)s+=1;return s;}
+  function pickVoice(){var vs=(synth.getVoices()||[]).filter(function(v){return /^en/i.test(v.lang);});
+    vs.sort(function(a,b){return score(b)-score(a);});return vs[0]||null;}
+  function extract(brief){
+    var c=brief.cloneNode(true);
+    [].forEach.call(c.querySelectorAll('a.cite, .listen-bar, .meta, .pub, .major-tag'),function(n){
+      if(n.parentNode)n.parentNode.removeChild(n);});
+    var t=c.innerText||c.textContent||'';
+    t=t.replace(/\\[\\d+(?:\\s*[,\\u2013-]\\s*\\d+)*\\]/g,' ');   // any stray [n] / [1, 2] / [1-3]
+    return t.replace(/\\s+/g,' ').trim();
+  }
+  function chunk(text){
+    var parts=text.match(/[^.!?]+[.!?]+["')\\]]*|\\S[^.!?]*$/g)||[text],out=[],buf='';
+    parts.forEach(function(s){s=s.trim();if(!s)return;
+      if(buf&&(buf+' '+s).length>220){out.push(buf);buf=s;}else{buf=buf?buf+' '+s:s;}});
+    if(buf)out.push(buf);return out;
+  }
+  var active=null;
+  function reset(btn){btn.setAttribute('aria-pressed','false');
+    btn.querySelector('.listen-i').textContent='\\u25B6';btn.querySelector('.listen-t').textContent='Listen';}
+  function stop(){var b=active;active=null;synth.cancel();if(b)reset(b);}
+  function play(btn,brief){
+    stop();
+    var text=extract(brief);if(!text)return;
+    var voice=pickVoice(),parts=chunk(text),i=0;active=btn;
+    btn.setAttribute('aria-pressed','true');
+    btn.querySelector('.listen-i').textContent='\\u25A0';btn.querySelector('.listen-t').textContent='Stop';
+    (function next(){
+      if(active!==btn)return;
+      if(i>=parts.length){stop();return;}
+      var u=new SpeechSynthesisUtterance(parts[i++]);if(voice)u.voice=voice;u.rate=1;u.pitch=1;
+      u.onend=next;u.onerror=function(){stop();};synth.speak(u);
+    })();
+  }
+  [].forEach.call(document.querySelectorAll('.brief'),function(brief){
+    if(brief.querySelector('.listen'))return;
+    var bar=document.createElement('div');bar.className='listen-bar';
+    var btn=document.createElement('button');btn.type='button';btn.className='listen';
+    btn.setAttribute('aria-pressed','false');btn.setAttribute('aria-label','Listen to this brief');
+    btn.innerHTML='<span class="listen-i" aria-hidden="true">\\u25B6</span><span class="listen-t">Listen</span>';
+    btn.onclick=function(){active===btn?stop():play(btn,brief);};
+    bar.appendChild(btn);
+    var h1=brief.querySelector('h1');
+    if(h1)h1.insertAdjacentElement('afterend',bar);else brief.insertBefore(bar,brief.firstChild);
+  });
+  window.addEventListener('pagehide',stop);window.addEventListener('beforeunload',stop);
+})();"""
+
+
 def brief_ref_date(stem: str) -> dt.date:
     """The date a brief looks forward FROM — the YYYY-MM-DD at the start of its filename (so
     suffixed stems like '2026-06-12-deepseek' still resolve). Catalysts before this date have
@@ -563,7 +620,7 @@ def build():
         # references to reach catalysts/markets. Catalysts look forward from THIS brief's date.
         page_extras = catalysts_section(brief_ref_date(p.stem)) + market_block
         (OUT / slug).write_text(
-            page(strip_lead(m["title"]), with_published(body_html, p.stem, pub.get(p.stem)) + page_extras + sources_section(src_html), repo_url=repo_url),
+            page(strip_lead(m["title"]), '<div class="brief">' + with_published(body_html, p.stem, pub.get(p.stem)) + '</div>' + page_extras + sources_section(src_html), repo_url=repo_url),
             encoding="utf-8")
         engine = m["engine"]
         # Archive label: digest name only — drop the trailing date and any leading emoji (old digests).
@@ -628,7 +685,7 @@ def build():
   <p><strong>Pharma Morning Brief</strong> turns each day's global pharmaceutical news into a fact-checked, ~3-minute executive read &mdash; for someone entering pharma who needs to stay current without scanning 20 outlets. Weekdays: a daily brief; Saturday: a <em>Week in Review</em>; Sunday: a <em>Week Ahead</em>. On the last weekend of each month these widen to a <em>Month in Review</em> and <em>Month Ahead</em>, and at the close of December to a <em>Year in Review</em> and <em>Year Ahead</em>.</p>
   <p>Every fact is grounded in a real, linked source and passed through an automated <strong>grounding check</strong> that removes claims the sources don't support; niche terms are glossed in plain language. It runs automatically each morning on <em>Gemini</em> (free) &mdash; one click switches to <em>DeepSeek</em> &mdash; with the richest analysis available on demand via <em>Claude</em>. Each issue is labelled with the engine that wrote it.</p>
 </div></section>
-<section class="block" id="latest"><div class="block-label">Latest brief</div><div class="block-body">{latest_html}</div></section>
+<section class="block" id="latest"><div class="block-label">Latest brief</div><div class="block-body brief">{latest_html}</div></section>
 {index_catalysts}
 {market_block}
 {latest_src_section}
@@ -639,6 +696,7 @@ def build():
     (OUT / "search-data.js").write_text("window.DIGESTS=" + json.dumps(search_index) + ";", encoding="utf-8")
     (OUT / "search.js").write_text(SEARCH_JS, encoding="utf-8")
     (OUT / "settings.js").write_text(SETTINGS_JS, encoding="utf-8")
+    (OUT / "listen.js").write_text(LISTEN_JS, encoding="utf-8")
     if base and feed_items:
         (OUT / "feed.xml").write_text(
             rss_feed(feed_items, base, dt.datetime.now(dt.timezone.utc)), encoding="utf-8")
@@ -706,6 +764,14 @@ h2.major a,h3.major a,h2.major,h3.major{color:var(--major) !important}
 .major-tag{font-family:var(--mono);text-transform:uppercase;letter-spacing:.16em;font-size:10px;color:var(--major);margin:0 0 5px}
 a.cite{border-bottom:none;color:var(--accent);font-weight:600;font-size:.82em;padding:0 1px}
 a.cite:hover{text-decoration:underline;text-underline-offset:2px}
+/* read-aloud "Listen" control (injected per brief by listen.js) */
+.listen-bar{margin:6px 0 20px}
+.listen{font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--accent);background:transparent;
+ border:1px solid var(--line);border-radius:16px;padding:5px 14px;cursor:pointer;display:inline-flex;
+ align-items:center;gap:7px;transition:background .15s,border-color .15s,color .15s}
+.listen:hover{border-color:var(--accent)}
+.listen[aria-pressed="true"]{background:var(--accent);color:var(--paper);border-color:var(--accent)}
+.listen-i{font-size:10px;line-height:1}
 .muted{color:var(--muted)}
 .meta{font-family:var(--mono);font-size:11.5px;letter-spacing:.02em;color:var(--muted);text-transform:none;margin:.4em 0 1.4em}
 .meta.pub{margin:.2em 0 1em}.meta.pub time{color:var(--ink)}.tz-note{opacity:.7}
