@@ -651,6 +651,23 @@ THREADS_JS = """(function(){
   function reFor(terms){return new RegExp('('+terms.map(rxEsc).join('|')+')','i');}
   function countFor(t){var re=reFor(termsFor(t));
     return data.filter(function(d){return re.test(d.title)||re.test(d.text);}).length;}
+  // Weekly buckets across the whole archive, for the selected topic's trend over time. Shown as
+  // tidy columns (not a line) so it reads cleanly with few data points; all client-side.
+  var allDates=data.map(function(d){return (d.date||'').slice(0,10);}).filter(Boolean).sort();
+  var WK=604800000, T0=allDates.length?Date.parse(allDates[0]+'T00:00:00Z'):0;
+  var NB=allDates.length?Math.floor((Date.parse(allDates[allDates.length-1]+'T00:00:00Z')-T0)/WK)+1:0;
+  function series(terms){var re=reFor(terms),a=[],i;for(i=0;i<NB;i++)a.push(0);
+    data.forEach(function(d){var s=(d.date||'').slice(0,10);
+      if(s&&(re.test(d.title)||re.test(d.text))){var b=Math.floor((Date.parse(s+'T00:00:00Z')-T0)/WK);if(b>=0&&b<NB)a[b]++;}});
+    return a;}
+  function sparkbars(terms){
+    if(NB<2)return '';                       // not enough weeks yet for a meaningful trend
+    var a=series(terms),mx=Math.max.apply(null,a)||1;
+    var bars=a.map(function(v,i){var wk=new Date(T0+i*WK).toISOString().slice(0,10);
+      return '<span class="sb" style="height:'+Math.round(v/mx*100)+'%" title="week of '+wk+': '+v+'"></span>';}).join('');
+    return '<div class="trend-overtime"><span class="trend-ot-label">Weekly mentions</span>'
+         +'<div class="trend-spark">'+bars+'</div></div>';
+  }
   function snippet(text,terms){
     var m=reFor(terms).exec(text);
     if(!m)return '';
@@ -667,7 +684,7 @@ THREADS_JS = """(function(){
                  .sort(function(a,b){return a.date<b.date?1:(a.date>b.date?-1:0);});
     if(!hits.length){results.innerHTML='<p class="muted">No briefs mention &ldquo;'+esc(topic)+'&rdquo; yet.</p>';return;}
     var head='<div class="thread-count">'+hits.length+' brief'+(hits.length>1?'s':'')+' mention &ldquo;'+esc(topic)+'&rdquo;</div>';
-    results.innerHTML=head+hits.map(function(d){
+    results.innerHTML=head+sparkbars(terms)+hits.map(function(d){
       return '<a class="thread-item" href="'+encodeURI(d.slug)+'">'
         +'<span class="thread-date">'+esc((d.date||'').slice(0,10))+'</span>'
         +'<span class="thread-body"><span class="thread-title">'+d.title+'</span>'
@@ -681,25 +698,12 @@ THREADS_JS = """(function(){
                    .filter(function(x){return x.n>0;})
                    .sort(function(a,b){return b.n-a.n;}).slice(0,16);
     if(!rows.length){chart.innerHTML='';return;}
-    // Weekly buckets across the whole archive, for a per-topic trend sparkline. All client-side.
-    var ds=data.map(function(d){return (d.date||'').slice(0,10);}).filter(Boolean).sort();
-    var WK=604800000, t0=ds.length?Date.parse(ds[0]+'T00:00:00Z'):0;
-    var nB=ds.length?Math.floor((Date.parse(ds[ds.length-1]+'T00:00:00Z')-t0)/WK)+1:0;
-    function series(terms){var re=reFor(terms),a=[],i;for(i=0;i<nB;i++)a.push(0);
-      data.forEach(function(d){var s=(d.date||'').slice(0,10);
-        if(s&&(re.test(d.title)||re.test(d.text))){var b=Math.floor((Date.parse(s+'T00:00:00Z')-t0)/WK);if(b>=0&&b<nB)a[b]++;}});
-      return a;}
-    function spark(a){var mx=Math.max.apply(null,a)||1;
-      var pts=a.map(function(v,i){return (i/(nB-1)*100).toFixed(1)+','+(21-(v/mx)*18).toFixed(1);}).join(' ');
-      return '<svg class="spark" viewBox="0 0 100 22" preserveAspectRatio="none" aria-hidden="true"><polyline points="'+pts+'"/></svg>';}
     var max=rows[0].n;
-    chart.innerHTML='<div class="trend-h">Coverage &amp; weekly trend across '+data.length+' briefs &mdash; click to follow a thread</div>'+
-      rows.map(function(x){
-        var mid=(nB>=2)?spark(series(termsFor(x.t)))
-              :'<span class="trend-track"><span class="trend-fill" style="width:'+Math.round(x.n/max*100)+'%"></span></span>';
+    chart.innerHTML='<div class="trend-h">Coverage across '+data.length+' briefs &mdash; click to follow a thread (and see its weekly trend)</div>'+
+      rows.map(function(x){var pct=Math.round(x.n/max*100);
         return '<button class="trend-bar" type="button" data-term="'+esc(x.t)+'">'
           +'<span class="trend-name">'+esc(x.t)+'</span>'
-          +'<span class="trend-mid">'+mid+'</span>'
+          +'<span class="trend-mid"><span class="trend-track"><span class="trend-fill" style="width:'+pct+'%"></span></span></span>'
           +'<span class="trend-val">'+x.n+'</span></button>';}).join('');
     [].forEach.call(chart.querySelectorAll('.trend-bar'),function(b){
       b.onclick=function(){setTerm(b.getAttribute('data-term'));
@@ -1015,14 +1019,16 @@ a.cite:hover{text-decoration:underline;text-underline-offset:2px}
 .trend-bar{display:flex;align-items:center;gap:10px;width:100%;background:transparent;border:none;padding:5px 0;cursor:pointer;font-family:inherit;text-align:left}
 .trend-name{flex:none;width:11em;font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .trend-mid{flex:1;display:flex;align-items:center;min-width:0}
-.spark{width:100%;height:22px;display:block}
-.spark polyline{fill:none;stroke:var(--accent);stroke-width:1.5;vector-effect:non-scaling-stroke;stroke-linejoin:round;stroke-linecap:round}
-.trend-bar:hover .spark polyline{stroke:var(--ink)}
 .trend-track{flex:1;height:8px;background:var(--line);border-radius:3px;overflow:hidden}
 .trend-fill{display:block;height:100%;background:var(--accent)}
 .trend-val{flex:none;width:2em;text-align:right;font-family:var(--mono);font-size:12px;color:var(--muted)}
 .trend-bar:hover .trend-fill{background:var(--ink)}
 .trend-bar:hover .trend-name{color:var(--accent)}
+/* selected-topic weekly trend — tidy columns (reads cleanly with few data points) */
+.trend-overtime{margin:12px 0 18px}
+.trend-ot-label{display:block;font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:0 0 7px}
+.trend-spark{display:flex;align-items:flex-end;gap:3px;height:40px;border-bottom:1px solid var(--line)}
+.sb{width:7px;flex:none;background:var(--accent);border-radius:2px 2px 0 0}
 .thread-input{width:100%;font-family:var(--sans);font-size:15px;padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--ink)}
 .thread-input:focus{outline:none;border-color:var(--accent)}
 .thread-count{font-family:var(--mono);font-size:12px;color:var(--muted);margin:20px 0 4px}
