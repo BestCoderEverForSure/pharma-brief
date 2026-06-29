@@ -22,13 +22,14 @@ The only thing it can't drive is the premium **Claude** read - for that, type `/
 
 ---
 
-## The one idea to hold onto: 1 recipe, 2 cooks, 1 waiter
+## The one idea to hold onto: 1 recipe, 3 cooks, 1 waiter
 
-- **The recipe** 📋 - a set of instruction files that say what a good digest looks like (what to cover, how to analyse, the Lilly focus, the format). Both cooks follow the *same* recipe.
-- **Two cooks** 👨‍🍳 - two different AIs that can write the digest:
-  - **Claude** = the *smart* cook. Searches the whole web, finds more, writes richer analysis. Runs on your Mac inside the Claude app. Costs your Claude plan.
-  - **DeepSeek** = the *cheap, tireless* cook. Reads a fixed list of news sites and summarises them. Runs anywhere (even a server in the cloud). Costs pennies.
-- **The waiter** 📨 - a small script that takes the finished digest and **emails it to you** (via a service called Resend). Same waiter for both cooks.
+- **The recipe** 📋 - a set of instruction files that say what a good digest looks like (what to cover, how to analyse, the Lilly focus, the format). Every cook follows the *same* recipe.
+- **Three cooks** 👨‍🍳 - three different AIs that can write the digest:
+  - **Gemini** = the *free, reliable* cook who shows up every morning. Reads a fixed list of news sites and summarises them, in the cloud. This is the **default** for the automatic daily brief — free on Google's tier.
+  - **DeepSeek** = the *cheap stand-in* cook. Same job as Gemini (same news list, runs in the cloud), but costs a few pennies per brief — switch to it any time from the Command Centre.
+  - **Claude** = the *smart* cook. Searches the whole web, finds more, writes richer analysis. Runs on your Mac inside the Claude app, on demand. Costs your Claude plan.
+- **The waiter** 📨 - a small script that takes the finished digest and **emails it to you** (via a service called Resend). Same waiter for every cook.
 
 That's the whole thing. Everything below is just *where* and *when* the cooks work.
 
@@ -43,6 +44,7 @@ That's the whole thing. Everything below is just *where* and *when* the cooks wo
 ## When it runs (the automatic part)
 - **In the cloud (GitHub), every morning at 7am Rome time.** Mon-Fri it's the tight daily brief; **Saturday** a deeper "Week in Review" (looking back); **Sunday** a "Week Ahead" (looking forward). On the **last weekend of each month** these grow into a "Month in Review" and "Month Ahead", and at the **end of December** into a "Year in Review" and "Year Ahead". This is the reliable one - it runs even if your laptop is closed or off, because it's on GitHub's computers, not yours. It makes the digest (Gemini by default), emails you, posts a Telegram card you can share, and updates the website.
 - You don't have to do anything. It just happens.
+- **If Gemini is briefly too busy** (Google's free tier sometimes says "overloaded"), it waits and retries for a bit. If it still can't run, you get an email so you know that morning was missed — it does **not** quietly switch to the paid cook. If you'd rather it fall back to DeepSeek on those days so the brief always lands, turn that on in the Command Centre under **Settings → Engine fallback** (off by default).
 
 ## How to STOP or START the automatic run
 1. Go to **github.com/BestCoderEverForSure/pharma-brief**
