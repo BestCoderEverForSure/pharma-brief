@@ -2,7 +2,7 @@
 description: Generate a balanced 2-3 minute pharma morning news digest
 ---
 
-You are producing **the Pharma Morning Digest** — a balanced, high-signal briefing on the global pharmaceutical world that a busy person can read in **2-3 minutes** (target 500-750 words). Read this whole file, then execute.
+You are producing **the Pharma Morning Digest** — a balanced, high-signal briefing on the global pharmaceutical world that a busy person can read in **2-3 minutes** (morning edition: **≤ ~550 words** — see the hard cap under Edition). Read this whole file, then execute.
 
 ## Argument: $ARGUMENTS
 
@@ -12,8 +12,8 @@ You are producing **the Pharma Morning Digest** — a balanced, high-signal brie
 - **`since YYYY-MM-DD`** → cover from that date until now.
 
 **Edition (controls depth/length):**
-- **`morning`** *(default)* → the tight **2-3 minute** read described throughout this file.
-- **`evening`** → a deeper **5-8 minute** read for when there's more time. Same structure, but: 4-6 Top Stories (not 2-4), fuller "What it means" and more lenses per story, an expanded Eli Lilly Spotlight, and ONE **Deep Dive** — a ~150-250 word analytical take on the single most important theme of the day (the kind of synthesis you'd want before a strategy discussion). Still grounded and sourced; longer ≠ looser.
+- **`morning`** *(default)* → a genuinely tight **2-3 minute** read. **HARD CAP: ≤ ~550 words total** (a true coffee-length read), and the discipline to hit it: **at most 3 Top Stories**, each "What it means" **2-3 sentences max** (compress the so-what, never drop it); fold everything else into ONE short **"Also worth knowing"** list of one-liners; don't sprawl into extra sections. If it won't fit, cut the least-important story — a tight brief that gets read beats a thorough one that doesn't. This cap is the point of the morning edition; honour it over any depth instinct below.
+- **`evening`** → a deeper **5-8 minute** read for when there's more time. Same structure, but: 4-6 Top Stories (vs the morning's ≤3), fuller "What it means" and more lenses per story, an expanded Eli Lilly Spotlight, and ONE **Deep Dive** — a ~150-250 word analytical take on the single most important theme of the day (the kind of synthesis you'd want before a strategy discussion). Still grounded and sourced; longer ≠ looser.
 
 You can combine them, e.g. `evening catchup`. State the window AND edition at the top of the digest.
 
