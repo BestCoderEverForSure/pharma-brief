@@ -36,12 +36,12 @@ That's the whole thing. Everything below is just *where* and *when* the cooks wo
 
 ## Where you READ it
 - **📧 Email** - lands in your Gmail every morning. This is your main way to read it (works on your phone).
-- **🌐 Website** - https://bestcodereverforsure.github.io/pharma-brief/ - a nice page with the latest digest, a calendar of upcoming events, charts, an archive of past digests, and a search box. Open it anywhere.
+- **🌐 Website** - https://bestcodereverforsure.github.io/pharma-brief/ - a nice page with the latest digest, a calendar of upcoming events (you can subscribe to it), charts, an archive of past digests, and a search box. There's a **▶ Listen** button to hear a brief read aloud, a **Threads** page to follow a topic (e.g. Eli Lilly) across every brief, and you can **install it on your phone and read offline**. Open it anywhere.
 
 ---
 
 ## When it runs (the automatic part)
-- **In the cloud (GitHub), every morning at 7am Rome time.** Mon-Fri it's the tight daily brief; **Saturday** a deeper "Week in Review" (looking back); **Sunday** a "Week Ahead" (looking forward). On the **last weekend of each month** these grow into a "Month in Review" and "Month Ahead", and at the **end of December** into a "Year in Review" and "Year Ahead". This is the reliable one - it runs even if your laptop is closed or off, because it's on GitHub's computers, not yours. It makes the digest (DeepSeek), emails you, posts a Telegram card you can share, and updates the website.
+- **In the cloud (GitHub), every morning at 7am Rome time.** Mon-Fri it's the tight daily brief; **Saturday** a deeper "Week in Review" (looking back); **Sunday** a "Week Ahead" (looking forward). On the **last weekend of each month** these grow into a "Month in Review" and "Month Ahead", and at the **end of December** into a "Year in Review" and "Year Ahead". This is the reliable one - it runs even if your laptop is closed or off, because it's on GitHub's computers, not yours. It makes the digest (Gemini by default), emails you, posts a Telegram card you can share, and updates the website.
 - You don't have to do anything. It just happens.
 
 ## How to STOP or START the automatic run
