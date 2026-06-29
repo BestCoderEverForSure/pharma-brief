@@ -647,7 +647,7 @@ THREADS_JS = """(function(){
     var head='<div class="thread-count">'+hits.length+' brief'+(hits.length>1?'s':'')+' mention &ldquo;'+esc(term)+'&rdquo;</div>';
     results.innerHTML=head+hits.map(function(d){
       return '<a class="thread-item" href="'+encodeURI(d.slug)+'">'
-        +'<span class="thread-date">'+esc(d.date)+'</span>'
+        +'<span class="thread-date">'+esc((d.date||'').slice(0,10))+'</span>'
         +'<span class="thread-body"><span class="thread-title">'+d.title+'</span>'
         +'<span class="thread-snip">'+snippet(d.text,term)+'</span></span></a>';
     }).join('');
@@ -931,7 +931,8 @@ a.cite:hover{text-decoration:underline;text-underline-offset:2px}
 .thread-count{font-family:var(--mono);font-size:12px;color:var(--muted);margin:20px 0 4px}
 .thread-item{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--line)}
 .thread-item:last-child{border-bottom:none}
-.thread-date{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;width:5.5em;flex:none;padding-top:2px}
+.thread-date{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;width:6.4em;flex:none;padding-top:2px;overflow:hidden;text-overflow:ellipsis}
+.thread-body{flex:1;min-width:0}
 .thread-title{display:block;font-weight:600}
 .thread-snip{display:block;color:var(--muted);font-size:14px;margin-top:3px;line-height:1.6}
 .thread-snip mark{background:var(--accent);color:var(--paper);border-radius:2px;padding:0 2px}
