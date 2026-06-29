@@ -357,6 +357,40 @@ def rss_feed(items: list, base_url: str, built: dt.datetime) -> str:
     return "\n".join(parts)
 
 
+def ics_feed(events: list, built: dt.datetime) -> str:
+    """An iCalendar (.ics) feed of the catalysts so the calendar can be SUBSCRIBED to — each
+    becomes an all-day event. `events` are {date, label, full} dicts (already filtered to the set
+    you want published). RFC 5545: values escaped, long lines folded, and a STABLE per-event UID
+    (date + slug) so a rebuild updates events in place instead of duplicating them."""
+    def esc(s: str) -> str:
+        return (s or "").replace("\\", "\\\\").replace(";", "\\;").replace(",", "\\,").replace("\n", " ")
+    def fold(line: str) -> str:        # RFC 5545 line folding (conservative, char-based)
+        if len(line) <= 73:
+            return line
+        out, rest = [line[:73]], line[73:]
+        while rest:
+            out.append(" " + rest[:72]); rest = rest[72:]
+        return "\r\n".join(out)
+    stamp = built.strftime("%Y%m%dT%H%M%SZ")
+    lines = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//Pharma Morning Brief//Catalysts//EN",
+             "CALSCALE:GREGORIAN", "METHOD:PUBLISH", "X-WR-CALNAME:Pharma Catalysts",
+             "X-WR-CALDESC:Upcoming pharma catalysts to watch."]
+    for e in events:
+        dstart = e["date"].strftime("%Y%m%d")
+        dend = (e["date"] + dt.timedelta(days=1)).strftime("%Y%m%d")
+        lines += ["BEGIN:VEVENT",
+                  f"UID:cat-{dstart}-{_slug(e['full'])[:48]}@pharma-brief",
+                  f"DTSTAMP:{stamp}",
+                  f"DTSTART;VALUE=DATE:{dstart}",
+                  f"DTEND;VALUE=DATE:{dend}",
+                  fold("SUMMARY:" + esc(e["label"])),
+                  fold("DESCRIPTION:" + esc(e["full"])),
+                  "TRANSP:TRANSPARENT",
+                  "END:VEVENT"]
+    lines.append("END:VCALENDAR")
+    return "\r\n".join(lines) + "\r\n"
+
+
 def page(title: str, body: str, home_link: bool = True, repo_url: str = "") -> str:
     base = "index.html" if home_link else ""
     nav = "".join(f'<a href="{base}#{i}">{n}</a>'
@@ -590,7 +624,8 @@ def build():
         return (
             '<section class="block" id="upcoming"><div class="block-label">Catalysts</div><div class="block-body">'
             '<p class="meta">Dates to watch &mdash; scheduled events that can move the sector: regulatory decisions, '
-            'trial readouts, earnings, and major conferences.</p>'
+            'trial readouts, earnings, and major conferences. '
+            '<a class="cal-sub" href="catalysts.ics">Add to your calendar &#8599;</a></p>'
             + mix + timeline + "</div></section>")
 
     latest_md = files[0].read_text(encoding="utf-8") if files else ""
@@ -697,6 +732,12 @@ def build():
     (OUT / "search.js").write_text(SEARCH_JS, encoding="utf-8")
     (OUT / "settings.js").write_text(SETTINGS_JS, encoding="utf-8")
     (OUT / "listen.js").write_text(LISTEN_JS, encoding="utf-8")
+    # Subscribe-able catalyst calendar: the upcoming events as an .ics (regenerated each build,
+    # so past events drop off and new ones appear — a subscribed calendar stays current).
+    _today = dt.date.today()
+    (OUT / "catalysts.ics").write_text(
+        ics_feed([e for e in events if e["date"] >= _today], dt.datetime.now(dt.timezone.utc)),
+        encoding="utf-8")
     if base and feed_items:
         (OUT / "feed.xml").write_text(
             rss_feed(feed_items, base, dt.datetime.now(dt.timezone.utc)), encoding="utf-8")
@@ -772,6 +813,8 @@ a.cite:hover{text-decoration:underline;text-underline-offset:2px}
 .listen:hover{border-color:var(--accent)}
 .listen[aria-pressed="true"]{background:var(--accent);color:var(--paper);border-color:var(--accent)}
 .listen-i{font-size:10px;line-height:1}
+.cal-sub{white-space:nowrap;color:var(--accent);border-bottom:1px solid var(--line)}
+.cal-sub:hover{border-bottom-color:var(--accent)}
 .muted{color:var(--muted)}
 .meta{font-family:var(--mono);font-size:11.5px;letter-spacing:.02em;color:var(--muted);text-transform:none;margin:.4em 0 1.4em}
 .meta.pub{margin:.2em 0 1em}.meta.pub time{color:var(--ink)}.tz-note{opacity:.7}

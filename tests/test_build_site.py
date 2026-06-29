@@ -253,5 +253,36 @@ class TestRssFeed(unittest.TestCase):
         self.assertIn("<pubDate>", out)
 
 
+class TestIcsFeed(unittest.TestCase):
+    EVENTS = [{"date": dt.date(2026, 9, 18), "label": "Zidesamtinib PDUFA",
+               "full": "Zidesamtinib (Nuvalent/GSK) PDUFA; ROS1+ NSCLC, a key milestone"}]
+    BUILT = dt.datetime(2026, 6, 29, 12, 0, tzinfo=dt.timezone.utc)
+
+    def test_valid_all_day_vevent(self):
+        out = bs.ics_feed(self.EVENTS, self.BUILT)
+        self.assertTrue(out.startswith("BEGIN:VCALENDAR"))
+        self.assertIn("END:VCALENDAR", out)
+        self.assertIn("DTSTART;VALUE=DATE:20260918", out)   # all-day on the catalyst date
+        self.assertIn("DTEND;VALUE=DATE:20260919", out)     # + next day (all-day convention)
+        self.assertIn("SUMMARY:Zidesamtinib PDUFA", out)
+        self.assertIn("DTSTAMP:20260629T120000Z", out)
+
+    def test_escapes_rfc5545_specials(self):
+        out = bs.ics_feed(self.EVENTS, self.BUILT)
+        self.assertIn("\\;", out)     # ';' in the description is backslash-escaped
+        self.assertIn("\\,", out)     # ',' too
+
+    def test_stable_uid_across_rebuilds(self):
+        import re as _re
+        a = _re.search(r"UID:(.+)", bs.ics_feed(self.EVENTS, self.BUILT)).group(1)
+        b = _re.search(r"UID:(.+)", bs.ics_feed(self.EVENTS, self.BUILT + dt.timedelta(days=1))).group(1)
+        self.assertEqual(a, b)        # same event -> same UID, so a refresh updates not duplicates
+
+    def test_empty_is_a_valid_calendar(self):
+        out = bs.ics_feed([], self.BUILT)
+        self.assertIn("BEGIN:VCALENDAR", out)
+        self.assertNotIn("BEGIN:VEVENT", out)
+
+
 if __name__ == "__main__":
     unittest.main()
