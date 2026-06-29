@@ -253,10 +253,10 @@ def render_timeline(events: list[dict], ref_date: dt.date | None = None) -> str:
 
 def render_catalyst_mix(events: list[dict], ref_date: dt.date | None = None) -> str:
     """A compact category-mix of the UPCOMING catalysts as of `ref_date` (default today),
-    pairing the timeline's per-date detail with an at-a-glance sense of WHAT KIND of events
-    are ahead — regulatory decisions, earnings, conferences, or other. Counts the exact same
-    forward-looking set the timeline shows (past events dropped, same `ref_date`), so the bar
-    counts and the timeline can never disagree. Returns "" when nothing is upcoming."""
+    rendered as a single wide row above the timeline — an at-a-glance sense of WHAT KIND of
+    events are ahead (regulatory decisions, earnings, conferences, or other). Counts the exact
+    same forward-looking set the timeline shows (past events dropped, same `ref_date`), so the
+    cell counts and the timeline can never disagree. Returns "" when nothing is upcoming."""
     upcoming = [e for _, evs in upcoming_catalysts(events, ref_date) for e in evs]
     if not upcoming:
         return ""
@@ -265,18 +265,20 @@ def render_catalyst_mix(events: list[dict], ref_date: dt.date | None = None) -> 
         c = _category(e["full"])
         counts[c] = counts.get(c, 0) + 1
     total = max(sum(counts.values()), 1)
-    bars = []
+    cells = []
     for k in ("reg", "earn", "conf", "other"):
         n = counts.get(k, 0)
         if not n:
             continue
         pct = round(n / total * 100)
-        bars.append(
-            f'<div class="bar-row"><span class="bar-name">{_CAT_NAMES[k]}</span>'
-            f'<span class="bar-track"><span class="bar-fill {k}" style="width:{pct}%"></span></span>'
-            f'<span class="bar-val">{n}</span></div>')
-    return ('<div class="sub-h">By category</div><div class="barchart">'
-            + "".join(bars) + "</div>")
+        cells.append(
+            f'<div class="catmix-cell">'
+            f'<div class="catmix-top"><span class="catmix-name">{_CAT_NAMES[k]}</span>'
+            f'<span class="catmix-val">{n}</span></div>'
+            f'<span class="catmix-bar"><span class="catmix-fill {k}" style="width:{pct}%"></span></span>'
+            "</div>")
+    return ('<div class="sub-h">By category</div><div class="catmix">'
+            + "".join(cells) + "</div>")
 
 
 # ----------------------------------------------------------------------------- #
@@ -523,16 +525,16 @@ def build():
     events = parse_catalysts(CATALYSTS)
 
     def catalysts_section(ref_date: dt.date) -> str:
-        # Pair the dated timeline (left, the detail) with a forward-looking category-mix bar
-        # chart (right, the at-a-glance summary). Both count from the SAME ref_date, so they
-        # always agree; when nothing is upcoming the mix is "" and the timeline stands alone.
-        timeline, mix = render_timeline(events, ref_date), render_catalyst_mix(events, ref_date)
-        body = f'<div class="two-col">{timeline}<div>{mix}</div></div>' if mix else timeline
+        # The forward-looking category-mix sits as a single wide row ABOVE the dated timeline (so
+        # the timeline gets the full width, not a squeezed left column). Both count from the SAME
+        # ref_date, so they always agree; when nothing is upcoming the mix is "" and the timeline
+        # stands alone.
+        mix, timeline = render_catalyst_mix(events, ref_date), render_timeline(events, ref_date)
         return (
             '<section class="block" id="upcoming"><div class="block-label">Catalysts</div><div class="block-body">'
             '<p class="meta">Dates to watch &mdash; scheduled events that can move the sector: regulatory decisions, '
             'trial readouts, earnings, and major conferences.</p>'
-            + body + "</div></section>")
+            + mix + timeline + "</div></section>")
 
     latest_md = files[0].read_text(encoding="utf-8") if files else ""
     _dt = plain_text(latest_md).lower()
@@ -734,18 +736,19 @@ code{font-family:var(--mono);font-size:.82em;color:var(--accent);background:tran
 .arch-engine{font-family:var(--mono);font-size:9.5px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);white-space:nowrap}
 
 /* two columns (timeline + mix) */
-.two-col{display:grid;grid-template-columns:1.5fr 1fr;gap:40px;align-items:start}
-@media(max-width:640px){.two-col{grid-template-columns:1fr;gap:24px}}
 
 /* bars */
-.barchart{margin-top:2px}
-.bar-row{display:flex;align-items:center;gap:10px;margin:10px 0;font-size:13px}
-.bar-name{min-width:84px;color:var(--muted)}
-.bar-track{flex:1;height:6px;background:var(--line);border-radius:2px;overflow:hidden}
-.bar-fill{display:block;height:100%}
-.bar-fill.reg{background:var(--c-reg)}.bar-fill.earn{background:var(--c-earn)}
-.bar-fill.conf{background:var(--c-conf)}.bar-fill.other{background:var(--c-other)}
-.bar-val{min-width:18px;text-align:right;font-family:var(--mono);font-size:12px}
+/* catalyst category-mix: one wide row of cells across the full width, above the timeline */
+.catmix{display:flex;gap:22px;margin:4px 0 22px}
+.catmix-cell{flex:1;min-width:0}
+.catmix-top{display:flex;justify-content:space-between;align-items:baseline;font-size:13.5px;margin-bottom:6px}
+.catmix-name{color:var(--muted)}
+.catmix-val{font-family:var(--mono);font-weight:600}
+.catmix-bar{display:block;height:6px;background:var(--line);border-radius:2px;overflow:hidden}
+.catmix-fill{display:block;height:100%}
+.catmix-fill.reg{background:var(--c-reg)}.catmix-fill.earn{background:var(--c-earn)}
+.catmix-fill.conf{background:var(--c-conf)}.catmix-fill.other{background:var(--c-other)}
+@media(max-width:560px){.catmix{flex-wrap:wrap;gap:16px 22px}.catmix-cell{flex:1 1 40%}}
 
 /* markets (clean table — matches the email) */
 .mkt-table{width:100%;border-collapse:collapse;margin-top:2px}
