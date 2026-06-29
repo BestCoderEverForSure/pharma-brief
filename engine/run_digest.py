@@ -433,6 +433,12 @@ def engine_model(secrets: dict, engine: str) -> str:
     return secrets.get(p["model_key"]) or p["default_model"]
 
 
+# Backoff between retries of ONE model call (seconds): patient enough to ride out a short
+# 429/503 "overloaded" blip without failing the run (~50s over 4 tries). If a provider stays
+# down longer than this, call_model_with_fallback() switches to the other engine.
+_RETRY_DELAYS = (0, 5, 15, 30)
+
+
 def call_model(secrets: dict, system: str, user: str) -> str:
     """Call whichever engine resolve_engine() picks, via its OpenAI-compatible endpoint."""
     engine = resolve_engine(secrets)
@@ -455,9 +461,10 @@ def call_model(secrets: dict, system: str, user: str) -> str:
     headers = {"Authorization": f"Bearer {key}", "Content-Type": "application/json",
                "User-Agent": "pharma-digest/1.0"}
     # Retry transient failures (5xx, rate-limit, dropped connection) — free tiers 503 under
-    # load, and we don't want to lose the grounding check to a blip.
+    # load, and we don't want to lose the run to a short blip.
     last = None
-    for delay in (0, 3, 8):
+    for i, delay in enumerate(_RETRY_DELAYS):
+        last_attempt = i == len(_RETRY_DELAYS) - 1
         if delay:
             time.sleep(delay)
         try:
@@ -467,21 +474,43 @@ def call_model(secrets: dict, system: str, user: str) -> str:
                 data = json.loads(r.read().decode("utf-8"))
             return data["choices"][0]["message"]["content"]
         except urllib.error.HTTPError as e:
-            if e.code in (429, 500, 502, 503, 504) and delay != 8:
+            if e.code in (429, 500, 502, 503, 504) and not last_attempt:
                 last = e; continue          # transient — retry
             raise                            # 4xx (bad request/auth/quota=0) — fail now
         except (urllib.error.URLError, http.client.HTTPException, OSError) as e:
             last = e
-            if delay == 8:
+            if last_attempt:
                 raise
         except (ValueError, KeyError, IndexError, TypeError) as e:
             # 200 OK but the body isn't the JSON shape we expect (truncated, an HTML error
             # page, a changed schema). Treat as transient — retry, then fail with a clean
             # error rather than an uncaught traceback mid-run.
             last = RuntimeError(f"unexpected model response ({e})")
-            if delay == 8:
+            if last_attempt:
                 raise last
     raise last                               # exhausted retries
+
+
+def call_model_with_fallback(secrets: dict, system: str, user: str) -> tuple[str, str]:
+    """Call the resolved engine; if it stays down (overload/rate-limit/network/bad key) AND the
+    OTHER provider has a key configured, transparently retry the whole call on it — so a busy
+    Gemini doesn't sink the day's run; the brief still ships, on DeepSeek, on time. Returns
+    (engine_used, text). Raises the last error only if EVERY keyed engine fails — a genuine,
+    persistent outage that main() turns into a non-zero exit (GitHub then emails you)."""
+    primary = resolve_engine(secrets)
+    order = [primary] + [e for e in PROVIDERS
+                         if e != primary and secrets.get(PROVIDERS[e]["key"])]
+    last = None
+    for i, eng in enumerate(order):
+        forced = {**secrets, "PHARMA_ENGINE": eng}   # force this engine; don't mutate caller's dict
+        try:
+            return eng, call_model(forced, system, user)
+        except Exception as e:                        # exhausted-transient, 4xx, missing key, bad shape
+            last = e
+            if i + 1 < len(order):
+                print(f"  ! {PROVIDERS[eng]['label']} unavailable ({e}); "
+                      f"falling back to {PROVIDERS[order[i + 1]]['label']}", file=sys.stderr)
+    raise last
 
 
 def _fmt_source_dt(iso: str) -> str:
@@ -986,9 +1015,11 @@ def main() -> int:
         secrets["PHARMA_ENGINE"] = args.engine
     engine = resolve_engine(secrets)
     label = PROVIDERS[engine]["label"]
-    keyname = PROVIDERS[engine]["key"]
-    if not secrets.get(keyname):
-        print(f"ERROR: engine '{engine}' needs {keyname} (env or {SECRETS_PATH})", file=sys.stderr)
+    # Either engine can carry the run, so only abort if NEITHER key is configured —
+    # call_model_with_fallback() uses whichever provider(s) have a key.
+    if not any(secrets.get(PROVIDERS[e]["key"]) for e in PROVIDERS):
+        print(f"ERROR: no engine key configured — set GEMINI_API_KEY or DEEPSEEK_API_KEY "
+              f"(env or {SECRETS_PATH})", file=sys.stderr)
         return 2
 
     # Backward review editions synthesise from the project's OWN archive of fact-checked daily
@@ -1058,21 +1089,29 @@ def main() -> int:
 
     print(f"Calling {label} ({engine_model(secrets, engine)})...", file=sys.stderr)
     try:
-        digest = call_model(secrets, build_system_prompt(args.edition, label, args.mode), user)
+        engine, digest = call_model_with_fallback(
+            secrets, build_system_prompt(args.edition, label, args.mode), user)
     except urllib.error.HTTPError as e:
         print(f"ERROR {e.code}: {e.read().decode('utf-8', 'replace')}", file=sys.stderr)
         if e.code == 429:
-            print(f"  hint: {label} hit a rate/quota limit. Free Gemini tiers cap daily "
-                  "requests (≈20/day for 2.5-flash) and reset next day — a single daily run "
-                  "(~3 calls) fits easily, but many manual runs in one day can exhaust it. "
-                  "Switch engine in the Command Centre, enable billing, or wait for reset.",
-                  file=sys.stderr)
+            print("  hint: every configured engine hit a rate/quota/overload limit. Free Gemini "
+                  "tiers cap daily requests (≈20/day for 2.5-flash) and 503 under load; one daily "
+                  "run (~3 calls) fits easily. Add the OTHER engine's key as an automatic fallback, "
+                  "switch engine, enable billing, or wait and re-run.", file=sys.stderr)
         return 4
     except (urllib.error.URLError, http.client.HTTPException, OSError) as e:
-        # Network drop / reset / closed connection — fail cleanly (GitHub emails the
-        # failure) instead of crashing with a traceback.
-        print(f"ERROR: {label} call failed ({e})", file=sys.stderr)
+        # Network drop / reset / closed connection on every engine — fail cleanly (GitHub
+        # emails the failure) instead of crashing with a traceback.
+        print(f"ERROR: model call failed on every configured engine ({e})", file=sys.stderr)
         return 4
+    except RuntimeError as e:
+        # Unexpected response shape (after retries) on every engine, or no usable engine.
+        print(f"ERROR: {e}", file=sys.stderr)
+        return 4
+    # `engine` may now be the fallback. Relabel so finalize() stamps the engine that ACTUALLY
+    # wrote the brief, and pin the rest of the run (grounding review/revise) to it too.
+    label = PROVIDERS[engine]["label"]
+    secrets["PHARMA_ENGINE"] = engine
 
     # Guard against empty/near-empty model output: don't email or publish a hollow
     # digest — abort so GitHub's failure email surfaces it (same policy as MIN_ARTICLES).

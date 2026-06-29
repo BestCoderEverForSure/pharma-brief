@@ -574,6 +574,52 @@ class TestCallModelRetry(unittest.TestCase):
             rd.call_model({}, "s", "u")   # no engine key configured
 
 
+class TestCallModelFallback(unittest.TestCase):
+    """If the primary engine stays down, regenerate on the other configured engine so a busy
+    Gemini doesn't sink the run. call_model is mocked — no network, no sleeps."""
+
+    @staticmethod
+    def _overloaded(*a, **k):
+        raise urllib.error.HTTPError("u", 503, "model is overloaded", {}, None)
+
+    def test_falls_back_to_other_engine(self):
+        secrets = {"GEMINI_API_KEY": "g", "DEEPSEEK_API_KEY": "d", "PHARMA_ENGINE": "gemini"}
+        seen = []
+
+        def fake(s, system, user):
+            eng = rd.resolve_engine(s)
+            seen.append(eng)
+            if eng == "gemini":
+                self._overloaded()
+            return "the digest"
+
+        with mock.patch.object(rd, "call_model", fake):
+            engine, text = rd.call_model_with_fallback(secrets, "sys", "usr")
+        self.assertEqual(engine, "deepseek")
+        self.assertEqual(text, "the digest")
+        self.assertEqual(seen, ["gemini", "deepseek"])     # tried primary, then the fallback
+        self.assertEqual(secrets["PHARMA_ENGINE"], "gemini")   # caller's dict untouched
+
+    def test_primary_success_skips_fallback(self):
+        secrets = {"GEMINI_API_KEY": "g", "DEEPSEEK_API_KEY": "d", "PHARMA_ENGINE": "gemini"}
+        seen = []
+
+        def fake(s, system, user):
+            seen.append(rd.resolve_engine(s))
+            return "ok"
+
+        with mock.patch.object(rd, "call_model", fake):
+            engine, text = rd.call_model_with_fallback(secrets, "s", "u")
+        self.assertEqual((engine, text), ("gemini", "ok"))
+        self.assertEqual(seen, ["gemini"])                 # never touched the fallback
+
+    def test_reraises_when_no_other_key(self):
+        secrets = {"GEMINI_API_KEY": "g", "PHARMA_ENGINE": "gemini"}   # only one engine has a key
+        with mock.patch.object(rd, "call_model", self._overloaded):
+            with self.assertRaises(urllib.error.HTTPError):
+                rd.call_model_with_fallback(secrets, "s", "u")
+
+
 class TestReviewDigest(unittest.TestCase):
     """The grounding self-check is the product's anti-hallucination guarantee, and its
     PASS/issue parsing + catalyst extraction is fragile — now covered. call_model is mocked."""

@@ -54,7 +54,7 @@ Persistent context for this project. Read it first.
 ## Current state
 - **Live:** repo `github.com/BestCoderEverForSure/pharma-brief` (public, anonymised) · site `https://bestcodereverforsure.github.io/pharma-brief/`.
 - **Schedule:** three crons in `pharma-digest.yml` (`1-5`, `6`, `0` at 05:00 UTC = 07:00 Rome). Generate (`--auto`) → archive → deploy → deliver, in that order, so a delivery outage can't cost the archive/publish; senders retry transient failures.
-- **Engine:** Gemini Flash (free) for scheduled runs; DeepSeek on demand; Claude via `/pharma-news`.
+- **Engine:** Gemini Flash (free) for scheduled runs; DeepSeek on demand; Claude via `/pharma-news`. The model call retries transient 429/503s (~50s over 4 tries) and then **auto-falls-back to the other keyed engine** so a busy/overloaded Gemini doesn't sink the run — only a failure on *every* configured engine exits non-zero (`call_model_with_fallback`).
 - **Feature-complete.** It's run almost entirely on **autorun** (weekday mornings + Saturday review + Sunday ahead). ~191 stdlib tests green.
 
 ## Gotchas
