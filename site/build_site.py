@@ -852,6 +852,11 @@ def build():
                 f'<div class="block-body">{src_html}</div></section>') if src_html else ""
 
     base = pages_url(repo_url)
+    # Cap the client search/Threads index (search-data.js) so it can't grow without bound as the
+    # archive deepens — it's downloaded whenever someone opens Search or Threads. 500 is well over a
+    # year of daily briefs (~2 MB); generous on purpose. Older briefs stay fully on the site via the
+    # archive + their own pages — they just drop out of instant full-text search and the Threads window.
+    SEARCH_INDEX_MAX = 500
     arch_items, search_index, feed_items = [], [], []
     for p in files:
         md = _dmy_title(p.read_text(encoding="utf-8"), p.stem)   # d/m/y title for every digest
@@ -871,8 +876,9 @@ def build():
             f'<a class="arch-item" href="{slug}"><span class="arch-date">{html.escape(p.stem)}</span>'
             f'<span class="arch-title">{html.escape(short_title)}</span>'
             f'<span class="arch-engine">{html.escape(engine)}</span></a>')
-        search_index.append({"slug": slug, "date": p.stem, "title": html.escape(short_title),
-                             "engine": html.escape(engine), "text": plain_text(md)[:4000]})
+        if len(search_index) < SEARCH_INDEX_MAX:        # files are newest-first, so this keeps the most recent
+            search_index.append({"slug": slug, "date": p.stem, "title": html.escape(short_title),
+                                 "engine": html.escape(engine), "text": plain_text(md)[:4000]})
         if len(feed_items) < 20 and base:        # newest 20 (files are sorted newest-first)
             iso = pub.get(p.stem)
             try:
