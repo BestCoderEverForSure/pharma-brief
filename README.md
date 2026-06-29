@@ -105,13 +105,12 @@ For a richer read any time, run `/pharma-news` (Claude) by hand - it uses your C
 
 ---
 
-## 7. Audio brief (optional)
+## 7. Listen to the brief
 
-A spoken version you can listen to on the commute - free, offline, via the macOS `say` engine.
+Two ways to hear a brief instead of reading it:
 
-- Produced on demand: run `python3 pharma-news/make_audio.py`, or click **Listen to the audio brief** in the Command Centre.
-- Voice: set `"audio_voice"` in [`config.json`](pharma-news/config.json) (list voices with `say -v '?'`).
-- Output: `digests/audio/YYYY-MM-DD.m4a`.
+- **On the website (no install):** every brief has a **▶ Listen** button that reads it aloud via the browser's built-in speech synthesis — it uses the device's own voices and skips citations, the subtitle, and the sources. Nothing to generate; works offline.
+- **As a saved audio file (macOS):** `python3 pharma-news/make_audio.py` (or **Listen to the audio brief** in the Command Centre) narrates the day's digest to `digests/audio/YYYY-MM-DD.m4a` via the macOS `say` engine. Voice: set `"audio_voice"` in [`config.json`](pharma-news/config.json) (list voices with `say -v '?'`).
 
 ---
 
@@ -141,7 +140,7 @@ python3 deepseek/run_digest.py --engine deepseek     # force a specific engine f
 
 ## 8b. Website & cloud
 
-**Website (local):** `python3 site/build_site.py` renders every digest into a styled, browsable site at `site/public/index.html` - with an archive grid (engine badges), a visual **catalyst timeline**, and a markets strip whose %-move matches each brief's window (daily ~5-day, weekly ~7-day). It also emits a subscribe-able **RSS feed** (`feed.xml`, auto-discovered by feed readers); the archive index caps at the 30 most recent and links to a full `archive.html`. Both engines rebuild it automatically after each run. Open `index.html` in any browser.
+**Website (local):** `python3 site/build_site.py` renders every digest into a styled, browsable site at `site/public/index.html` - with an archive grid (engine badges), a forward-looking **catalyst timeline** (a category-mix row above the dated list), a markets strip whose %-move matches each brief's window (daily ~5-day, weekly ~7-day), and a one-click **▶ Listen** read-aloud on each brief (browser speech synthesis; skips citations and metadata). It also emits a subscribe-able **RSS feed** (`feed.xml`, auto-discovered by feed readers); the archive index caps at the 30 most recent and links to a full `archive.html`. Both engines rebuild it automatically after each run. Open `index.html` in any browser.
 
 **Tests:** `python3 -m unittest discover -s tests -t tests` runs the stdlib unit-test suite (offline, no keys) over the digest, website, email, and Telegram helpers. A `Tests` GitHub workflow runs them automatically on every push/PR, so a code regression is caught before it can reach the morning send. See [`tests/README.md`](tests/README.md).
 
@@ -218,6 +217,6 @@ Secrets (outside the repo, private):
 
 ## 12. Roadmap
 
-- ✅ On-demand + cloud-scheduled digest · email · **Telegram** · evening + Sunday weekly editions · audio · website (markets, catalyst timeline, search, dark mode, "last updated") · thread-tracking / "what's new" tagging · archive search · accuracy pass + **grounding self-check** · self-maintaining catalysts · source date/times · DeepSeek engine
+- ✅ On-demand + cloud-scheduled digest · email · **Telegram** · evening + Sunday weekly editions · audio · website (markets, catalyst timeline + category mix, **▶ Listen** read-aloud, search, dark mode, "last updated") · thread-tracking / "what's new" tagging · archive search · accuracy pass + **grounding self-check** · self-maintaining catalysts · source date/times · DeepSeek engine
 - 💡 Parked: WhatsApp (Business API isn't free/simple); a Claude-grade *cloud* digest (the on-demand `/pharma-news` already gives you Claude quality on your subscription).
 - See `ROADMAP.md` for the full checklist.
