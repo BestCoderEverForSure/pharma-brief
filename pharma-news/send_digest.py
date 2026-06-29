@@ -35,7 +35,8 @@ if str(PROJECT_ROOT) not in sys.path:
 # Citation/markets/catalyst data logic is shared with the website renderer so the email
 # and site can't drift apart — see pharma_render.py.
 from pharma_render import (renumber_sources, parse_srcmap, parse_catalysts,
-                           upcoming_catalysts, fetch_market, select_tickers, brief_market_days)
+                           upcoming_catalysts, fetch_market, select_tickers, brief_market_days,
+                           strip_md_pseudo_citations, tighten_link_spaces)
 _RETRY_DELAYS = (0, 3, 8)
 
 
@@ -178,12 +179,7 @@ def find_digest(arg_path: str | None) -> Path:
 def md_inline(text: str) -> str:
     """Minimal inline markdown -> HTML (links, bold, italic, clickable [n] citations)."""
     text = _html.escape(text)
-    # Drop "[catalysts.md]"-style markers (internal files cited as if sources); the
-    # lookahead spares real "[label.md](url)" links.
-    text = re.sub(r"\s*\[[^\[\]]*\.md\](?!\()", "", text, flags=re.I)
-    # Tolerate a stray space in links the model sometimes writes as "[text] (https://…)";
-    # collapse it only before a URL so citations like "[1] (a note)" stay plain text.
-    text = re.sub(r"\]\s+\((?=https?://)", "](", text)
+    text = tighten_link_spaces(strip_md_pseudo_citations(text))   # shared pre-cleanups
     # Positively mark the minority of DIRECT publisher links with a ✓ (the rest go via the
     # Google News aggregator and can redirect) — matches the website, low-noise.
     def _emlink(m):

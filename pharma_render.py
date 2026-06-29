@@ -75,6 +75,22 @@ def parse_srcmap(md: str) -> dict:
 
 
 # --------------------------------------------------------------------------- #
+#  Inline-markdown pre-cleanups applied by ALL three renderers (site/email/Telegram)
+#  before their own (divergent) link/emphasis rendering — kept here so they can't drift.
+# --------------------------------------------------------------------------- #
+def strip_md_pseudo_citations(text: str) -> str:
+    """Drop "[catalysts.md]"-style markers — internal methodology files the model sometimes
+    cites as if they were sources. The lookahead spares a real "[label.md](url)" link."""
+    return re.sub(r"\s*\[[^\[\]]*\.md\](?!\()", "", text, flags=re.I)
+
+
+def tighten_link_spaces(text: str) -> str:
+    """Collapse a stray space in links the model writes as "[text] (https://…)", only before a
+    URL — so a citation like "[1] (a note)" stays plain text rather than becoming a link."""
+    return re.sub(r"\]\s+\((?=https?://)", "](", text)
+
+
+# --------------------------------------------------------------------------- #
 #  Catalyst calendar parsing (the dated "- **DATE** · desc" lines)
 # --------------------------------------------------------------------------- #
 def catalyst_date(datestr: str):

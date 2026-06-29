@@ -66,7 +66,10 @@ jobs:
           IN_HOURS: ${{ github.event.inputs.hours }}
           IN_EDITION: ${{ github.event.inputs.edition }}
           IN_MODE: ${{ github.event.inputs.mode }}
-        # Generate + ground-check + finalize + build the site, but DON'T email/Telegram
+          # The dedicated "Build the website" step below rebuilds + deploys, so skip the
+          # redundant in-process build (and its duplicate live market fetch) here.
+          SKIP_SITE_BUILD: "1"
+        # Generate + ground-check + finalize, but DON'T email/Telegram
         # yet. Delivery is a separate step AFTER archive + publish below, so a delivery
         # outage can never cost the day's archived digest or the published website.
         run: python3 deepseek/run_digest.py --auto

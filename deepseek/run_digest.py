@@ -1162,9 +1162,12 @@ def main() -> int:
         if added:
             print(f"  catalysts: +{added} auto-detected", file=sys.stderr)
 
-    # Rebuild the static site so the archive + timeline stay current.
-    import subprocess
-    subprocess.run([sys.executable, str(ROOT / "site" / "build_site.py")])
+    # Rebuild the static site so the archive + timeline stay current. The cloud workflow sets
+    # SKIP_SITE_BUILD=1 because it rebuilds + deploys in a dedicated step anyway — skipping here
+    # avoids a redundant build and a duplicate live market fetch. Local/manual runs still build.
+    if os.environ.get("SKIP_SITE_BUILD") != "1":
+        import subprocess
+        subprocess.run([sys.executable, str(ROOT / "site" / "build_site.py")])
     return rc
 
 

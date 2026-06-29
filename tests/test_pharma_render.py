@@ -43,6 +43,19 @@ class TestParseSrcmap(unittest.TestCase):
                          {"1": "https://a.example/y", "2": "https://b.example/x"})
 
 
+class TestInlineCleanups(unittest.TestCase):
+    def test_strip_md_pseudo_citations(self):
+        self.assertEqual(pr.strip_md_pseudo_citations("text [catalysts.md] more"), "text more")
+        # a real "[label.md](url)" link is spared by the lookahead
+        self.assertEqual(pr.strip_md_pseudo_citations("see [notes.md](https://x/n)"),
+                         "see [notes.md](https://x/n)")
+
+    def test_tighten_link_spaces(self):
+        self.assertEqual(pr.tighten_link_spaces("[t] (https://x)"), "[t](https://x)")
+        # only before a URL — a plain "[1] (a note)" stays untouched
+        self.assertEqual(pr.tighten_link_spaces("[1] (a note)"), "[1] (a note)")
+
+
 class TestCatalystDate(unittest.TestCase):
     def test_iso(self):
         self.assertEqual(pr.catalyst_date("2026-09-15"), dt.date(2026, 9, 15))

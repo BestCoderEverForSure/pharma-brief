@@ -34,6 +34,10 @@ import urllib.error
 from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+if str(PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(PROJECT_ROOT))
+from pharma_render import strip_md_pseudo_citations   # shared with the site + email renderers
+
 SECRETS_PATH = Path.home() / ".config" / "pharma-news" / "secrets.env"
 DEFAULT_SITE = "https://bestcodereverforsure.github.io/pharma-brief/"
 TG_API = "https://api.telegram.org/bot{token}/sendMessage"
@@ -89,7 +93,7 @@ def find_digest(arg_path: str | None) -> Path:
 def tg_inline(text: str) -> str:
     """Markdown subset -> Telegram-flavoured HTML; drop [n] citation markers."""
     text = re.sub(r"\s*\[\d+\]", "", text)                     # strip [n] citations
-    text = re.sub(r"\s*\[[^\[\]]*\.md\](?!\()", "", text)      # strip "[catalysts.md]"-style markers
+    text = strip_md_pseudo_citations(text)                     # strip "[catalysts.md]"-style markers
     text = _html.escape(text)
     text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", r'<a href="\2">\1</a>', text)
     text = re.sub(r"\*\*([^*]+)\*\*", r"<b>\1</b>", text)

@@ -26,7 +26,8 @@ if str(ROOT) not in sys.path:
 # Citation/markets/catalyst data logic is shared with the email renderer so the two
 # can't drift apart — see pharma_render.py.
 from pharma_render import (renumber_sources, parse_srcmap, parse_catalysts,
-                           upcoming_catalysts, fetch_market, select_tickers, brief_market_days)
+                           upcoming_catalysts, fetch_market, select_tickers, brief_market_days,
+                           strip_md_pseudo_citations, tighten_link_spaces)
 DIGESTS = ROOT / "digests"
 CATALYSTS = ROOT / "pharma-news" / "catalysts.md"
 OUT = ROOT / "site" / "public"
@@ -78,12 +79,7 @@ def _mk_link(m):
 
 def md_inline(text: str) -> str:
     text = html.escape(text)
-    # Drop "[catalysts.md]"-style markers (internal files cited as if sources); the
-    # lookahead spares real "[label.md](url)" links.
-    text = re.sub(r"\s*\[[^\[\]]*\.md\](?!\()", "", text, flags=re.I)
-    # Tolerate a stray space in links the model sometimes writes as "[text] (https://…)";
-    # collapse it only before a URL so citations like "[1] (a note)" stay plain text.
-    text = re.sub(r"\]\s+\((?=https?://)", "](", text)
+    text = tighten_link_spaces(strip_md_pseudo_citations(text))   # shared pre-cleanups
     text = re.sub(r"\[([^\]]+)\]\(([^)]+)\)", _mk_link, text)
     text = re.sub(r"\*\*([^*]+)\*\*", r"<strong>\1</strong>", text)
     text = re.sub(r"(?<!\*)\*([^*]+)\*(?!\*)", r"<em>\1</em>", text)
