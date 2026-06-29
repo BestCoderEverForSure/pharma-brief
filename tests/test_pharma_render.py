@@ -153,6 +153,44 @@ class TestUpcomingCatalysts(unittest.TestCase):
         self.assertEqual(kept, [future])
 
 
+class TestForwardCalendarText(unittest.TestCase):
+    SRC = (
+        "# Catalyst Calendar\n"
+        "Some intro prose.\n"
+        "\n"
+        "## Regulatory\n"
+        "- **2026-06-18** · Tebipenem FDA decision\n"      # past as of REF -> dropped
+        "- **~2026-06-20** · Cytisinicline FDA decision\n"  # past (tilde tolerated) -> dropped
+        "- **2026-09-18** · Zidesamtinib PDUFA\n"           # future -> kept
+        "- **Monthly (~3rd week)** · EMA CHMP meeting\n"    # no parseable date -> kept
+        "> Tip: keep this trimmed.\n")
+    REF = dt.date(2026, 6, 28)
+
+    def _run(self):
+        tmp = tempfile.TemporaryDirectory()
+        path = Path(tmp.name) / "catalysts.md"
+        path.write_text(self.SRC, encoding="utf-8")
+        try:
+            return pr.forward_calendar_text(path, self.REF)
+        finally:
+            tmp.cleanup()
+
+    def test_drops_only_past_dated_lines(self):
+        out = self._run()
+        self.assertNotIn("Tebipenem", out)        # past
+        self.assertNotIn("Cytisinicline", out)    # past (had a ~ prefix)
+        self.assertIn("Zidesamtinib", out)        # future dated entry survives
+
+    def test_keeps_structure_and_undated_lines(self):
+        out = self._run()
+        for keep in ("# Catalyst Calendar", "Some intro prose.", "## Regulatory",
+                     "Monthly (~3rd week)", "> Tip: keep this trimmed."):
+            self.assertIn(keep, out)
+
+    def test_missing_file_is_empty(self):
+        self.assertEqual(pr.forward_calendar_text(Path("/no/such/catalysts.md"), self.REF), "")
+
+
 class _R:
     """Stand-in for a Yahoo HTTP response (fetch_market calls .read() directly)."""
     def __init__(self, body):

@@ -49,7 +49,7 @@ MAX_FEED_BYTES = 5 * 1024 * 1024
 # dedup treats a curated "Sep 2026" and an auto-detected "2026-09-15" as the same day.
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
-from pharma_render import catalyst_date
+from pharma_render import catalyst_date, forward_calendar_text
 
 DEFAULT_FEEDS = [
     "https://www.fiercepharma.com/rss/xml",
@@ -747,7 +747,16 @@ def _cat_tokens(desc: str) -> set:
 
 def merge_catalysts(events: list, today: dt.date) -> int:
     """Add new auto-detected catalysts to catalysts.md under a labelled section (prune past,
-    dedup against the whole file). Returns the number newly added."""
+    dedup against the whole file). Returns the number newly added.
+
+    By design, catalysts.md is a FORWARD-LOOKING working calendar (see its header), not a
+    historical archive: the machine-generated auto section is pruned to today-onward to bound
+    its growth (the file is also fed to the grounding check each run), and human-curated entries
+    above are deliberately left untouched — we never auto-edit hand-maintained content. Nothing
+    downstream depends on past entries surviving here: the site and email filter catalysts to
+    each brief's own date at render time (upcoming_catalysts), so every brief looks forward
+    whether or not the file still lists older events. If you ever want archived briefs to be
+    fully faithful snapshots, the render filter — not retention in this file — is the lever."""
     path = ROOT / "pharma-news" / "catalysts.md"
     if not path.exists():
         return 0
@@ -1061,8 +1070,11 @@ def main() -> int:
         review_corpus = (f"=== PERIOD TIMELINE ===\n{timeline}\n\n=== SOURCE ARTICLES ===\n{corpus}"
                          if timeline else corpus)
         if cat_file.exists():
+            # Only the UPCOMING calendar entries are valid sources for upcoming events — feeding
+            # past ones would be cost + noise (and grows unbounded as the file accumulates).
             review_corpus = (review_corpus + "\n\n=== CATALYST CALENDAR (curated; its dated entries are "
-                             "valid sources for upcoming events) ===\n" + cat_file.read_text(encoding="utf-8"))
+                             "valid sources for upcoming events) ===\n"
+                             + forward_calendar_text(cat_file, dt.date.today()))
         ok, issues, cat_events = review_digest(secrets, digest, review_corpus, dt.date.today())
         if ok:
             print("  grounding: passed", file=sys.stderr)

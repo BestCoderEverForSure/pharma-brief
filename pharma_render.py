@@ -146,6 +146,26 @@ def upcoming_catalysts(events: list, ref_date=None) -> list:
     return [(CATALYST_BUCKETS[i], g) for i, g in enumerate(groups) if g]
 
 
+def forward_calendar_text(path, ref_date=None) -> str:
+    """catalysts.md as text with PAST dated entries dropped — for feeding the LLM grounding
+    check, which treats the calendar's dated lines as sources for UPCOMING events. A past event
+    can't support an upcoming claim, and dropping it stops the prompt from growing as the file
+    accumulates. Non-dated lines (section headers, guidance, recurring notes with no parseable
+    date) are kept verbatim, so the calendar still reads as itself. "" if the file is missing."""
+    if not path or not path.exists():
+        return ""
+    ref = ref_date or dt.date.today()
+    kept = []
+    for line in path.read_text(encoding="utf-8").splitlines():
+        m = re.match(r"^- \*\*(.+?)\*\* · ", line.strip())
+        if m:
+            when = catalyst_date(m.group(1))
+            if when is not None and when < ref:
+                continue                    # dated, and already past — leave it out of the prompt
+        kept.append(line)
+    return "\n".join(kept)
+
+
 # --------------------------------------------------------------------------- #
 #  Markets (free Yahoo Finance endpoint — no key, real prices only)
 # --------------------------------------------------------------------------- #
