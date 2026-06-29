@@ -461,8 +461,14 @@ def page(title: str, body: str, home_link: bool = True, repo_url: str = "") -> s
 {head_theme}
 <link rel="stylesheet" href="style.css">
 <link rel="alternate" type="application/rss+xml" title="Pharma Morning Brief" href="feed.xml">
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#466362">
+<link rel="apple-touch-icon" href="icon.svg">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Pharma Brief">
 </head><body>{drawer}{topbar}<main>{inner}</main>{footer}
-<script src="settings.js"></script><script src="listen.js"></script></body></html>"""
+<script src="settings.js"></script><script src="listen.js"></script>
+<script>if('serviceWorker' in navigator)addEventListener('load',function(){{navigator.serviceWorker.register('sw.js').catch(function(){{}});}});</script></body></html>"""
 
 
 def published_line(date_str: str, iso: str | None = None) -> str:
@@ -677,6 +683,53 @@ THREADS_JS = """(function(){
 })();"""
 
 
+# --- PWA: installable + offline. A scalable SVG app icon (no raster tooling needed), a web app
+#     manifest, and a service worker that precaches the shell + recent briefs and serves
+#     cache-first so the site reads/plays offline. ---
+ICON_SVG = """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Pharma Morning Brief">
+<rect width="512" height="512" rx="104" fill="#17181c"/>
+<g transform="rotate(40 256 256)">
+<rect x="190" y="120" width="132" height="272" rx="66" fill="#f4f2ec"/>
+<rect x="190" y="240" width="132" height="32" fill="#466362"/>
+</g>
+</svg>
+"""
+
+MANIFEST_JSON = json.dumps({
+    "name": "Pharma Morning Brief",
+    "short_name": "Pharma Brief",
+    "description": "A balanced, fact-checked 2-3 minute pharmaceutical-sector morning brief.",
+    "start_url": "index.html",
+    "scope": "./",
+    "display": "standalone",
+    "background_color": "#f4f2ec",
+    "theme_color": "#466362",
+    "icons": [{"src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable"}],
+}, indent=2)
+
+# Cache name (__CACHE__) and precache list (__PRECACHE__) are filled in at build time.
+SW_JS = """const CACHE='__CACHE__';
+const PRECACHE=__PRECACHE__;
+self.addEventListener('install',function(e){
+  e.waitUntil(caches.open(CACHE).then(function(c){return c.addAll(PRECACHE);}).then(function(){return self.skipWaiting();}));
+});
+self.addEventListener('activate',function(e){
+  e.waitUntil(caches.keys().then(function(ks){return Promise.all(ks.map(function(k){if(k!==CACHE)return caches.delete(k);}));}).then(function(){return self.clients.claim();}));
+});
+self.addEventListener('fetch',function(e){
+  var req=e.request;
+  if(req.method!=='GET'||new URL(req.url).origin!==self.location.origin)return;
+  e.respondWith(caches.match(req).then(function(cached){
+    var net=fetch(req).then(function(res){
+      if(res&&res.status===200){var copy=res.clone();caches.open(CACHE).then(function(c){c.put(req,copy);});}
+      return res;
+    }).catch(function(){return cached;});
+    return cached||net;   // cache-first for instant/offline; refresh in the background
+  }));
+});
+"""
+
+
 def brief_ref_date(stem: str) -> dt.date:
     """The date a brief looks forward FROM — the YYYY-MM-DD at the start of its filename (so
     suffixed stems like '2026-06-12-deepseek' still resolve). Catalysts before this date have
@@ -838,6 +891,16 @@ def build():
     _today = dt.date.today()
     (OUT / "catalysts.ics").write_text(
         ics_feed([e for e in events if e["date"] >= _today], dt.datetime.now(dt.timezone.utc)),
+        encoding="utf-8")
+    # PWA: icon + manifest + service worker (precaches the shell + recent briefs for offline use).
+    (OUT / "icon.svg").write_text(ICON_SVG, encoding="utf-8")
+    (OUT / "manifest.webmanifest").write_text(MANIFEST_JSON, encoding="utf-8")
+    precache = (["index.html", "threads.html", "style.css", "settings.js", "listen.js",
+                 "search.js", "search-data.js", "threads.js", "manifest.webmanifest", "icon.svg"]
+                + [p.stem + ".html" for p in files[:12]])
+    swver = dt.datetime.now(dt.timezone.utc).strftime("%Y%m%d%H%M%S")
+    (OUT / "sw.js").write_text(
+        SW_JS.replace("__CACHE__", "pharma-" + swver).replace("__PRECACHE__", json.dumps(precache)),
         encoding="utf-8")
     if base and feed_items:
         (OUT / "feed.xml").write_text(
