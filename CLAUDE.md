@@ -44,7 +44,7 @@ Persistent context for this project. Read it first.
 ## Key files
 - `engine/run_digest.py` — the multi-engine generator (gather → prompt → ground-check → finalize → archive → build).
 - `pharma_render.py` — shared render/data logic (site + email).
-- `site/build_site.py` — the static site: archive, catalyst timeline + category mix, markets, **Threads** (topic storyline) + coverage/weekly-trend, subscribe-able catalyst **`.ics`**, **Listen** read-aloud (play/pause/resume), search, dark mode, installable **PWA**/offline.
+- `site/build_site.py` — the static site: archive, catalyst timeline + category mix, markets, **Threads** (topic storyline) + coverage/weekly-trend, subscribe-able catalyst **`.ics`**, **Listen** read-aloud (play/pause/resume + restart), search, dark mode, installable **PWA**/offline.
 - `pharma-news/` — `send_digest.py`, `send_telegram.py`, `make_audio.py`, `check_freshness.py`, `set_schedule.py`, `{watchlist,catalysts,digest-template}.md`, `config.json`, `state.json`.
 - `digests/` — saved digests (the archive the site renders) + `published.json`.
 - `tests/` — stdlib `unittest` + golden fixtures (regen: `python3 tests/_gen_golden.py`); guarded by `.github/workflows/tests.yml`.

@@ -109,7 +109,7 @@ For a richer read any time, run `/pharma-news` (Claude) by hand - it uses your C
 
 Two ways to hear a brief instead of reading it:
 
-- **On the website (no install):** every brief has a **▶ Listen** button that reads it aloud via the browser's built-in speech synthesis — it uses the device's own voices and reads just the prose, skipping the title/date, the subtitle, citations, and sources. Nothing to generate; works offline.
+- **On the website (no install):** every brief has a **▶ Listen** button that reads it aloud via the browser's built-in speech synthesis — it uses the device's own voices and reads just the prose, skipping the title/date, the subtitle, citations, and sources. **Pause** keeps your place (tap again to resume from the same spot), and a small **restart** button next to it starts the brief over from the top. Nothing to generate; works offline.
 - **As a saved audio file (macOS):** `python3 pharma-news/make_audio.py` (or **Listen to the audio brief** in the Command Centre) narrates the day's digest to `digests/audio/YYYY-MM-DD.m4a` via the macOS `say` engine. Voice: set `"audio_voice"` in [`config.json`](pharma-news/config.json) (list voices with `say -v '?'`).
 
 ---

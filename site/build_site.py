@@ -592,26 +592,47 @@ LISTEN_JS = """(function(){
       if(buf&&(buf+' '+s).length>220){out.push(buf);buf=s;}else{buf=buf?buf+' '+s:s;}});
     if(buf)out.push(buf);return out;
   }
-  var active=null, paused=false;     // play -> pause (keeps place) -> resume; one brief at a time
+  // One brief at a time. We pause/resume by cancelling and remembering our place --
+  // NOT via synth.pause()/synth.resume(), which are unreliable across browsers and were
+  // making playback restart from the top instead of picking up where it left off.
+  var active=null,paused=false,parts=[],idx=0,offset=0,lastChar=0,voice=null,curU=null;
   function setBtn(btn,icon,text,pressed){
     btn.setAttribute('aria-pressed',pressed?'true':'false');
     btn.querySelector('.listen-i').textContent=icon;
     btn.querySelector('.listen-t').textContent=text;
+    if(btn._r)btn._r.style.display=pressed?'inline-flex':'none';   // "restart" shows only while this brief is active
   }
-  function reset(){var b=active;active=null;paused=false;if(b)setBtn(b,'\\u25B6','Listen',false);}
-  function stop(){synth.cancel();reset();}
+  function reset(){var b=active;active=null;paused=false;parts=[];idx=0;offset=0;lastChar=0;curU=null;
+    if(b)setBtn(b,'\\u25B6','Listen',false);}
+  function stop(){curU=null;synth.cancel();reset();}
+  function speakNext(btn){
+    if(active!==btn||paused)return;
+    if(idx>=parts.length){reset();return;}              // finished -> back to Listen
+    var base=offset,u=new SpeechSynthesisUtterance(parts[idx].slice(base));
+    if(voice)u.voice=voice;u.rate=1;u.pitch=1;curU=u;lastChar=base;
+    u.onboundary=function(e){if(curU===u)lastChar=base+(e.charIndex||0);};   // remember the word we're on
+    u.onend=function(){if(curU!==u||paused||active!==btn)return;idx++;offset=0;speakNext(btn);};
+    u.onerror=function(){if(curU!==u||active!==btn)return;reset();};         // ignore the cancel() we fire to pause
+    synth.speak(u);
+  }
   function play(btn,brief){
     if(active&&active!==btn)setBtn(active,'\\u25B6','Listen',false);   // hand off from another brief
-    synth.cancel();
-    var text=extract(brief);if(!text){active=null;paused=false;return;}
-    var voice=pickVoice(),parts=chunk(text),i=0;active=btn;paused=false;
-    setBtn(btn,'\\u23F8','Pause',true);
-    (function next(){
-      if(active!==btn)return;
-      if(i>=parts.length){reset();return;}              // finished -> back to Listen
-      var u=new SpeechSynthesisUtterance(parts[i++]);if(voice)u.voice=voice;u.rate=1;u.pitch=1;
-      u.onend=next;u.onerror=function(){if(active===btn)reset();};synth.speak(u);
-    })();
+    curU=null;synth.cancel();
+    var text=extract(brief);if(!text){reset();return;}
+    voice=pickVoice();parts=chunk(text);idx=0;offset=0;lastChar=0;active=btn;paused=false;
+    setBtn(btn,'\\u23F8','Pause',true);speakNext(btn);
+  }
+  function pause(btn){
+    paused=true;offset=lastChar;curU=null;synth.cancel();   // save our place, then stop the engine
+    setBtn(btn,'\\u25B6','Resume',true);
+  }
+  function resume(btn){
+    paused=false;setBtn(btn,'\\u23F8','Pause',true);speakNext(btn);   // pick up from the saved chunk/word
+  }
+  function restart(btn){
+    if(active!==btn)return;                                  // only the playing brief can restart
+    idx=0;offset=0;lastChar=0;paused=false;curU=null;synth.cancel();   // back to the very top, keep playing
+    setBtn(btn,'\\u23F8','Pause',true);speakNext(btn);
   }
   [].forEach.call(document.querySelectorAll('.brief'),function(brief){
     if(brief.querySelector('.listen'))return;
@@ -620,11 +641,16 @@ LISTEN_JS = """(function(){
     btn.setAttribute('aria-pressed','false');btn.setAttribute('aria-label','Listen to this brief');
     btn.innerHTML='<span class="listen-i" aria-hidden="true">\\u25B6</span><span class="listen-t">Listen</span>';
     btn.onclick=function(){
-      if(active!==btn){play(btn,brief);}                                          // start
-      else if(paused){synth.resume();paused=false;setBtn(btn,'\\u23F8','Pause',true);}   // resume where it left off
-      else{synth.pause();paused=true;setBtn(btn,'\\u25B6','Resume',true);}        // pause (keeps place)
+      if(active!==btn)play(btn,brief);           // start from the top
+      else if(paused)resume(btn);                // resume where it left off
+      else pause(btn);                           // pause, keeping our place
     };
-    bar.appendChild(btn);
+    var rbtn=document.createElement('button');rbtn.type='button';rbtn.className='listen-restart';
+    rbtn.setAttribute('aria-label','Restart from the beginning');rbtn.style.display='none';
+    rbtn.innerHTML='<span aria-hidden="true">\\u23EE</span>';
+    rbtn.onclick=function(){restart(btn);};
+    btn._r=rbtn;
+    bar.appendChild(rbtn);bar.appendChild(btn);   // restart sits to the left of the main control
     var h1=brief.querySelector('h1');
     if(h1)h1.insertAdjacentElement('afterend',bar);else brief.insertBefore(bar,brief.firstChild);
   });
@@ -1013,13 +1039,17 @@ h2.major a,h3.major a,h2.major,h3.major{color:var(--major) !important}
 a.cite{border-bottom:none;color:var(--accent);font-weight:600;font-size:.82em;padding:0 1px}
 a.cite:hover{text-decoration:underline;text-underline-offset:2px}
 /* read-aloud "Listen" control (injected per brief by listen.js) */
-.listen-bar{margin:6px 0 20px}
+.listen-bar{display:flex;align-items:center;gap:8px;margin:6px 0 20px}
 .listen{font-family:var(--mono);font-size:12px;letter-spacing:.04em;color:var(--accent);background:transparent;
  border:1px solid var(--line);border-radius:16px;padding:5px 14px;cursor:pointer;display:inline-flex;
  align-items:center;gap:7px;transition:background .15s,border-color .15s,color .15s}
 .listen:hover{border-color:var(--accent)}
 .listen[aria-pressed="true"]{background:var(--accent);color:var(--paper);border-color:var(--accent)}
 .listen-i{font-size:10px;line-height:1}
+.listen-restart{font-family:var(--mono);color:var(--accent);background:transparent;border:1px solid var(--line);
+ border-radius:50%;width:28px;height:28px;padding:0;cursor:pointer;align-items:center;justify-content:center;
+ font-size:11px;line-height:1;transition:background .15s,border-color .15s,color .15s}
+.listen-restart:hover{border-color:var(--accent)}
 .cal-sub{white-space:nowrap;color:var(--accent);border-bottom:1px solid var(--line)}
 .cal-sub:hover{border-bottom-color:var(--accent)}
 /* threads — coverage chart (also the trends view + topic picker) + topic-storyline results */
