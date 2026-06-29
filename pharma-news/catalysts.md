@@ -30,6 +30,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-06-30** · Aurobindo Pharma's $250M Lannett acquisition expected to close (auto-detected 2026-06-19)
 - **2026-07-01** · India policy decision on customs duty cuts extension (auto-detected 2026-06-14)
 - **2026-07-01** · Medicare to offer GLP-1 weight-loss drugs for $50 (auto-detected 2026-06-15)
+- **2026-07-01** · CDSCO discontinues hard copies for vaccine/anti-sera import licence PACs (auto-detected 2026-06-29)
 - **2026-07-10** · Rossari Biotech dividend record date (auto-detected 2026-06-18)
 - **2026-07-15** · CNX and Legacy US relaunch of Ethyol (auto-detected 2026-06-26)
 - **2026-07-16** · Ajanta Pharma 47th annual general meeting (auto-detected 2026-06-15)
