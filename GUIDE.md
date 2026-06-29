@@ -47,7 +47,7 @@ That's the whole thing. Everything below is just *where* and *when* the cooks wo
 ## How to STOP or START the automatic run
 1. Go to **github.com/BestCoderEverForSure/pharma-brief**
 2. Click the **"Actions"** tab at the top.
-3. Click the workflow named **"Pharma Morning Digest (DeepSeek)"** on the left.
+3. Click the workflow named **"Pharma Morning Digest"** on the left.
 4. **To stop:** click the **"•••"** button (top right) → **"Disable workflow."**
    **To start again:** same place → **"Enable workflow."**
    **To run it right now (any time):** click **"Run workflow."**
