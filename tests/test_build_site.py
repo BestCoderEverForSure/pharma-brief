@@ -284,5 +284,34 @@ class TestIcsFeed(unittest.TestCase):
         self.assertNotIn("BEGIN:VEVENT", out)
 
 
+class TestWatchlistTopics(unittest.TestCase):
+    def _topics(self, text):
+        tmp = tempfile.TemporaryDirectory()
+        path = Path(tmp.name) / "watchlist.md"
+        path.write_text(text, encoding="utf-8")
+        try:
+            return bs.watchlist_topics(path)
+        finally:
+            tmp.cleanup()
+
+    def test_strips_notes_and_splits_alternatives(self):
+        topics = self._topics(
+            "## Companies\n"
+            "- Eli Lilly *(primary focus - see Spotlight)*\n"
+            "- Pfizer / Metsera\n"
+            "## Themes\n"
+            "- Drug pricing / MFN / tariffs\n"
+            "- Patent cliffs & M&A\n"
+            "not a bullet line\n")
+        self.assertIn("Eli Lilly", topics)     # italic note + space stripped
+        self.assertIn("Metsera", topics)        # ' / ' alternative split out
+        self.assertIn("tariffs", topics)        # multi-slash split
+        self.assertIn("M&A", topics)            # ' & ' split keeps M&A intact
+        self.assertNotIn("", topics)
+
+    def test_missing_file_is_empty(self):
+        self.assertEqual(bs.watchlist_topics(Path("/no/such/watchlist.md")), [])
+
+
 if __name__ == "__main__":
     unittest.main()

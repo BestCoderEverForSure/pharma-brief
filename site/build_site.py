@@ -30,6 +30,7 @@ from pharma_render import (renumber_sources, parse_srcmap, parse_catalysts,
                            strip_md_pseudo_citations, tighten_link_spaces)
 DIGESTS = ROOT / "digests"
 CATALYSTS = ROOT / "pharma-news" / "catalysts.md"
+WATCHLIST = ROOT / "pharma-news" / "watchlist.md"
 OUT = ROOT / "site" / "public"
 
 SOURCES = [
@@ -391,11 +392,31 @@ def ics_feed(events: list, built: dt.datetime) -> str:
     return "\r\n".join(lines) + "\r\n"
 
 
+def watchlist_topics(path) -> list:
+    """Topic chips for the Threads view, derived from watchlist.md bullets: strip the leading
+    '- ', any *(italic note)* and (parenthetical), split on ' / ' and ' & ' alternatives, trim,
+    dedupe, and drop over-long fragments. Best-effort — the Threads box also takes free text."""
+    if not path or not path.exists():
+        return []
+    topics, seen = [], set()
+    for line in path.read_text(encoding="utf-8").splitlines():
+        m = re.match(r"^\s*-\s+(.+)$", line)
+        if not m:
+            continue
+        t = re.sub(r"\([^)]*\)", "", m.group(1).replace("*", ""))   # drop notes/parentheticals + emphasis
+        for part in re.split(r"\s+/\s+|\s+&\s+", t):
+            part = part.strip(" *_-—–.")
+            if part and len(part) <= 28 and part.lower() not in seen:
+                topics.append(part); seen.add(part.lower())
+    return topics
+
+
 def page(title: str, body: str, home_link: bool = True, repo_url: str = "") -> str:
     base = "index.html" if home_link else ""
     nav = "".join(f'<a href="{base}#{i}">{n}</a>'
                   for i, n in [("latest", "Latest"), ("upcoming", "Catalysts"),
-                               ("markets", "Markets"), ("archive", "Archive")])
+                               ("markets", "Markets"), ("archive", "Archive")]) \
+        + '<a href="threads.html">Threads</a>'
     src = ", ".join(f'<a href="{u}" target="_blank" rel="noopener">{n}</a>' for n, u in SOURCES)
     cloud = (f'<h4>Cloud</h4>'
              f'<a href="{repo_url}/actions" target="_blank" rel="noopener">Run / manage digests &rarr;</a>'
@@ -410,6 +431,7 @@ def page(title: str, body: str, home_link: bool = True, repo_url: str = "") -> s
         '<h4>Go to</h4>'
         f'<a href="{base}#latest">Latest digest</a><a href="{base}#upcoming">Catalysts</a>'
         f'<a href="{base}#markets">Markets</a><a href="{base}#archive">Archive</a><a href="{base}#about">About</a>'
+        '<a href="threads.html">Threads (follow a topic)</a>'
         '<h4>Find</h4><button class="opt" id="opensearch">Search the archive</button>'
         f'{cloud}</aside>')
     topbar = (f'<header class="topbar"><div class="bar">'
@@ -591,6 +613,47 @@ LISTEN_JS = """(function(){
 })();"""
 
 
+# Threads view: pick a topic (a watchlist chip or free text) and see every archived brief that
+# mentions it, newest-first, with a snippet around the match — the archive as a storyline. Pure
+# client-side over window.DIGESTS (the same index that powers search). search_index text is plain
+# (unescaped), so every interpolation is HTML-escaped before it touches innerHTML.
+THREADS_JS = """(function(){
+  var data=window.DIGESTS||[];
+  var q=document.getElementById('threadq'),results=document.getElementById('threadresults'),
+      chips=document.getElementById('threadchips');
+  function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+  function rxEsc(s){return s.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&');}
+  function snippet(text,term){
+    var i=text.toLowerCase().indexOf(term.toLowerCase());
+    if(i<0)return '';
+    var start=Math.max(0,i-90),end=Math.min(text.length,i+term.length+150);
+    var s=(start>0?'… ':'')+text.slice(start,end)+(end<text.length?' …':'');
+    return esc(s).replace(new RegExp(rxEsc(esc(term)),'ig'),function(m){return '<mark>'+m+'</mark>';});
+  }
+  function render(term){
+    term=(term||'').trim();
+    if(!term){results.innerHTML='';return;}
+    var re=new RegExp(rxEsc(term),'i');
+    var hits=data.filter(function(d){return re.test(d.title)||re.test(d.text);})
+                 .sort(function(a,b){return a.date<b.date?1:(a.date>b.date?-1:0);});
+    if(!hits.length){results.innerHTML='<p class="muted">No briefs mention &ldquo;'+esc(term)+'&rdquo; yet.</p>';return;}
+    var head='<div class="thread-count">'+hits.length+' brief'+(hits.length>1?'s':'')+' mention &ldquo;'+esc(term)+'&rdquo;</div>';
+    results.innerHTML=head+hits.map(function(d){
+      return '<a class="thread-item" href="'+encodeURI(d.slug)+'">'
+        +'<span class="thread-date">'+esc(d.date)+'</span>'
+        +'<span class="thread-body"><span class="thread-title">'+d.title+'</span>'
+        +'<span class="thread-snip">'+snippet(d.text,term)+'</span></span></a>';
+    }).join('');
+  }
+  if(chips)[].forEach.call(chips.querySelectorAll('button'),function(b){
+    b.onclick=function(){q.value=b.getAttribute('data-term');render(q.value);
+      if(history.replaceState)history.replaceState(null,'','?t='+encodeURIComponent(q.value));};});
+  if(q)q.addEventListener('input',function(){render(q.value);});
+  var m=location.search.match(/[?&]t=([^&]+)/);
+  if(m&&q){q.value=decodeURIComponent(m[1].replace(/\\+/g,' '));render(q.value);}
+})();"""
+
+
 def brief_ref_date(stem: str) -> dt.date:
     """The date a brief looks forward FROM — the YYYY-MM-DD at the start of its filename (so
     suffixed stems like '2026-06-12-deepseek' still resolve). Catalysts before this date have
@@ -732,6 +795,21 @@ def build():
     (OUT / "search.js").write_text(SEARCH_JS, encoding="utf-8")
     (OUT / "settings.js").write_text(SETTINGS_JS, encoding="utf-8")
     (OUT / "listen.js").write_text(LISTEN_JS, encoding="utf-8")
+    # Threads: a topic-storyline view over the archive (chips from the watchlist + free text).
+    _chips = "".join(
+        f'<button class="thread-chip" type="button" data-term="{html.escape(t, quote=True)}">{html.escape(t)}</button>'
+        for t in watchlist_topics(WATCHLIST))
+    threads_body = (
+        '<section class="block"><div class="block-label">Threads</div><div class="block-body">'
+        '<p class="meta">Follow a company, drug, or theme across every brief &mdash; pick one or type your own, '
+        'and see each mention newest-first with a snippet.</p>'
+        f'<div class="thread-chips" id="threadchips">{_chips}</div>'
+        '<input id="threadq" class="thread-input" type="search" placeholder="e.g. orforglipron, tariffs, Novo Nordisk…" autocomplete="off">'
+        '<div id="threadresults" class="thread-results"></div>'
+        '</div></section>'
+        '<script src="search-data.js"></script><script src="threads.js"></script>')
+    (OUT / "threads.html").write_text(page("Threads — Pharma Morning Brief", threads_body, repo_url=repo_url), encoding="utf-8")
+    (OUT / "threads.js").write_text(THREADS_JS, encoding="utf-8")
     # Subscribe-able catalyst calendar: the upcoming events as an .ics (regenerated each build,
     # so past events drop off and new ones appear — a subscribed calendar stays current).
     _today = dt.date.today()
@@ -815,6 +893,19 @@ a.cite:hover{text-decoration:underline;text-underline-offset:2px}
 .listen-i{font-size:10px;line-height:1}
 .cal-sub{white-space:nowrap;color:var(--accent);border-bottom:1px solid var(--line)}
 .cal-sub:hover{border-bottom-color:var(--accent)}
+/* threads — topic-storyline view */
+.thread-chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 16px}
+.thread-chip{font-family:var(--mono);font-size:12px;color:var(--accent);background:transparent;border:1px solid var(--line);border-radius:14px;padding:4px 12px;cursor:pointer}
+.thread-chip:hover{border-color:var(--accent)}
+.thread-input{width:100%;font-family:var(--sans);font-size:15px;padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--ink)}
+.thread-input:focus{outline:none;border-color:var(--accent)}
+.thread-count{font-family:var(--mono);font-size:12px;color:var(--muted);margin:20px 0 4px}
+.thread-item{display:flex;gap:14px;padding:12px 0;border-bottom:1px solid var(--line)}
+.thread-item:last-child{border-bottom:none}
+.thread-date{font-family:var(--mono);font-size:12px;color:var(--muted);white-space:nowrap;width:5.5em;flex:none;padding-top:2px}
+.thread-title{display:block;font-weight:600}
+.thread-snip{display:block;color:var(--muted);font-size:14px;margin-top:3px;line-height:1.6}
+.thread-snip mark{background:var(--accent);color:var(--paper);border-radius:2px;padding:0 2px}
 .muted{color:var(--muted)}
 .meta{font-family:var(--mono);font-size:11.5px;letter-spacing:.02em;color:var(--muted);text-transform:none;margin:.4em 0 1.4em}
 .meta.pub{margin:.2em 0 1em}.meta.pub time{color:var(--ink)}.tz-note{opacity:.7}
