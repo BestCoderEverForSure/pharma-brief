@@ -7,7 +7,7 @@ name: Tests
 on:
   push:
     paths:
-      - "deepseek/**"
+      - "engine/**"
       - "site/**"
       - "pharma-news/**"
       - "pharma_render.py"

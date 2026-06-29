@@ -63,7 +63,7 @@ The DeepSeek version (Section 8) is grounded *only* on the articles it fetches -
 | [`pharma-news/config.json`](pharma-news/config.json) | Delivery time, timezone, audio on/off + voice. |
 | [`pharma-news/digest-template.md`](pharma-news/digest-template.md) | The exact structure every digest follows. |
 | [`.claude/commands/pharma-news.md`](.claude/commands/pharma-news.md) | The engine - full methodology. Edit to change behaviour. |
-| [`deepseek/feeds.txt`](deepseek/feeds.txt) | News sources for the DeepSeek version. |
+| [`engine/feeds.txt`](engine/feeds.txt) | News sources for the automatic (Gemini/DeepSeek) engine. |
 
 Want it longer/shorter, more financial, focused on different companies? Edit `watchlist.md` or just ask me to adjust the command file.
 
@@ -116,13 +116,13 @@ Two ways to hear a brief instead of reading it:
 
 ## 8. The automatic engine (Gemini or DeepSeek)
 
-The automatic digest (cloud + local script) runs on one of two interchangeable, API-based engines - same methodology, same RSS news source, just a different brain. **Gemini is the primary engine; DeepSeek is the alternative.** Full details in [`deepseek/README.md`](deepseek/README.md).
+The automatic digest (cloud + local script) runs on one of two interchangeable, API-based engines - same methodology, same RSS news source, just a different brain. **Gemini is the primary engine; DeepSeek is the alternative.** Full details in [`engine/README.md`](engine/README.md).
 
 ```bash
-python3 deepseek/run_digest.py                       # morning, last 24h
-python3 deepseek/run_digest.py --edition evening --hours 48
-python3 deepseek/run_digest.py --email               # also email it
-python3 deepseek/run_digest.py --engine deepseek     # force a specific engine for one run
+python3 engine/run_digest.py                       # morning, last 24h
+python3 engine/run_digest.py --edition evening --hours 48
+python3 engine/run_digest.py --email               # also email it
+python3 engine/run_digest.py --engine deepseek     # force a specific engine for one run
 ```
 
 **Switching engines (easy + quick):**
@@ -132,7 +132,7 @@ python3 deepseek/run_digest.py --engine deepseek     # force a specific engine f
 **Keys & models (in `secrets.env`, and as GitHub Secrets for the cloud):**
 - **Gemini:** `GEMINI_API_KEY` (free key from [aistudio.google.com](https://aistudio.google.com)); model `GEMINI_MODEL` (default `gemini-2.5-flash` — free tier). Note: **`gemini-2.5-pro` is *not* on the free tier** (needs billing enabled, ~$4-5/mo at this volume); Flash is free and plenty for this digest.
 - **DeepSeek:** `DEEPSEEK_API_KEY`; model `DEEPSEEK_MODEL` (e.g. the cheap `deepseek-v4-flash`).
-- Pulls news from [`deepseek/feeds.txt`](deepseek/feeds.txt) (edit to change breadth).
+- Pulls news from [`engine/feeds.txt`](engine/feeds.txt) (edit to change breadth).
 - **Trade-off:** it can only summarise what the RSS feeds supply, so discovery is narrower than Claude's live web search - the honest cost of going self-hosted.
 - **This is also your answer to "runs even if my laptop is closed":** because it's plain Python, you can schedule it with `cron` on an always-on server / Raspberry Pi / cloud function.
 
@@ -181,10 +181,10 @@ pharma-news/
 digests/
   YYYY-MM-DD.md               ← your daily archive
   audio/                      ← spoken briefs
-deepseek/
-  run_digest.py               ← standalone Gemini/DeepSeek version
+engine/
+  run_digest.py               ← the digest generator (Gemini default, DeepSeek fallback)
   feeds.txt                   ← RSS sources
-  README.md                   ← DeepSeek guide
+  README.md                   ← engine guide
 tests/                        ← unit tests (stdlib only) + golden fixtures
   README.md                   ← how to run them
 

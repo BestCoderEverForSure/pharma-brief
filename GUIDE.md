@@ -68,7 +68,7 @@ Open the Claude app and type **`/pharma-news`**. That runs the *smart* cook (Cla
 Edit these files (then, for the cloud, push them to GitHub):
 - **`pharma-news/watchlist.md`** - the companies, topics, and themes to always track.
 - **`pharma-news/catalysts.md`** - upcoming dates (approvals, earnings, conferences) shown on the website timeline.
-- **`deepseek/feeds.txt`** - the news websites the cheap cook reads.
+- **`engine/feeds.txt`** - the news websites the cheap cook reads.
 
 ---
 

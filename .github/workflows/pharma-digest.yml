@@ -72,7 +72,7 @@ jobs:
         # Generate + ground-check + finalize, but DON'T email/Telegram
         # yet. Delivery is a separate step AFTER archive + publish below, so a delivery
         # outage can never cost the day's archived digest or the published website.
-        run: python3 deepseek/run_digest.py --auto
+        run: python3 engine/run_digest.py --auto
 
       - name: Archive the digest back to the repo
         run: |

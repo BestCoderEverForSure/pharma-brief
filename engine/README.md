@@ -2,7 +2,7 @@
 
 Runs the digest **without Claude** - on a plain API, per-token (no subscription). Same methodology and Lilly focus, just a different brain and a different news source.
 
-> **Engine:** `run_digest.py` is multi-engine. **Gemini is the default** (free tier — see the top-level README §8); **DeepSeek is the fallback**. Pick with the `PHARMA_ENGINE` env var / repo Variable. This page documents the DeepSeek option specifically; the directory is named `deepseek/` for historical reasons.
+> **Engine:** `run_digest.py` is multi-engine. **Gemini is the default** (free tier — see the top-level README §8); **DeepSeek is the fallback**. Pick with the `PHARMA_ENGINE` env var / repo Variable. This page documents the DeepSeek option specifically.
 
 ## How it differs from the Claude version
 
@@ -25,9 +25,9 @@ The trade-off: DeepSeek can only summarise the articles the RSS feeds supply - s
 ## Run
 
 ```bash
-python3 deepseek/run_digest.py                  # morning, last 24h
-python3 deepseek/run_digest.py --edition evening --hours 48
-python3 deepseek/run_digest.py --email          # also email it via Resend
+python3 engine/run_digest.py                  # morning, last 24h
+python3 engine/run_digest.py --edition evening --hours 48
+python3 engine/run_digest.py --email          # also email it via Resend
 ```
 
 Output saves to `digests/YYYY-MM-DD.md`, same as the Claude version.

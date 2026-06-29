@@ -1,7 +1,7 @@
 # Tests
 
 Stdlib `unittest` only — no pip, no pytest (matches the project's "stdlib-only" rule).
-They cover the **pure, deterministic** helpers in `deepseek/run_digest.py` and
+They cover the **pure, deterministic** helpers in `engine/run_digest.py` and
 `site/build_site.py` (text/markdown/date transforms). Network calls and the LLM
 are **not** exercised, so the suite runs offline in well under a second.
 

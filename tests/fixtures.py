@@ -1,6 +1,6 @@
 """Shared test fixtures: module loaders, sample inputs, and golden-file helpers.
 
-The two modules under test live in non-package dirs (`deepseek/`, `site/`) and one
+The two modules under test live in non-package dirs (`engine/`, `site/`) and one
 of them (`site`) shadows a stdlib module name, so we load them by file path under
 unique names rather than via the import system. Stdlib only — no pip, no pytest.
 """
@@ -20,7 +20,7 @@ def _load(path: Path, name: str):
 
 
 def load_run_digest():
-    return _load(ROOT / "deepseek" / "run_digest.py", "rd_under_test")
+    return _load(ROOT / "engine" / "run_digest.py", "rd_under_test")
 
 
 def load_build_site():

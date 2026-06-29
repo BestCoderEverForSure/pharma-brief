@@ -49,7 +49,7 @@ act_generate(){
   local em; em=$(osascript -e 'button returned of (display dialog "Also email it to the subscriber list?" buttons {"No, just the website","Yes, email it"} default button "Yes, email it" with title "Pharma Command Centre")' 2>/dev/null)
   local f=""; [ "$em" = "Yes, email it" ] && f="--email"
   echo "Generating a $MODE/$EDITION digest for the last ${HOURS}h..."
-  if python3 deepseek/run_digest.py --hours "$HOURS" --edition "$EDITION" --mode "$MODE" $f; then
+  if python3 engine/run_digest.py --hours "$HOURS" --edition "$EDITION" --mode "$MODE" $f; then
     local a; a=$(osascript -e 'button returned of (display dialog "✅ Done — digest generated and website updated." buttons {"Close","Open website"} default button "Open website" with title "Pharma Command Centre")' 2>/dev/null)
     [ "$a" = "Open website" ] && open "$DIR/site/public/index.html"
   else dlg "Something went wrong — see the Terminal text above."; fi
@@ -134,7 +134,7 @@ act_customise(){
   local c; c=$(menu "What would you like to edit? (opens in TextEdit)" "Watchlist (companies & topics)" "News sources (feeds)" "Catalyst calendar")
   case "$c" in
     "Watchlist"*) open -e "$DIR/pharma-news/watchlist.md" ;;
-    "News sources"*) open -e "$DIR/deepseek/feeds.txt" ;;
+    "News sources"*) open -e "$DIR/engine/feeds.txt" ;;
     "Catalyst"*) open -e "$DIR/pharma-news/catalysts.md" ;;
   esac
 }

@@ -1,4 +1,4 @@
-"""Tests for deepseek/run_digest.py — the pure, deterministic helpers.
+"""Tests for engine/run_digest.py — the pure, deterministic helpers.
 
 The golden tests lock in finalize()'s exact output so the refactor that splits it
 into named steps can be proven to change nothing. The rest are ordinary unit tests

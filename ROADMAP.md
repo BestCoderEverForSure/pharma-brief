@@ -45,7 +45,7 @@ Where the project stands, and everything we discussed adding.
 
 ## Optional / future 💡
 - [ ] Verify a Resend domain - required to email **other people** (e.g. a pharma friend); Telegram is the free alternative
-- [ ] More sources as you find them (add RSS feeds to `deepseek/feeds.txt`)
+- [ ] More sources as you find them (add RSS feeds to `engine/feeds.txt`)
 - [ ] Port the whole thing to another industry (e.g. AI news) - swap feeds/watchlist/catalysts/branding; ~half a day, no core rewrite
 
 ## Note on schedulers (resolved ✅)

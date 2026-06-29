@@ -12,7 +12,7 @@ by design: the engine cannot browse, so it uses ONLY the supplied articles, and 
 grounding pass revises out any claim the sources don't support.
 
 Usage:
-    python3 deepseek/run_digest.py [--hours 24] [--edition morning|evening] [--email] [--engine gemini|deepseek]
+    python3 engine/run_digest.py [--hours 24] [--edition morning|evening] [--email] [--engine gemini|deepseek]
 
 Secrets (env var or ~/.config/pharma-news/secrets.env):
     PHARMA_ENGINE      (optional, "gemini" | "deepseek"; default: Gemini if keyed, else DeepSeek)
@@ -40,7 +40,7 @@ import urllib.error
 
 ROOT = Path(__file__).resolve().parent.parent
 SECRETS_PATH = Path.home() / ".config" / "pharma-news" / "secrets.env"
-FEEDS_FILE = ROOT / "deepseek" / "feeds.txt"
+FEEDS_FILE = ROOT / "engine" / "feeds.txt"
 # Cap how much of a feed we read before parsing. Real RSS/Atom feeds are well under this;
 # the cap bounds a hostile/runaway payload (stdlib ElementTree isn't hardened for that).
 MAX_FEED_BYTES = 5 * 1024 * 1024
