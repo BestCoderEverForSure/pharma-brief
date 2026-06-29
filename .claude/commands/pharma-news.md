@@ -74,9 +74,9 @@ Keep the digest a **full-industry view** — but always surface what matters to 
 
 Produce a short **Eli Lilly Spotlight** block: Lilly's own news plus the most important competitor/market moves that affect Lilly's position, with a brief "so what for Lilly" where it adds insight. If there is genuinely nothing Lilly-relevant in the window, write one honest line saying so rather than padding.
 
-## Step 3 — Bonus: wider world → pharma
+## Step 3 — Bonus: wider world → pharma *(evening edition only)*
 
-Scan major global news (politics, economics, geopolitics, tech, health policy) for anything with **implications for pharma** that isn't itself a pharma story — e.g. elections, trade/tariffs, currency moves, conflicts affecting supply chains, big tech moves into health. Include only if there's a real, non-obvious implication. 1-3 items.
+**Skip this in the tight morning brief** (see the Edition note above). For the **evening** edition, scan major global news (politics, economics, geopolitics, tech, health policy) for anything with **implications for pharma** that isn't itself a pharma story — e.g. elections, trade/tariffs, currency moves, conflicts affecting supply chains, big tech moves into health. Include only if there's a real, non-obvious implication. 1-3 items.
 
 ## Step 3.5 — Keep the catalyst calendar current
 
