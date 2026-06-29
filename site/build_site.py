@@ -623,39 +623,55 @@ LISTEN_JS = """(function(){
 })();"""
 
 
+# Synonyms so a watchlist topic also matches its common short forms in the Threads/coverage view
+# (e.g. "Lilly" → Eli Lilly, "merger" → M&A) instead of missing or splitting them. Deliberately
+# conservative — over-broad aliases create false matches. A topic not listed matches only its own
+# name; the first entry should be the canonical name. Edit freely.
+TOPIC_ALIASES = {
+    "Eli Lilly": ["Eli Lilly", "Lilly"],
+    "Novo Nordisk": ["Novo Nordisk", "Novo"],
+    "AstraZeneca": ["AstraZeneca", "Astra"],
+    "Viking Therapeutics": ["Viking Therapeutics", "Viking"],
+    "M&A": ["M&A", "merger", "acquisition", "takeover", "buyout"],
+}
+
+
 # Threads view: pick a topic (a coverage-chart bar or free text) and see every archived brief
 # that mentions it, newest-first, with a snippet around the match — the archive as a storyline.
 # The chart doubles as a TRENDS view: watchlist topics ranked by how many briefs mention them.
 # Pure client-side over window.DIGESTS (the same index that powers search); search_index text is
 # plain (unescaped), so every interpolation is HTML-escaped before it touches innerHTML.
 THREADS_JS = """(function(){
-  var data=window.DIGESTS||[], topics=window.THREAD_TOPICS||[];
+  var data=window.DIGESTS||[], topics=window.THREAD_TOPICS||[], aliases=window.THREAD_ALIASES||{};
   var q=document.getElementById('threadq'),results=document.getElementById('threadresults'),
       chart=document.getElementById('threadchart');
   function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function rxEsc(s){return s.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&');}
-  function countFor(term){var re=new RegExp(rxEsc(term),'i');
+  function termsFor(t){return (aliases[t]&&aliases[t].length)?aliases[t]:[t];}   // a topic's synonyms (or itself)
+  function reFor(terms){return new RegExp('('+terms.map(rxEsc).join('|')+')','i');}
+  function countFor(t){var re=reFor(termsFor(t));
     return data.filter(function(d){return re.test(d.title)||re.test(d.text);}).length;}
-  function snippet(text,term){
-    var i=text.toLowerCase().indexOf(term.toLowerCase());
-    if(i<0)return '';
-    var start=Math.max(0,i-90),end=Math.min(text.length,i+term.length+150);
+  function snippet(text,terms){
+    var m=reFor(terms).exec(text);
+    if(!m)return '';
+    var i=m.index,start=Math.max(0,i-90),end=Math.min(text.length,i+m[0].length+150);
     var s=(start>0?'… ':'')+text.slice(start,end)+(end<text.length?' …':'');
-    return esc(s).replace(new RegExp(rxEsc(esc(term)),'ig'),function(m){return '<mark>'+m+'</mark>';});
+    var hl=new RegExp('('+terms.map(function(t){return rxEsc(esc(t));}).join('|')+')','ig');
+    return esc(s).replace(hl,function(m){return '<mark>'+m+'</mark>';});
   }
-  function render(term){
-    term=(term||'').trim();
-    if(!term){results.innerHTML='';return;}
-    var re=new RegExp(rxEsc(term),'i');
+  function render(topic){
+    topic=(topic||'').trim();
+    if(!topic){results.innerHTML='';return;}
+    var terms=termsFor(topic),re=reFor(terms);
     var hits=data.filter(function(d){return re.test(d.title)||re.test(d.text);})
                  .sort(function(a,b){return a.date<b.date?1:(a.date>b.date?-1:0);});
-    if(!hits.length){results.innerHTML='<p class="muted">No briefs mention &ldquo;'+esc(term)+'&rdquo; yet.</p>';return;}
-    var head='<div class="thread-count">'+hits.length+' brief'+(hits.length>1?'s':'')+' mention &ldquo;'+esc(term)+'&rdquo;</div>';
+    if(!hits.length){results.innerHTML='<p class="muted">No briefs mention &ldquo;'+esc(topic)+'&rdquo; yet.</p>';return;}
+    var head='<div class="thread-count">'+hits.length+' brief'+(hits.length>1?'s':'')+' mention &ldquo;'+esc(topic)+'&rdquo;</div>';
     results.innerHTML=head+hits.map(function(d){
       return '<a class="thread-item" href="'+encodeURI(d.slug)+'">'
         +'<span class="thread-date">'+esc((d.date||'').slice(0,10))+'</span>'
         +'<span class="thread-body"><span class="thread-title">'+d.title+'</span>'
-        +'<span class="thread-snip">'+snippet(d.text,term)+'</span></span></a>';
+        +'<span class="thread-snip">'+snippet(d.text,terms)+'</span></span></a>';
     }).join('');
   }
   function setTerm(t){q.value=t;render(t);if(history.replaceState)history.replaceState(null,'','?t='+encodeURIComponent(t));}
@@ -882,7 +898,8 @@ def build():
         '<input id="threadq" class="thread-input" type="search" placeholder="e.g. orforglipron, tariffs, Novo Nordisk…" autocomplete="off">'
         '<div id="threadresults" class="thread-results"></div>'
         '</div></section>'
-        f'<script>window.THREAD_TOPICS={json.dumps(watchlist_topics(WATCHLIST))};</script>'
+        f'<script>window.THREAD_TOPICS={json.dumps(watchlist_topics(WATCHLIST))};'
+        f'window.THREAD_ALIASES={json.dumps(TOPIC_ALIASES)};</script>'
         '<script src="search-data.js"></script><script src="threads.js"></script>')
     (OUT / "threads.html").write_text(page("Threads — Pharma Morning Brief", threads_body, repo_url=repo_url), encoding="utf-8")
     (OUT / "threads.js").write_text(THREADS_JS, encoding="utf-8")
