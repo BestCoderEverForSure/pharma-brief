@@ -169,6 +169,25 @@ class TestRenderTimeline(unittest.TestCase):
         self.assertIn("No upcoming catalysts", bs.render_timeline(self.EVENTS, dt.date(2027, 1, 1)))
 
 
+class TestRenderCatalystMix(unittest.TestCase):
+    EVENTS = [
+        {"date": dt.date(2026, 7, 1), "label": "PDUFA", "full": "tirzepatide PDUFA decision"},
+        {"date": dt.date(2026, 7, 5), "label": "Earnings", "full": "Lilly Q2 earnings"},
+        {"date": dt.date(2026, 6, 1), "label": "Past conf", "full": "ASCO congress"},
+    ]
+
+    def test_counts_only_upcoming(self):
+        # As of 28 Jun the 1 Jun congress has already happened — like the timeline, the mix
+        # must drop it, leaving only the regulatory + earnings bars.
+        out = bs.render_catalyst_mix(self.EVENTS, dt.date(2026, 6, 28))
+        self.assertIn("Regulatory", out)
+        self.assertIn("Earnings", out)
+        self.assertNotIn("Conference", out)   # past event dropped, same as the timeline
+
+    def test_empty_when_all_past(self):
+        self.assertEqual(bs.render_catalyst_mix(self.EVENTS, dt.date(2027, 1, 1)), "")
+
+
 class TestBriefRefDate(unittest.TestCase):
     def test_plain_date_stem(self):
         self.assertEqual(bs.brief_ref_date("2026-06-28"), dt.date(2026, 6, 28))

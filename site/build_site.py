@@ -282,11 +282,17 @@ def render_timeline(events: list[dict], ref_date: dt.date | None = None) -> str:
     return '<div class="cat-wrap">' + "".join(parts) + "</div>"
 
 
-def render_catalyst_mix(events: list[dict]) -> str:
-    if not events:
+def render_catalyst_mix(events: list[dict], ref_date: dt.date | None = None) -> str:
+    """A compact category-mix of the UPCOMING catalysts as of `ref_date` (default today),
+    pairing the timeline's per-date detail with an at-a-glance sense of WHAT KIND of events
+    are ahead — regulatory decisions, earnings, conferences, or other. Counts the exact same
+    forward-looking set the timeline shows (past events dropped, same `ref_date`), so the bar
+    counts and the timeline can never disagree. Returns "" when nothing is upcoming."""
+    upcoming = [e for _, evs in upcoming_catalysts(events, ref_date) for e in evs]
+    if not upcoming:
         return ""
     counts: dict[str, int] = {}
-    for e in events:
+    for e in upcoming:
         c = _category(e["full"])
         counts[c] = counts.get(c, 0) + 1
     total = max(sum(counts.values()), 1)
@@ -300,7 +306,8 @@ def render_catalyst_mix(events: list[dict]) -> str:
             f'<div class="bar-row"><span class="bar-name">{_CAT_NAMES[k]}</span>'
             f'<span class="bar-track"><span class="bar-fill {k}" style="width:{pct}%"></span></span>'
             f'<span class="bar-val">{n}</span></div>')
-    return '<div class="barchart">' + "".join(bars) + "</div>"
+    return ('<div class="sub-h">By category</div><div class="barchart">'
+            + "".join(bars) + "</div>")
 
 
 # ----------------------------------------------------------------------------- #
@@ -547,11 +554,16 @@ def build():
     events = parse_catalysts(CATALYSTS)
 
     def catalysts_section(ref_date: dt.date) -> str:
+        # Pair the dated timeline (left, the detail) with a forward-looking category-mix bar
+        # chart (right, the at-a-glance summary). Both count from the SAME ref_date, so they
+        # always agree; when nothing is upcoming the mix is "" and the timeline stands alone.
+        timeline, mix = render_timeline(events, ref_date), render_catalyst_mix(events, ref_date)
+        body = f'<div class="two-col">{timeline}<div>{mix}</div></div>' if mix else timeline
         return (
             '<section class="block" id="upcoming"><div class="block-label">Catalysts</div><div class="block-body">'
             '<p class="meta">Dates to watch &mdash; scheduled events that can move the sector: regulatory decisions, '
             'trial readouts, earnings, and major conferences.</p>'
-            + render_timeline(events, ref_date) + "</div></section>")
+            + body + "</div></section>")
 
     latest_md = files[0].read_text(encoding="utf-8") if files else ""
     _dt = plain_text(latest_md).lower()
@@ -756,24 +768,6 @@ code{font-family:var(--mono);font-size:.82em;color:var(--accent);background:tran
 .two-col{display:grid;grid-template-columns:1.5fr 1fr;gap:40px;align-items:start}
 @media(max-width:640px){.two-col{grid-template-columns:1fr;gap:24px}}
 
-/* timeline */
-.vtl-group{font-family:var(--mono);font-size:10.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--accent);margin:18px 0 4px}
-.vtl-wrap > .vtl-group:first-child{margin-top:2px}
-.vtl{list-style:none;margin:4px 0;padding:0}
-.vtl-item{position:relative;padding:8px 0 8px 24px;border-left:1px solid var(--line)}
-.vtl-item:last-child{border-left-color:transparent}
-.vtl-dot{position:absolute;left:-5px;top:13px;width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px var(--paper)}
-.vtl-item.reg .vtl-dot{background:var(--c-reg)}.vtl-item.earn .vtl-dot{background:var(--c-earn)}
-.vtl-item.conf .vtl-dot{background:var(--c-conf)}.vtl-item.other .vtl-dot{background:var(--c-other)}
-.vtl-date{display:inline-block;min-width:104px;font-family:var(--mono);font-size:12px;margin-right:8px}
-.vtl-text{font-size:14.5px}
-.vtl-legend{display:flex;gap:16px;flex-wrap:wrap;margin-top:14px;font-size:11.5px;color:var(--muted)}
-.vtl-legend .lg{display:flex;align-items:center;gap:6px}
-.vtl-legend .lg::before{content:"";width:9px;height:9px;border-radius:50%;display:inline-block}
-.vtl-legend .reg::before{background:var(--c-reg)}.vtl-legend .earn::before{background:var(--c-earn)}
-.vtl-legend .conf::before{background:var(--c-conf)}.vtl-legend .other::before{background:var(--c-other)}
-@media(max-width:560px){.vtl-date{display:block;min-width:0}}
-
 /* bars */
 .barchart{margin-top:2px}
 .bar-row{display:flex;align-items:center;gap:10px;margin:10px 0;font-size:13px}
@@ -826,7 +820,6 @@ footer .bar{flex-direction:column;align-items:flex-start;gap:14px;padding:40px c
 /* dark mode is toggleable via the settings gear (html.dark); "Auto" follows the OS */
 html.dark{--paper:#0b0c10;--ink:#e2e8f0;--muted:#8a91a0;--line:#20232c;--accent:#86b3ad;
  --c-reg:#86b3ad;--c-earn:#c1948b;--c-conf:#bd9bb1;--c-other:#b9baa3;--up:#86b3ad;--down:#cf9087;--major:#d39b91;}
-html.dark .vtl-dot{box-shadow:0 0 0 4px var(--paper)}
 html.dark ::selection{background:var(--accent);color:#0b0c10}
 /* settings gear + drawer */
 .gear{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:transparent;color:var(--ink);
