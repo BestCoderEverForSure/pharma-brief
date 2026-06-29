@@ -398,6 +398,9 @@ def watchlist_topics(path) -> list:
     dedupe, and drop over-long fragments. Best-effort — the Threads box also takes free text."""
     if not path or not path.exists():
         return []
+    # Generic fragments left behind by a ' / ' or ' & ' split (e.g. "...discovery & development")
+    # that would match briefs spuriously and pollute the coverage chart — drop them.
+    STOP = {"development", "metabolic", "next-gen"}
     topics, seen = [], set()
     for line in path.read_text(encoding="utf-8").splitlines():
         m = re.match(r"^\s*-\s+(.+)$", line)
@@ -406,8 +409,9 @@ def watchlist_topics(path) -> list:
         t = re.sub(r"\([^)]*\)", "", m.group(1).replace("*", ""))   # drop notes/parentheticals + emphasis
         for part in re.split(r"\s+/\s+|\s+&\s+", t):
             part = part.strip(" *_-—–.")
-            if part and len(part) <= 28 and part.lower() not in seen:
-                topics.append(part); seen.add(part.lower())
+            key = part.lower()
+            if part and len(part) <= 28 and key not in STOP and key not in seen:
+                topics.append(part); seen.add(key)
     return topics
 
 
@@ -613,16 +617,19 @@ LISTEN_JS = """(function(){
 })();"""
 
 
-# Threads view: pick a topic (a watchlist chip or free text) and see every archived brief that
-# mentions it, newest-first, with a snippet around the match — the archive as a storyline. Pure
-# client-side over window.DIGESTS (the same index that powers search). search_index text is plain
-# (unescaped), so every interpolation is HTML-escaped before it touches innerHTML.
+# Threads view: pick a topic (a coverage-chart bar or free text) and see every archived brief
+# that mentions it, newest-first, with a snippet around the match — the archive as a storyline.
+# The chart doubles as a TRENDS view: watchlist topics ranked by how many briefs mention them.
+# Pure client-side over window.DIGESTS (the same index that powers search); search_index text is
+# plain (unescaped), so every interpolation is HTML-escaped before it touches innerHTML.
 THREADS_JS = """(function(){
-  var data=window.DIGESTS||[];
+  var data=window.DIGESTS||[], topics=window.THREAD_TOPICS||[];
   var q=document.getElementById('threadq'),results=document.getElementById('threadresults'),
-      chips=document.getElementById('threadchips');
+      chart=document.getElementById('threadchart');
   function esc(s){return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
   function rxEsc(s){return s.replace(/[.*+?^${}()|[\\]\\\\]/g,'\\\\$&');}
+  function countFor(term){var re=new RegExp(rxEsc(term),'i');
+    return data.filter(function(d){return re.test(d.title)||re.test(d.text);}).length;}
   function snippet(text,term){
     var i=text.toLowerCase().indexOf(term.toLowerCase());
     if(i<0)return '';
@@ -645,9 +652,25 @@ THREADS_JS = """(function(){
         +'<span class="thread-snip">'+snippet(d.text,term)+'</span></span></a>';
     }).join('');
   }
-  if(chips)[].forEach.call(chips.querySelectorAll('button'),function(b){
-    b.onclick=function(){q.value=b.getAttribute('data-term');render(q.value);
-      if(history.replaceState)history.replaceState(null,'','?t='+encodeURIComponent(q.value));};});
+  function setTerm(t){q.value=t;render(t);if(history.replaceState)history.replaceState(null,'','?t='+encodeURIComponent(t));}
+  function buildChart(){
+    if(!chart)return;
+    var counts=topics.map(function(t){return {t:t,n:countFor(t)};})
+                     .filter(function(x){return x.n>0;})
+                     .sort(function(a,b){return b.n-a.n;}).slice(0,16);
+    if(!counts.length){chart.innerHTML='';return;}
+    var max=counts[0].n;
+    chart.innerHTML='<div class="trend-h">Coverage across '+data.length+' briefs &mdash; click to follow a thread</div>'+
+      counts.map(function(x){var pct=Math.round(x.n/max*100);
+        return '<button class="trend-bar" type="button" data-term="'+esc(x.t)+'">'
+          +'<span class="trend-name">'+esc(x.t)+'</span>'
+          +'<span class="trend-track"><span class="trend-fill" style="width:'+pct+'%"></span></span>'
+          +'<span class="trend-val">'+x.n+'</span></button>';}).join('');
+    [].forEach.call(chart.querySelectorAll('.trend-bar'),function(b){
+      b.onclick=function(){setTerm(b.getAttribute('data-term'));
+        results.scrollIntoView({behavior:'smooth',block:'start'});};});
+  }
+  buildChart();
   if(q)q.addEventListener('input',function(){render(q.value);});
   var m=location.search.match(/[?&]t=([^&]+)/);
   if(m&&q){q.value=decodeURIComponent(m[1].replace(/\\+/g,' '));render(q.value);}
@@ -795,18 +818,18 @@ def build():
     (OUT / "search.js").write_text(SEARCH_JS, encoding="utf-8")
     (OUT / "settings.js").write_text(SETTINGS_JS, encoding="utf-8")
     (OUT / "listen.js").write_text(LISTEN_JS, encoding="utf-8")
-    # Threads: a topic-storyline view over the archive (chips from the watchlist + free text).
-    _chips = "".join(
-        f'<button class="thread-chip" type="button" data-term="{html.escape(t, quote=True)}">{html.escape(t)}</button>'
-        for t in watchlist_topics(WATCHLIST))
+    # Threads: a topic-storyline view over the archive. The coverage chart (watchlist topics ranked
+    # by how many briefs mention them) doubles as the trends view AND the topic picker; free text
+    # covers anything else. Topics are embedded for the client to count against window.DIGESTS.
     threads_body = (
         '<section class="block"><div class="block-label">Threads</div><div class="block-body">'
-        '<p class="meta">Follow a company, drug, or theme across every brief &mdash; pick one or type your own, '
-        'and see each mention newest-first with a snippet.</p>'
-        f'<div class="thread-chips" id="threadchips">{_chips}</div>'
+        '<p class="meta">Follow a company, drug, or theme across every brief &mdash; the bars show how much '
+        'each has been covered; click one (or type your own) to see every mention newest-first with a snippet.</p>'
+        '<div class="thread-chart" id="threadchart"></div>'
         '<input id="threadq" class="thread-input" type="search" placeholder="e.g. orforglipron, tariffs, Novo Nordisk…" autocomplete="off">'
         '<div id="threadresults" class="thread-results"></div>'
         '</div></section>'
+        f'<script>window.THREAD_TOPICS={json.dumps(watchlist_topics(WATCHLIST))};</script>'
         '<script src="search-data.js"></script><script src="threads.js"></script>')
     (OUT / "threads.html").write_text(page("Threads — Pharma Morning Brief", threads_body, repo_url=repo_url), encoding="utf-8")
     (OUT / "threads.js").write_text(THREADS_JS, encoding="utf-8")
@@ -893,10 +916,16 @@ a.cite:hover{text-decoration:underline;text-underline-offset:2px}
 .listen-i{font-size:10px;line-height:1}
 .cal-sub{white-space:nowrap;color:var(--accent);border-bottom:1px solid var(--line)}
 .cal-sub:hover{border-bottom-color:var(--accent)}
-/* threads — topic-storyline view */
-.thread-chips{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 16px}
-.thread-chip{font-family:var(--mono);font-size:12px;color:var(--accent);background:transparent;border:1px solid var(--line);border-radius:14px;padding:4px 12px;cursor:pointer}
-.thread-chip:hover{border-color:var(--accent)}
+/* threads — coverage chart (also the trends view + topic picker) + topic-storyline results */
+.thread-chart{margin:8px 0 18px}
+.trend-h{font-family:var(--mono);font-size:11px;text-transform:uppercase;letter-spacing:.1em;color:var(--muted);margin:0 0 10px}
+.trend-bar{display:flex;align-items:center;gap:10px;width:100%;background:transparent;border:none;padding:5px 0;cursor:pointer;font-family:inherit;text-align:left}
+.trend-name{flex:none;width:11em;font-size:13px;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.trend-track{flex:1;height:8px;background:var(--line);border-radius:3px;overflow:hidden}
+.trend-fill{display:block;height:100%;background:var(--accent)}
+.trend-val{flex:none;width:2em;text-align:right;font-family:var(--mono);font-size:12px;color:var(--muted)}
+.trend-bar:hover .trend-fill{background:var(--ink)}
+.trend-bar:hover .trend-name{color:var(--accent)}
 .thread-input{width:100%;font-family:var(--sans);font-size:15px;padding:10px 14px;border:1px solid var(--line);border-radius:8px;background:transparent;color:var(--ink)}
 .thread-input:focus{outline:none;border-color:var(--accent)}
 .thread-count{font-family:var(--mono);font-size:12px;color:var(--muted);margin:20px 0 4px}

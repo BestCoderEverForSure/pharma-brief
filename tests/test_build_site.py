@@ -302,11 +302,14 @@ class TestWatchlistTopics(unittest.TestCase):
             "## Themes\n"
             "- Drug pricing / MFN / tariffs\n"
             "- Patent cliffs & M&A\n"
+            "- AI in drug discovery & development\n"
             "not a bullet line\n")
-        self.assertIn("Eli Lilly", topics)     # italic note + space stripped
-        self.assertIn("Metsera", topics)        # ' / ' alternative split out
-        self.assertIn("tariffs", topics)        # multi-slash split
-        self.assertIn("M&A", topics)            # ' & ' split keeps M&A intact
+        self.assertIn("Eli Lilly", topics)            # italic note + space stripped
+        self.assertIn("Metsera", topics)               # ' / ' alternative split out
+        self.assertIn("tariffs", topics)               # multi-slash split
+        self.assertIn("M&A", topics)                   # ' & ' split keeps M&A intact
+        self.assertIn("AI in drug discovery", topics)
+        self.assertNotIn("development", topics)        # generic split-fragment dropped
         self.assertNotIn("", topics)
 
     def test_missing_file_is_empty(self):
