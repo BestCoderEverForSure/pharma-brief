@@ -513,8 +513,8 @@ LISTEN_JS = """(function(){
     vs.sort(function(a,b){return score(b)-score(a);});return vs[0]||null;}
   function extract(brief){
     var c=brief.cloneNode(true);
-    [].forEach.call(c.querySelectorAll('a.cite, .listen-bar, .meta, .pub, .major-tag'),function(n){
-      if(n.parentNode)n.parentNode.removeChild(n);});
+    [].forEach.call(c.querySelectorAll('h1, a.cite, .listen-bar, .meta, .pub, .major-tag'),function(n){
+      if(n.parentNode)n.parentNode.removeChild(n);});   // h1 dropped: the "DD/MM/YYYY" date reads badly aloud
     var t=c.innerText||c.textContent||'';
     t=t.replace(/\\[\\d+(?:\\s*[,\\u2013-]\\s*\\d+)*\\]/g,' ');   // any stray [n] / [1, 2] / [1-3]
     return t.replace(/\\s+/g,' ').trim();
