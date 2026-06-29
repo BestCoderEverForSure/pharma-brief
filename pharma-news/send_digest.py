@@ -35,7 +35,7 @@ if str(PROJECT_ROOT) not in sys.path:
 # Citation/markets/catalyst data logic is shared with the website renderer so the email
 # and site can't drift apart — see pharma_render.py.
 from pharma_render import (renumber_sources, parse_srcmap, parse_catalysts,
-                           fetch_market, select_tickers, brief_market_days)
+                           upcoming_catalysts, fetch_market, select_tickers, brief_market_days)
 _RETRY_DELAYS = (0, 3, 8)
 
 
@@ -117,33 +117,24 @@ def render_catalysts_email() -> str:
     """Upcoming-catalysts list for the email (mirrors the website's timeline buckets),
     inline styles only. "" when there are no dated catalysts on file."""
     events = parse_catalysts(CATALYSTS_PATH)
-    if not events:
+    # The email is always today's brief, so look forward from today: past catalysts are dropped
+    # and the rest bucketed by the shared helper (mirrors the website timeline exactly).
+    groups = upcoming_catalysts(events)
+    if not groups:
         return ""
-    today = datetime.date.today()
-    labels = ["Next 30 days", "1–3 months", "On the horizon"]
-
-    def bucket(d):
-        delta = (d - today).days
-        return 0 if delta <= 30 else (1 if delta <= 90 else 2)
-
-    groups: dict = {0: [], 1: [], 2: []}
-    for e in events:
-        groups[bucket(e["date"])].append(e)
     mono = "ui-monospace,Menlo,Consolas,monospace"
     parts = ['<hr style="border:none;border-top:1px solid #e3dfd4;margin:26px 0 0">',
              "<h2>Upcoming catalysts</h2>",
              f'<p style="font-family:{mono};font-size:12px;color:#7c7a70;margin:-2px 0 12px">'
              "Dates to watch — scheduled events that can move the sector: regulatory decisions, "
              "trial readouts, earnings, and major conferences.</p>"]
-    rows_total = sum(len(groups[g]) for g in (0, 1, 2))
+    rows_total = sum(len(g) for _, g in groups)
     rendered = 0
-    for gi in (0, 1, 2):
-        if not groups[gi]:
-            continue
+    for label, evs in groups:
         parts.append(f'<p style="font-family:{mono};text-transform:uppercase;letter-spacing:.08em;'
-                     f'font-size:11px;color:#8b635c;margin:16px 0 4px">{labels[gi]}</p>')
+                     f'font-size:11px;color:#8b635c;margin:16px 0 4px">{label}</p>')
         parts.append('<table style="width:100%;border-collapse:collapse" cellpadding="0" cellspacing="0">')
-        for e in groups[gi]:
+        for e in evs:
             rendered += 1
             # No border under the very last row — otherwise it doubles up with the Markets
             # section's rule below and reads as an empty band.

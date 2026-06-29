@@ -148,6 +148,38 @@ class TestParseCatalysts(unittest.TestCase):
         self.assertEqual(events[1]["date"], dt.date(2026, 8, 15))   # month-only -> 15th
 
 
+class TestRenderTimeline(unittest.TestCase):
+    EVENTS = [
+        {"date": dt.date(2026, 6, 18), "label": "Tebipenem FDA", "full": "Tebipenem FDA"},
+        {"date": dt.date(2026, 7, 10), "label": "Soon", "full": "Soon"},
+    ]
+
+    def test_drops_past_events_relative_to_ref_date(self):
+        # As of 28 Jun, the 18 Jun catalyst has already happened — it must not appear.
+        html_out = bs.render_timeline(self.EVENTS, dt.date(2026, 6, 28))
+        self.assertNotIn("Tebipenem FDA", html_out)
+        self.assertIn("Soon", html_out)
+
+    def test_keeps_event_for_an_earlier_brief(self):
+        # The SAME catalyst is still upcoming for a brief produced on 15 Jun.
+        html_out = bs.render_timeline(self.EVENTS, dt.date(2026, 6, 15))
+        self.assertIn("Tebipenem FDA", html_out)
+
+    def test_empty_when_all_past(self):
+        self.assertIn("No upcoming catalysts", bs.render_timeline(self.EVENTS, dt.date(2027, 1, 1)))
+
+
+class TestBriefRefDate(unittest.TestCase):
+    def test_plain_date_stem(self):
+        self.assertEqual(bs.brief_ref_date("2026-06-28"), dt.date(2026, 6, 28))
+
+    def test_suffixed_stem_uses_leading_date(self):
+        self.assertEqual(bs.brief_ref_date("2026-06-12-deepseek"), dt.date(2026, 6, 12))
+
+    def test_undated_stem_falls_back_to_today(self):
+        self.assertEqual(bs.brief_ref_date("INDEX"), dt.date.today())
+
+
 class TestRssFeed(unittest.TestCase):
     def setUp(self):
         self._saved = os.environ.pop("SITE_URL", None)

@@ -126,6 +126,26 @@ def parse_catalysts(path) -> list:
     return sorted(events, key=lambda e: e["date"])
 
 
+# Timeline buckets, shared so the website and the email group catalysts identically.
+CATALYST_BUCKETS = ("Next 30 days", "1–3 months", "On the horizon")
+
+
+def upcoming_catalysts(events: list, ref_date=None) -> list:
+    """Group `events` (from parse_catalysts) into the forward-looking timeline buckets as of
+    `ref_date` (default: today): next 30 days, 1–3 months, on the horizon. Events dated BEFORE
+    `ref_date` are dropped — a brief always looks FORWARD from the day it was produced, so a
+    catalyst that has already passed never lingers in a later (or archived) brief. Returns
+    [(label, [event, …]), …] for the non-empty buckets only, in chronological order."""
+    ref = ref_date or dt.date.today()
+    groups = ([], [], [])
+    for e in events:
+        delta = (e["date"] - ref).days
+        if delta < 0:                       # already happened as of this brief — drop it
+            continue
+        groups[0 if delta <= 30 else 1 if delta <= 90 else 2].append(e)
+    return [(CATALYST_BUCKETS[i], g) for i, g in enumerate(groups) if g]
+
+
 # --------------------------------------------------------------------------- #
 #  Markets (free Yahoo Finance endpoint — no key, real prices only)
 # --------------------------------------------------------------------------- #

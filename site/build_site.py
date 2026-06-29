@@ -26,7 +26,7 @@ if str(ROOT) not in sys.path:
 # Citation/markets/catalyst data logic is shared with the email renderer so the two
 # can't drift apart — see pharma_render.py.
 from pharma_render import (renumber_sources, parse_srcmap, parse_catalysts,
-                           fetch_market, select_tickers, brief_market_days)
+                           upcoming_catalysts, fetch_market, select_tickers, brief_market_days)
 DIGESTS = ROOT / "digests"
 CATALYSTS = ROOT / "pharma-news" / "catalysts.md"
 OUT = ROOT / "site" / "public"
@@ -262,26 +262,18 @@ def _category(text: str) -> str:
 _CAT_NAMES = {"reg": "Regulatory", "earn": "Earnings", "conf": "Conference", "other": "Other"}
 
 
-def render_timeline(events: list[dict]) -> str:
-    if not events:
-        return '<p class="muted">No dated catalysts on file yet.</p>'
-    today = dt.date.today()
-    labels = ["Next 30 days", "1–3 months", "On the horizon"]
-
-    def bucket(d):
-        delta = (d - today).days
-        return 0 if delta <= 30 else (1 if delta <= 90 else 2)
-
-    groups = {0: [], 1: [], 2: []}
-    for e in events:
-        groups[bucket(e["date"])].append(e)
-
+def render_timeline(events: list[dict], ref_date: dt.date | None = None) -> str:
+    """Forward-looking catalyst table as of `ref_date` (default today): events that have
+    already passed are dropped, the rest grouped into next-30-days / 1–3-months / horizon
+    buckets. Each digest passes its OWN date, so an archived brief looks forward from when it
+    was produced rather than from the build date."""
+    groups = upcoming_catalysts(events, ref_date)
+    if not groups:
+        return '<p class="muted">No upcoming catalysts on file.</p>'
     parts = []
-    for gi in (0, 1, 2):
-        if not groups[gi]:
-            continue
-        parts.append(f'<div class="cat-group">{labels[gi]}</div><table class="cat-table">')
-        for e in groups[gi]:
+    for label, evs in groups:
+        parts.append(f'<div class="cat-group">{label}</div><table class="cat-table">')
+        for e in evs:
             d = e["date"].strftime("%-d %b %Y")
             parts.append(
                 f'<tr><td class="cat-date">{d}</td>'
@@ -530,20 +522,37 @@ SETTINGS_JS = """(function(){
 })();"""
 
 
+def brief_ref_date(stem: str) -> dt.date:
+    """The date a brief looks forward FROM — the YYYY-MM-DD at the start of its filename (so
+    suffixed stems like '2026-06-12-deepseek' still resolve). Catalysts before this date have
+    already passed for that brief and are dropped. Falls back to today if the stem isn't dated."""
+    m = re.match(r"(\d{4})-(\d{2})-(\d{2})", stem)
+    if m:
+        try:
+            return dt.date(int(m[1]), int(m[2]), int(m[3]))
+        except ValueError:
+            pass
+    return dt.date.today()
+
+
 def build():
     OUT.mkdir(parents=True, exist_ok=True)
     repo_url = get_repo_url()
     files = sorted([p for p in DIGESTS.glob("*.md") if p.stem != "INDEX"], reverse=True)
     pub = load_published()
 
-    # Catalysts + markets — computed once, shown on the index AND appended to every digest
-    # page (so the "read full brief" link is complete, not just the home page).
+    # Catalysts are rendered PER BRIEF (from each brief's own date) so a page always looks
+    # forward from when it was produced — past catalysts drop off rather than lingering. Markets
+    # are live prices: fetched once and shared across pages (they can't be reconstructed per day).
     events = parse_catalysts(CATALYSTS)
-    timeline = render_timeline(events)
-    catalysts_section = (
-        '<section class="block" id="upcoming"><div class="block-label">Catalysts</div><div class="block-body">'
-        '<p class="meta">Dates to watch &mdash; scheduled events that can move the sector: regulatory decisions, '
-        'trial readouts, earnings, and major conferences.</p>' + timeline + "</div></section>")
+
+    def catalysts_section(ref_date: dt.date) -> str:
+        return (
+            '<section class="block" id="upcoming"><div class="block-label">Catalysts</div><div class="block-body">'
+            '<p class="meta">Dates to watch &mdash; scheduled events that can move the sector: regulatory decisions, '
+            'trial readouts, earnings, and major conferences.</p>'
+            + render_timeline(events, ref_date) + "</div></section>")
+
     latest_md = files[0].read_text(encoding="utf-8") if files else ""
     _dt = plain_text(latest_md).lower()
     # Markets % matches the latest brief's window (daily=5d, review=7d); a forward brief on
@@ -555,7 +564,6 @@ def build():
         + market_html + f'<p class="meta">Source: Yahoo Finance, end-of-day prices ({mkt_days}-day change). Not investment advice.</p>'
         + "</div></section>"
     ) if market_html else ""
-    page_extras = catalysts_section + market_block      # appended to each digest page
 
     def sources_section(src_html):
         return (f'<section class="block"><div class="block-label">Sources</div>'
@@ -569,7 +577,8 @@ def build():
         slug = p.stem + ".html"
         body_html, src_html = render_digest_split(md)
         # Order: brief → catalysts → markets → Sources (last), so you don't scroll past the
-        # references to reach catalysts/markets.
+        # references to reach catalysts/markets. Catalysts look forward from THIS brief's date.
+        page_extras = catalysts_section(brief_ref_date(p.stem)) + market_block
         (OUT / slug).write_text(
             page(strip_lead(m["title"]), with_published(body_html, p.stem, pub.get(p.stem)) + page_extras + sources_section(src_html), repo_url=repo_url),
             encoding="utf-8")
@@ -601,9 +610,13 @@ def build():
         body0 = re.sub(r"<h1>(.*?)</h1>", rf'<h1><a href="{slug0}">\1</a></h1>', body0, count=1, flags=re.S)
         latest_html = with_published(body0, files[0].stem, pub.get(files[0].stem))
         latest_src_section = sources_section(src0)
+        # Homepage catalysts match the latest brief's date, so it reads identically to that
+        # brief's own page (both look forward from the day it was produced).
+        index_catalysts = catalysts_section(brief_ref_date(files[0].stem))
     else:
         latest_html = '<p class="muted">No digests yet.</p>'
         latest_src_section = ""
+        index_catalysts = catalysts_section(dt.date.today())
     # Archive: keep the index light — show the most recent ARCHIVE_ON_INDEX, and move the
     # complete list to its own archive.html once it grows past that (no unbounded index page).
     ARCHIVE_ON_INDEX = 30
@@ -633,7 +646,7 @@ def build():
   <p>Every fact is grounded in a real, linked source and passed through an automated <strong>grounding check</strong> that removes claims the sources don't support; niche terms are glossed in plain language. It runs automatically each morning on <em>Gemini</em> (free) &mdash; one click switches to <em>DeepSeek</em> &mdash; with the richest analysis available on demand via <em>Claude</em>. Each issue is labelled with the engine that wrote it.</p>
 </div></section>
 <section class="block" id="latest"><div class="block-label">Latest brief</div><div class="block-body">{latest_html}</div></section>
-{catalysts_section}
+{index_catalysts}
 {market_block}
 {latest_src_section}
 <section class="block" id="archive"><div class="block-label">Archive</div><div class="block-body"><div class="arch">{index_arch}</div></div></section>

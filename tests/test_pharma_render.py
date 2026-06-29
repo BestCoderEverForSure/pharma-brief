@@ -110,6 +110,49 @@ class TestParseCatalysts(unittest.TestCase):
         self.assertEqual(pr.parse_catalysts(Path("/no/such/catalysts.md")), [])
 
 
+class TestUpcomingCatalysts(unittest.TestCase):
+    REF = dt.date(2026, 6, 28)
+
+    @staticmethod
+    def _ev(d):
+        return {"date": d, "label": "x", "full": "x"}
+
+    def _events(self):
+        return [self._ev(dt.date(2026, 6, 18)),   # past — must be dropped
+                self._ev(dt.date(2026, 6, 28)),   # today — kept (next 30 days)
+                self._ev(dt.date(2026, 7, 10)),   # +12d — next 30 days
+                self._ev(dt.date(2026, 8, 20)),   # +53d — 1–3 months
+                self._ev(dt.date(2026, 12, 1))]   # +156d — on the horizon
+
+    def test_drops_events_before_ref_date(self):
+        groups = pr.upcoming_catalysts(self._events(), self.REF)
+        kept = [e["date"] for _, evs in groups for e in evs]
+        self.assertNotIn(dt.date(2026, 6, 18), kept)        # the past event is gone
+        self.assertIn(dt.date(2026, 6, 28), kept)           # ref date itself is kept
+
+    def test_buckets_and_labels(self):
+        groups = pr.upcoming_catalysts(self._events(), self.REF)
+        self.assertEqual([label for label, _ in groups], list(pr.CATALYST_BUCKETS))
+        by_label = {label: [e["date"] for e in evs] for label, evs in groups}
+        self.assertEqual(by_label["Next 30 days"], [dt.date(2026, 6, 28), dt.date(2026, 7, 10)])
+        self.assertEqual(by_label["1–3 months"], [dt.date(2026, 8, 20)])
+        self.assertEqual(by_label["On the horizon"], [dt.date(2026, 12, 1)])
+
+    def test_empty_buckets_are_omitted(self):
+        # Only a far-future event -> just the horizon bucket appears, not three empty ones.
+        groups = pr.upcoming_catalysts([self._ev(dt.date(2026, 12, 1))], self.REF)
+        self.assertEqual([label for label, _ in groups], ["On the horizon"])
+
+    def test_all_past_is_empty(self):
+        self.assertEqual(pr.upcoming_catalysts([self._ev(dt.date(2026, 1, 1))], self.REF), [])
+
+    def test_defaults_to_today(self):
+        past, future = dt.date.today() - dt.timedelta(days=5), dt.date.today() + dt.timedelta(days=5)
+        groups = pr.upcoming_catalysts([self._ev(past), self._ev(future)])
+        kept = [e["date"] for _, evs in groups for e in evs]
+        self.assertEqual(kept, [future])
+
+
 class _R:
     """Stand-in for a Yahoo HTTP response (fetch_market calls .read() directly)."""
     def __init__(self, body):
