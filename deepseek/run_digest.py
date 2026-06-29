@@ -322,8 +322,11 @@ MODE_NOTES = {
     "daily": "",
     "review": ("- WEEKLY REVIEW edition (Saturday): step back and synthesize the WHOLE WEEK — "
                "the 3-5 biggest themes/threads, what changed and why it matters over the week, "
-               "the big picture and the connections across stories. Less a list of headlines, "
-               "more an analytical wrap-up. Title it '# Pharma Week in Review - {DATE}'."),
+               "the big picture and the connections across stories. Weave in the macro forces "
+               "shaping pharma (policy/pricing such as IRA, MFN and tariffs, trade and geopolitics, "
+               "capital markets, and wider-world news with sector implications), not just "
+               "company-by-company news. Less a list of headlines, more an analytical wrap-up. "
+               "Title it '# Pharma Week in Review - {DATE}'."),
     "ahead": ("- WEEK AHEAD edition (Sunday): do NOT recap past news. Look FORWARD — lead with the "
               "most important catalysts and events coming in the next ~1-2 weeks (from the catalyst "
               "calendar in the methodology and any explicitly-dated future events in the articles), "
@@ -333,7 +336,9 @@ MODE_NOTES = {
     "month_review": ("- MONTH IN REVIEW edition (last Saturday of the month): zoom all the way out to "
                      "the WHOLE MONTH. Synthesize the 3-5 defining themes/threads of the month, what "
                      "materially changed and why it matters, the through-lines connecting stories, and "
-                     "how the competitive landscape shifted. An analytical monthly retrospective, not a "
+                     "how the competitive landscape shifted — including the macro forces at play "
+                     "(policy/pricing, trade/tariffs, geopolitics, capital markets, and wider-world "
+                     "developments with pharma implications). An analytical monthly retrospective, not a "
                      "list of headlines — think bigger and more selective than the weekly review. "
                      "Title it '# Pharma Month in Review - {DATE}'."),
     "month_ahead": ("- MONTH AHEAD edition (last Sunday of the month): do NOT recap past news. Look "
@@ -346,7 +351,9 @@ MODE_NOTES = {
     "year_review": ("- YEAR IN REVIEW edition (last Saturday of December): the big annual retrospective. "
                     "Step all the way back and tell the story of the WHOLE YEAR in pharma — the defining "
                     "themes, the landmark approvals, failures and deals, the winners and losers, and how "
-                    "the competitive landscape shifted over the year. Highly selective and analytical: "
+                    "the competitive landscape shifted over the year — including the macro forces that "
+                    "defined it (policy/pricing, trade/tariffs, geopolitics, capital markets, and "
+                    "wider-world shifts with pharma implications). Highly selective and analytical: "
                     "the 5-7 things that actually mattered, not a month-by-month log. Title it "
                     "'# Pharma Year in Review - {DATE}'."),
     "year_ahead": ("- YEAR AHEAD edition (last Sunday of December): do NOT recap the past. Look FORWARD "
