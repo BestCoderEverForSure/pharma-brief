@@ -181,7 +181,6 @@ pharma-news/
   state.json                  ← remembers last run (powers catchup)
 digests/
   YYYY-MM-DD.md               ← your daily archive
-  INDEX.md                    ← archive index (powers look-back search)
   audio/                      ← spoken briefs
 deepseek/
   run_digest.py               ← standalone Gemini/DeepSeek version

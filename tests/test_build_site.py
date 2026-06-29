@@ -148,6 +148,32 @@ class TestParseCatalysts(unittest.TestCase):
         self.assertEqual(events[1]["date"], dt.date(2026, 8, 15))   # month-only -> 15th
 
 
+class TestMdToHtml(unittest.TestCase):
+    """The website's block renderer: TL;DR points, ledes, {major} headings, meta lines."""
+
+    def test_bullets_become_points_with_head_and_body(self):
+        out = bs.md_to_html("- **Lilly** — wins FDA nod\n- plain point\n")
+        self.assertIn('<div class="points">', out)
+        self.assertIn('<div class="point-h">Lilly</div>', out)
+        self.assertIn('<div class="point-b">wins FDA nod</div>', out)
+        self.assertIn('<div class="point-b">plain point</div>', out)   # head-less bullet
+
+    def test_blockquote_becomes_lede(self):
+        out = bs.md_to_html("> A sharp talking point.\n")
+        self.assertIn('<div class="lede">', out)
+        self.assertIn("A sharp talking point.", out)
+
+    def test_major_heading_gets_tag_and_class(self):
+        out = bs.md_to_html("### Big win {major}\n")
+        self.assertIn('class="major"', out)
+        self.assertIn("Major story", out)
+        self.assertNotIn("{major}", out)                 # the marker is stripped from the text
+
+    def test_emphasis_only_paragraph_is_meta(self):
+        out = bs.md_to_html("*Window: last 24h*\n")
+        self.assertIn('<p class="meta">', out)
+
+
 class TestRenderTimeline(unittest.TestCase):
     EVENTS = [
         {"date": dt.date(2026, 6, 18), "label": "Tebipenem FDA", "full": "Tebipenem FDA"},

@@ -1,6 +1,8 @@
-# 🐋 DeepSeek standalone version
+# 🐋 Standalone version (`run_digest.py`)
 
-Runs the digest **without Claude** - on the DeepSeek API, per-token (no subscription). Same methodology and Lilly focus, just a different brain and a different news source.
+Runs the digest **without Claude** - on a plain API, per-token (no subscription). Same methodology and Lilly focus, just a different brain and a different news source.
+
+> **Engine:** `run_digest.py` is multi-engine. **Gemini is the default** (free tier — see the top-level README §8); **DeepSeek is the fallback**. Pick with the `PHARMA_ENGINE` env var / repo Variable. This page documents the DeepSeek option specifically; the directory is named `deepseek/` for historical reasons.
 
 ## How it differs from the Claude version
 

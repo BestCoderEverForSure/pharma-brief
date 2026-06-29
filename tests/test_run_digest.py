@@ -364,6 +364,28 @@ class TestResolveAuto(unittest.TestCase):
                          rd.auto_schedule(dt.datetime.now(dt.timezone.utc).date()))
 
 
+class TestRecentSeen(unittest.TestCase):
+    """recent_seen() collects URLs/titles cited in the window of strictly-earlier digests."""
+
+    def test_window_and_source_extraction(self):
+        today = dt.date.today()
+        with tempfile.TemporaryDirectory() as d:
+            dpath = Path(d)
+
+            def write(date, slug):
+                (dpath / f"{date.isoformat()}.md").write_text(
+                    f"# Brief\n\n## Sources\n1. [Title {slug}](https://ex.example/{slug})\n",
+                    encoding="utf-8")
+
+            write(today - dt.timedelta(days=2), "recent")    # inside the 7-day window
+            write(today - dt.timedelta(days=10), "old")      # older than the window
+            write(today, "today")                            # not strictly earlier than today
+            (dpath / "notes.md").write_text("not a dated digest", encoding="utf-8")
+            urls, titles = rd.recent_seen(days=7, archive_dir=dpath)
+        self.assertEqual(urls, {"https://ex.example/recent"})   # only the in-window digest
+        self.assertEqual(len(titles), 1)
+
+
 class TestWindowFeedUrl(unittest.TestCase):
     """The Google News breadth feed's 'when:Nd' recency cap must widen to match the run's
     window, so reviews aren't grounded in only the hardcoded 2 days."""

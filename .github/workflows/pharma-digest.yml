@@ -1,7 +1,8 @@
-name: Pharma Morning Digest (DeepSeek)
+name: Pharma Morning Digest
 
-# Generates the DeepSeek digest in the cloud, emails it, archives it to the repo,
-# and publishes the browsable website to GitHub Pages — all without your laptop.
+# Generates the digest in the cloud (Gemini by default, DeepSeek fallback), emails it,
+# archives it to the repo, and publishes the browsable website to GitHub Pages — all without
+# your laptop.
 on:
   schedule:
     # GitHub cron is UTC. 05:00 UTC = 07:00 Rome (summer/CEST).
@@ -74,7 +75,7 @@ jobs:
         run: |
           git config user.name "pharma-digest-bot"
           git config user.email "bot@users.noreply.github.com"
-          git add digests/ pharma-news/catalysts.md
+          git add digests/ pharma-news/catalysts.md pharma-news/state.json
           # If a local push landed mid-run, rebase onto it; a genuinely failed push
           # must fail the job — a silently skipped push loses the digest forever
           # (the next day's site is rebuilt from whatever is in the repo).

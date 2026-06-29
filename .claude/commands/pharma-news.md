@@ -119,11 +119,10 @@ If anything fails these checks, fix it before saving.
 
 1. Save the digest to `digests/YYYY-MM-DD.md` (today's date). If a file for today already exists, append a time-stamped section rather than overwriting.
 2. Update `pharma-news/state.json`: set `last_run` to the current timestamp and append a short entry to `history` (`{date, window, headline_count}`).
-3. **Update the archive index** `digests/INDEX.md`: prepend a one-line entry — `- [YYYY-MM-DD](YYYY-MM-DD.md) — {3-5 word headline of the day}`. Create the file if missing. This powers fast archive search (Step 6).
-4. **Audio brief (optional):** if `pharma-news/config.json` has `"audio": true`, generate a spoken version by running `python3 "pharma-news/make_audio.py"` — it narrates today's digest to `digests/audio/YYYY-MM-DD.m4a` using the macOS `say` engine (free, offline).
-5. **Rebuild the website:** run `python3 "site/build_site.py"` so the new digest appears in the browsable archive and the catalyst timeline refreshes.
-6. In your chat reply, give the user the digest inline (so they can read it immediately) and tell them where it was saved.
+3. **Audio brief (optional):** generate a spoken version by running `python3 "pharma-news/make_audio.py"` — it narrates today's digest to `digests/audio/YYYY-MM-DD.m4a` using the macOS `say` engine (free, offline; voice set by `audio_voice` in `config.json`).
+4. **Rebuild the website:** run `python3 "site/build_site.py"` so the new digest appears in the browsable archive and the catalyst timeline refreshes.
+5. In your chat reply, give the user the digest inline (so they can read it immediately) and tell them where it was saved.
 
 ## Step 6 — Archive search (only when the user asks a look-back question)
 
-If the user asks something like *"what happened with orforglipron last month?"* or *"summarise the GSK thread"*, don't re-search the web first — **search the saved archive**: grep `digests/*.md` for the relevant terms (and consult `digests/INDEX.md`), then synthesise an answer from past digests, citing the dates. Supplement with a fresh web search only if the archive is thin.
+If the user asks something like *"what happened with orforglipron last month?"* or *"summarise the GSK thread"*, don't re-search the web first — **search the saved archive**: grep `digests/*.md` for the relevant terms, then synthesise an answer from past digests, citing the dates. Supplement with a fresh web search only if the archive is thin.

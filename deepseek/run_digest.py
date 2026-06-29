@@ -630,11 +630,12 @@ def _norm_title(t: str) -> str:
     return re.sub(r"[^a-z0-9]+", "", t.lower())[:60]
 
 
-def recent_seen(days: int = 7) -> tuple[set, set]:
-    """URLs and normalised titles cited in the last `days` of archived digests."""
+def recent_seen(days: int = 7, archive_dir=None) -> tuple[set, set]:
+    """URLs and normalised titles cited in the last `days` of archived digests. `archive_dir`
+    defaults to the project's digests/ dir; it's injectable so the windowing can be tested."""
     urls, titles = set(), set()
     today = dt.date.today()
-    for p in (ROOT / "digests").glob("*.md"):
+    for p in (archive_dir or (ROOT / "digests")).glob("*.md"):
         m = re.match(r"(\d{4})-(\d{2})-(\d{2})", p.stem)
         if not m:
             continue
@@ -1126,6 +1127,20 @@ def main() -> int:
         pub_path.write_text(json.dumps(pubmap, indent=0, sort_keys=True), encoding="utf-8")
     except Exception as e:
         print(f"  ! could not record publish time ({e})", file=sys.stderr)
+
+    # Stamp last_run so the manual `/pharma-news catchup` starts from the last ACTUAL brief
+    # (cloud or manual), not the last manual one — otherwise catchup re-covers days the cloud
+    # already published. Best-effort; committed with the digests (see the workflow's git add).
+    try:
+        st_path = ROOT / "pharma-news" / "state.json"
+        st = json.loads(st_path.read_text(encoding="utf-8")) if st_path.exists() else {}
+        st["last_run"] = dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        hist = (st.get("history") or [])
+        hist.append({"date": today, "mode": args.mode, "articles": len(items)})
+        st["history"] = hist[-60:]            # keep the file bounded
+        st_path.write_text(json.dumps(st, indent=2), encoding="utf-8")
+    except Exception as e:
+        print(f"  ! could not update state.json ({e})", file=sys.stderr)
 
     # A failed delivery must fail the run (non-zero exit -> GitHub failure email),
     # otherwise the digest silently never reaches anyone.

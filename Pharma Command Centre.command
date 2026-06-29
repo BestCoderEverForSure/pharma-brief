@@ -81,8 +81,7 @@ act_cloud(){
        local p; p=$(osascript -e "button returned of (display dialog \"The daily cloud digest (currently: $cur) sends at $(sched).\" buttons {\"Turn OFF\",\"Turn ON\",\"Cancel\"} default button \"Cancel\" with title \"Pharma Command Centre\")" 2>/dev/null)
        [ "$p" = "Turn ON" ]  && gh workflow enable  "$WF" >/dev/null 2>&1 && dlg "✅ Daily cloud digest ON."
        [ "$p" = "Turn OFF" ] && gh workflow disable "$WF" >/dev/null 2>&1 && dlg "🛑 Daily cloud digest OFF." ;;
-    "Status"*) local last; last=$(python3 -c "import json;print(json.load(open('pharma-news/state.json')).get('last_run') or 'never')" 2>/dev/null)
-       local st; st=$(wf_state); local cl="unknown"; [ "$st" = active ] && cl="ON"; [ "$st" = disabled_manually ] && cl="OFF"
+    "Status"*) local st; st=$(wf_state); local cl="unknown"; [ "$st" = active ] && cl="ON"; [ "$st" = disabled_manually ] && cl="OFF"
        local lr; lr=$(gh run list -R "$REPO" --workflow "$WF" --limit 1 --json conclusion,createdAt --jq '.[0]|"\(.conclusion) (\(.createdAt[0:10]))"' 2>/dev/null)
        dlg "STATUS\n\nEngine: $(engine_name)\nDaily auto-send: $cl, at $(sched)\nLast cloud run: ${lr:-none}\nEmail goes to: $(recips)" ;;
   esac
