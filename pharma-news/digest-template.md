@@ -39,15 +39,17 @@
 
 ---
 
-## On the radar
+## On the radar *(evening edition only)*
 > Quick hits - one line each, each with a clause on why it matters. Label rumours.
+{Omit in the morning edition - upcoming items are auto-appended as "Upcoming catalysts".}
 - **{Item}** - {why it matters}.
 - **{Item (rumoured)}** - {why it matters}.
 
 ---
 
-## Wider world → pharma
+## Wider world → pharma *(evening edition only)*
 > Non-pharma news with real implications for the sector.
+{Omit in the morning edition; keep it for the deeper evening read.}
 - **{Event}** → {implication for pharma}.
 
 ---
