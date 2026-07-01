@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-06-30** · Aurobindo Pharma's $250M Lannett acquisition expected to close (auto-detected 2026-06-19)
 - **2026-07-01** · India policy decision on customs duty cuts extension (auto-detected 2026-06-14)
 - **2026-07-01** · Medicare to offer GLP-1 weight-loss drugs for $50 (auto-detected 2026-06-15)
 - **2026-07-01** · CDSCO discontinues hard copies for vaccine/anti-sera import licence PACs (auto-detected 2026-06-29)
