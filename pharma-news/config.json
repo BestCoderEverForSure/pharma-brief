@@ -1,7 +1,7 @@
 {
-  "delivery_time": "07:00",
+  "delivery_time": "05:30",
   "target_timezone": "Europe/Rome",
-  "cron_utc": "05:00 UTC (all scheduled days)",
+  "cron_utc": "03:30 UTC (all scheduled days)",
   "audio_voice": "Daniel",
-  "note": "Automatic send 07:00 Europe/Rome = 05:00 UTC. The digest runs in the cloud (GitHub Actions), not on this Mac; GitHub cron is UTC. The weekly Re-time workflow re-pins this across daylight-saving changes \u2014 or run set_schedule.py / the Command Centre to change the time yourself."
+  "note": "Automatic send 05:30 Europe/Rome = 03:30 UTC. The digest runs in the cloud (GitHub Actions), not on this Mac; GitHub cron is UTC. The weekly Re-time workflow re-pins this across daylight-saving changes \u2014 or run set_schedule.py / the Command Centre to change the time yourself."
 }
