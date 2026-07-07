@@ -27,6 +27,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
+- **2026-07-09** · OKYO Pharma fireside chat at Piper Sandler 2026 Virtual Ophthalmology Symposium (auto-detected 2026-07-07)
 - **2026-07-10** · Rossari Biotech dividend record date (auto-detected 2026-06-18)
 - **2026-07-15** · CNX and Legacy US relaunch of Ethyol (auto-detected 2026-06-26)
 - **2026-07-16** · Ajanta Pharma 47th annual general meeting (auto-detected 2026-06-15)
@@ -40,6 +41,8 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-09-15** · UniQure to submit BLA for AMT-130 for Huntington's disease (auto-detected 2026-06-21)
 - **2026-09-30** · Zydus Lifesciences extends Sterling Biotech API deal (auto-detected 2026-06-29)
 - **2026-09-30** · Praxis epilepsy drug verdict (auto-detected 2026-06-30)
+- **2026-10-01** · French clinical-stage biotech's UC drug FDA filing (auto-detected 2026-07-07)
+- **2026-11-01** · FDA review date for Agios' sickle cell drug (auto-detected 2026-07-07)
 - **2026-11-15** · FDA Delays iPLEDGE Modifications (auto-detected 2026-06-18)
 - **2026-12-25** · EU Biotech Act deal (auto-detected 2026-06-26)
 - **2027-01-15** · India Pharma Expo (auto-detected 2026-06-15)
