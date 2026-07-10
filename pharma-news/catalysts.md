@@ -27,9 +27,9 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-07-09** · OKYO Pharma fireside chat at Piper Sandler 2026 Virtual Ophthalmology Symposium (auto-detected 2026-07-07)
 - **2026-07-10** · Rossari Biotech dividend record date (auto-detected 2026-06-18)
 - **2026-07-15** · CNX and Legacy US relaunch of Ethyol (auto-detected 2026-06-26)
+- **2026-07-15** · India-UK FTA rollout (auto-detected 2026-07-10)
 - **2026-07-16** · Ajanta Pharma 47th annual general meeting (auto-detected 2026-06-15)
 - **2026-07-16** · Windlas Biotech dividend record date (auto-detected 2026-06-30)
 - **2026-07-29** · FDA decision for Lytenava (ophthalmic bevacizumab) (auto-detected 2026-06-16)
@@ -37,6 +37,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-07-31** · Q2 2026 earnings season begins (auto-detected 2026-06-14)
 - **2026-08-02** · FDA decision for Replimune's melanoma drug (auto-detected 2026-06-26)
 - **2026-08-04** · Mankind Pharma 35th AGM (auto-detected 2026-06-30)
+- **2026-08-07** · Emera Q2 2026 earnings (auto-detected 2026-07-10)
 - **2026-08-12** · European Commission decision on Vislyfa (ranibizumab biosimilar) approval (auto-detected 2026-06-14)
 - **2026-09-15** · UniQure to submit BLA for AMT-130 for Huntington's disease (auto-detected 2026-06-21)
 - **2026-09-30** · Zydus Lifesciences extends Sterling Biotech API deal (auto-detected 2026-06-29)
