@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-07-10** · Rossari Biotech dividend record date (auto-detected 2026-06-18)
 - **2026-07-15** · CNX and Legacy US relaunch of Ethyol (auto-detected 2026-06-26)
 - **2026-07-15** · India-UK FTA rollout (auto-detected 2026-07-10)
 - **2026-07-16** · Ajanta Pharma 47th annual general meeting (auto-detected 2026-06-15)
