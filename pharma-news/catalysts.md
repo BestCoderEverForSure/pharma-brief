@@ -44,6 +44,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-10-01** · French clinical-stage biotech's UC drug FDA filing (auto-detected 2026-07-07)
 - **2026-11-01** · FDA review date for Agios' sickle cell drug (auto-detected 2026-07-07)
 - **2026-11-15** · FDA Delays iPLEDGE Modifications (auto-detected 2026-06-18)
+- **2026-12-15** · FDA ruling on GRAS (auto-detected 2026-07-13)
 - **2026-12-25** · EU Biotech Act deal (auto-detected 2026-06-26)
 - **2027-01-15** · India Pharma Expo (auto-detected 2026-06-15)
 - **2027-08-15** · Australia's 'Biggest Week in Biotech 2027' (auto-detected 2026-06-18)
