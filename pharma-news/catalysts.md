@@ -31,6 +31,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-07-15** · India-UK FTA rollout (auto-detected 2026-07-10)
 - **2026-07-16** · Ajanta Pharma 47th annual general meeting (auto-detected 2026-06-15)
 - **2026-07-16** · Windlas Biotech dividend record date (auto-detected 2026-06-30)
+- **2026-07-20** · Rossari Biotech Q1 Earnings Call (auto-detected 2026-07-15)
 - **2026-07-29** · FDA decision for Lytenava (ophthalmic bevacizumab) (auto-detected 2026-06-16)
 - **2026-07-30** · Piramal Pharma 6th annual general meeting (auto-detected 2026-06-19)
 - **2026-07-31** · Q2 2026 earnings season begins (auto-detected 2026-06-14)
