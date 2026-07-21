@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-07-20** · Rossari Biotech Q1 Earnings Call (auto-detected 2026-07-15)
 - **2026-07-29** · FDA decision for Lytenava (ophthalmic bevacizumab) (auto-detected 2026-06-16)
 - **2026-07-30** · Piramal Pharma 6th annual general meeting (auto-detected 2026-06-19)
 - **2026-07-31** · Q2 2026 earnings season begins (auto-detected 2026-06-14)
@@ -37,6 +36,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-08-10** · Rajamannar Thennati not seeking re-election as Director for Sun Pharma Advanced Research Company Limited (auto-detected 2026-07-17)
 - **2026-08-12** · European Commission decision on Vislyfa (ranibizumab biosimilar) approval (auto-detected 2026-06-14)
 - **2026-08-15** · Mayne Pharma Group appoints Griffin D. Buchanan as CFO (auto-detected 2026-07-17)
+- **2026-08-31** · AstraZeneca Pharma CFO Bhavana Agrawal resigns (auto-detected 2026-07-21)
 - **2026-09-15** · UniQure to submit BLA for AMT-130 for Huntington's disease (auto-detected 2026-06-21)
 - **2026-09-15** · FDA public hearing on psychedelic therapies (auto-detected 2026-07-19)
 - **2026-09-30** · Zydus Lifesciences extends Sterling Biotech API deal (auto-detected 2026-06-29)
