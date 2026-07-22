@@ -31,6 +31,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-07-30** · Piramal Pharma 6th annual general meeting (auto-detected 2026-06-19)
 - **2026-07-31** · Q2 2026 earnings season begins (auto-detected 2026-06-14)
 - **2026-08-02** · FDA decision for Replimune's melanoma drug (auto-detected 2026-06-26)
+- **2026-08-03** · Glenmark Pharma Q1 Call (auto-detected 2026-07-22)
 - **2026-08-04** · Mankind Pharma 35th AGM (auto-detected 2026-06-30)
 - **2026-08-07** · Emera Q2 2026 earnings (auto-detected 2026-07-10)
 - **2026-08-10** · Rajamannar Thennati not seeking re-election as Director for Sun Pharma Advanced Research Company Limited (auto-detected 2026-07-17)
