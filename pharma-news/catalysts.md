@@ -27,6 +27,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
+- **2026-07-24** · Trinity Biotech Mandatory Exchange of 30 ADSs for 1 (auto-detected 2026-07-23)
 - **2026-07-29** · FDA decision for Lytenava (ophthalmic bevacizumab) (auto-detected 2026-06-16)
 - **2026-07-30** · Piramal Pharma 6th annual general meeting (auto-detected 2026-06-19)
 - **2026-07-31** · Q2 2026 earnings season begins (auto-detected 2026-06-14)
@@ -35,6 +36,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-08-04** · Mankind Pharma 35th AGM (auto-detected 2026-06-30)
 - **2026-08-07** · Emera Q2 2026 earnings (auto-detected 2026-07-10)
 - **2026-08-10** · Rajamannar Thennati not seeking re-election as Director for Sun Pharma Advanced Research Company Limited (auto-detected 2026-07-17)
+- **2026-08-11** · ‘From Bench to Boardroom: Women Driving Innovation Across Biotech’ conference (auto-detected 2026-07-23)
 - **2026-08-12** · European Commission decision on Vislyfa (ranibizumab biosimilar) approval (auto-detected 2026-06-14)
 - **2026-08-15** · Mayne Pharma Group appoints Griffin D. Buchanan as CFO (auto-detected 2026-07-17)
 - **2026-08-31** · AstraZeneca Pharma CFO Bhavana Agrawal resigns (auto-detected 2026-07-21)
@@ -43,10 +45,12 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-09-30** · Zydus Lifesciences extends Sterling Biotech API deal (auto-detected 2026-06-29)
 - **2026-09-30** · Praxis epilepsy drug verdict (auto-detected 2026-06-30)
 - **2026-10-01** · French clinical-stage biotech's UC drug FDA filing (auto-detected 2026-07-07)
+- **2026-10-15** · Ocular Therapeutix AXPAXLI NDA submission (auto-detected 2026-07-23)
 - **2026-11-01** · FDA review date for Agios' sickle cell drug (auto-detected 2026-07-07)
 - **2026-11-15** · FDA Delays iPLEDGE Modifications (auto-detected 2026-06-18)
 - **2026-12-15** · FDA ruling on GRAS (auto-detected 2026-07-13)
 - **2026-12-25** · EU Biotech Act deal (auto-detected 2026-06-26)
 - **2027-01-15** · India Pharma Expo (auto-detected 2026-06-15)
 - **2027-08-15** · Australia's 'Biggest Week in Biotech 2027' (auto-detected 2026-06-18)
+- **2028-08-15** · Trump's 100% tariff on imported generic drugs takes effect (auto-detected 2026-07-23)
 - **2029-01-15** · Federal rule proposes closing "loophole" for IV-to-subcutaneous drugs (auto-detected 2026-06-15)
