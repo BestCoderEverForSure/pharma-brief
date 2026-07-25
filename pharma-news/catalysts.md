@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-07-24** · Trinity Biotech Mandatory Exchange of 30 ADSs for 1 (auto-detected 2026-07-23)
 - **2026-07-29** · FDA decision for Lytenava (ophthalmic bevacizumab) (auto-detected 2026-06-16)
 - **2026-07-30** · Piramal Pharma 6th annual general meeting (auto-detected 2026-06-19)
 - **2026-07-31** · Q2 2026 earnings season begins (auto-detected 2026-06-14)
