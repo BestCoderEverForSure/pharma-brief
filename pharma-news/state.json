@@ -1,5 +1,5 @@
 {
-  "last_run": "2026-07-26T06:22:04Z",
+  "last_run": "2026-07-27T06:48:38Z",
   "history": [
     {
       "date": "2026-06-12",
@@ -170,6 +170,11 @@
       "date": "2026-07-26",
       "mode": "month_ahead",
       "articles": 326
+    },
+    {
+      "date": "2026-07-27",
+      "mode": "daily",
+      "articles": 174
     }
   ]
 }
