@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-07-30** · Piramal Pharma 6th annual general meeting (auto-detected 2026-06-19)
 - **2026-07-31** · Q2 2026 earnings season begins (auto-detected 2026-06-14)
 - **2026-07-31** · Strides Pharma Ex-Dividend Date (auto-detected 2026-07-30)
 - **2026-07-31** · Sun Pharma to Consider Quarterly Results (auto-detected 2026-07-30)
