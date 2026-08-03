@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-08-02** · FDA decision for Replimune's melanoma drug (auto-detected 2026-06-26)
 - **2026-08-03** · Glenmark Pharma Q1 Call (auto-detected 2026-07-22)
 - **2026-08-03** · Krystal Biotech webcast (auto-detected 2026-07-24)
 - **2026-08-04** · Mankind Pharma 35th AGM (auto-detected 2026-06-30)
@@ -40,6 +39,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-08-15** · Mayne Pharma Group appoints Griffin D. Buchanan as CFO (auto-detected 2026-07-17)
 - **2026-08-15** · EMA CHMP meeting (approx.) (auto-detected 2026-07-24)
 - **2026-08-31** · AstraZeneca Pharma CFO Bhavana Agrawal resigns (auto-detected 2026-07-21)
+- **2026-09-14** · Teva Pharmaceutical event (auto-detected 2026-08-03)
 - **2026-09-15** · UniQure to submit BLA for AMT-130 for Huntington's disease (auto-detected 2026-06-21)
 - **2026-09-15** · FDA public hearing on psychedelic therapies (auto-detected 2026-07-19)
 - **2026-09-15** · Gossamer Bio Seralutinib NDA submission (auto-detected 2026-07-28)
