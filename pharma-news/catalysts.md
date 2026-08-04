@@ -27,15 +27,15 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-08-03** · Glenmark Pharma Q1 Call (auto-detected 2026-07-22)
-- **2026-08-03** · Krystal Biotech webcast (auto-detected 2026-07-24)
 - **2026-08-04** · Mankind Pharma 35th AGM (auto-detected 2026-06-30)
 - **2026-08-06** · Aurobindo Pharma Q1 Earnings Call (auto-detected 2026-07-29)
 - **2026-08-07** · Emera Q2 2026 earnings (auto-detected 2026-07-10)
 - **2026-08-10** · Rajamannar Thennati not seeking re-election as Director for Sun Pharma Advanced Research Company Limited (auto-detected 2026-07-17)
+- **2026-08-10** · Rossari Biotech analyst meet (auto-detected 2026-08-04)
 - **2026-08-11** · ‘From Bench to Boardroom: Women Driving Innovation Across Biotech’ conference (auto-detected 2026-07-23)
 - **2026-08-12** · European Commission decision on Vislyfa (ranibizumab biosimilar) approval (auto-detected 2026-06-14)
 - **2026-08-13** · Link Pharma Chem 41st AGM voting record date (auto-detected 2026-07-28)
+- **2026-08-13** · Marksans Pharma Q1 Earnings Call (auto-detected 2026-08-04)
 - **2026-08-15** · Mayne Pharma Group appoints Griffin D. Buchanan as CFO (auto-detected 2026-07-17)
 - **2026-08-15** · EMA CHMP meeting (approx.) (auto-detected 2026-07-24)
 - **2026-08-31** · AstraZeneca Pharma CFO Bhavana Agrawal resigns (auto-detected 2026-07-21)
