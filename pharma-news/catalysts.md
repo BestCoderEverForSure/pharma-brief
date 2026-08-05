@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-08-04** · Mankind Pharma 35th AGM (auto-detected 2026-06-30)
 - **2026-08-06** · Aurobindo Pharma Q1 Earnings Call (auto-detected 2026-07-29)
 - **2026-08-07** · Emera Q2 2026 earnings (auto-detected 2026-07-10)
 - **2026-08-10** · Rajamannar Thennati not seeking re-election as Director for Sun Pharma Advanced Research Company Limited (auto-detected 2026-07-17)
