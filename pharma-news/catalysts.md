@@ -29,6 +29,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 ## Auto-detected (from recent briefs)
 - **2026-08-06** · Aurobindo Pharma Q1 Earnings Call (auto-detected 2026-07-29)
 - **2026-08-07** · Emera Q2 2026 earnings (auto-detected 2026-07-10)
+- **2026-08-08** · Aptus Pharma Ltd Board Meeting to Consider Preferential Allotment (auto-detected 2026-08-06)
 - **2026-08-10** · Rajamannar Thennati not seeking re-election as Director for Sun Pharma Advanced Research Company Limited (auto-detected 2026-07-17)
 - **2026-08-10** · Rossari Biotech analyst meet (auto-detected 2026-08-04)
 - **2026-08-11** · ‘From Bench to Boardroom: Women Driving Innovation Across Biotech’ conference (auto-detected 2026-07-23)
