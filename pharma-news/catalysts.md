@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-08-07** · Emera Q2 2026 earnings (auto-detected 2026-07-10)
 - **2026-08-08** · Aptus Pharma Ltd Board Meeting to Consider Preferential Allotment (auto-detected 2026-08-06)
 - **2026-08-10** · Rajamannar Thennati not seeking re-election as Director for Sun Pharma Advanced Research Company Limited (auto-detected 2026-07-17)
 - **2026-08-10** · Rossari Biotech analyst meet (auto-detected 2026-08-04)
