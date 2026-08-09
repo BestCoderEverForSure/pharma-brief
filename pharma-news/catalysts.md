@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-08-08** · Aptus Pharma Ltd Board Meeting to Consider Preferential Allotment (auto-detected 2026-08-06)
 - **2026-08-10** · Rajamannar Thennati not seeking re-election as Director for Sun Pharma Advanced Research Company Limited (auto-detected 2026-07-17)
 - **2026-08-10** · Rossari Biotech analyst meet (auto-detected 2026-08-04)
 - **2026-08-11** · ‘From Bench to Boardroom: Women Driving Innovation Across Biotech’ conference (auto-detected 2026-07-23)
@@ -42,6 +41,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-09-15** · UniQure to submit BLA for AMT-130 for Huntington's disease (auto-detected 2026-06-21)
 - **2026-09-15** · FDA public hearing on psychedelic therapies (auto-detected 2026-07-19)
 - **2026-09-15** · Gossamer Bio Seralutinib NDA submission (auto-detected 2026-07-28)
+- **2026-09-15** · Zidesamtinib (Nuvalent/GSK) PDUFA - ROS1+ NSCLC (auto-detected 2026-08-09)
 - **2026-09-30** · Zydus Lifesciences extends Sterling Biotech API deal (auto-detected 2026-06-29)
 - **2026-09-30** · Praxis epilepsy drug verdict (auto-detected 2026-06-30)
 - **2026-10-01** · French clinical-stage biotech's UC drug FDA filing (auto-detected 2026-07-07)
