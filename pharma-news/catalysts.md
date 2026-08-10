@@ -44,6 +44,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-09-15** · Zidesamtinib (Nuvalent/GSK) PDUFA - ROS1+ NSCLC (auto-detected 2026-08-09)
 - **2026-09-30** · Zydus Lifesciences extends Sterling Biotech API deal (auto-detected 2026-06-29)
 - **2026-09-30** · Praxis epilepsy drug verdict (auto-detected 2026-06-30)
+- **2026-09-30** · Scholar Rock Apitegromab BLA Approval Decision (auto-detected 2026-08-10)
 - **2026-10-01** · French clinical-stage biotech's UC drug FDA filing (auto-detected 2026-07-07)
 - **2026-10-15** · Ocular Therapeutix AXPAXLI NDA submission (auto-detected 2026-07-23)
 - **2026-11-01** · FDA review date for Agios' sickle cell drug (auto-detected 2026-07-07)
