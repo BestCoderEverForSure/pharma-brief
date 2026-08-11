@@ -27,8 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-08-10** · Rajamannar Thennati not seeking re-election as Director for Sun Pharma Advanced Research Company Limited (auto-detected 2026-07-17)
-- **2026-08-10** · Rossari Biotech analyst meet (auto-detected 2026-08-04)
 - **2026-08-11** · ‘From Bench to Boardroom: Women Driving Innovation Across Biotech’ conference (auto-detected 2026-07-23)
 - **2026-08-12** · European Commission decision on Vislyfa (ranibizumab biosimilar) approval (auto-detected 2026-06-14)
 - **2026-08-13** · Link Pharma Chem 41st AGM voting record date (auto-detected 2026-07-28)
