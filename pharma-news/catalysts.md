@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-08-12** · European Commission decision on Vislyfa (ranibizumab biosimilar) approval (auto-detected 2026-06-14)
 - **2026-08-13** · Link Pharma Chem 41st AGM voting record date (auto-detected 2026-07-28)
 - **2026-08-13** · Marksans Pharma Q1 Earnings Call (auto-detected 2026-08-04)
 - **2026-08-13** · Zealand Pharma Q2 Results Conference Call (auto-detected 2026-08-07)
@@ -53,6 +52,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2027-01-15** · India Pharma Expo (auto-detected 2026-06-15)
 - **2027-02-15** · Apnimed FDA decision (auto-detected 2026-07-28)
 - **2027-03-15** · Lilly Q1 2027 FDA application for retatrutide (auto-detected 2026-07-24)
+- **2027-04-15** · Immunome Varegacestat FDA Decision (auto-detected 2026-08-13)
 - **2027-08-15** · Australia's 'Biggest Week in Biotech 2027' (auto-detected 2026-06-18)
 - **2028-08-15** · Trump's 100% tariff on imported generic drugs takes effect (auto-detected 2026-07-23)
 - **2029-01-15** · Federal rule proposes closing "loophole" for IV-to-subcutaneous drugs (auto-detected 2026-06-15)
