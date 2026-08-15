@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-08-14** · Natco Pharma Q1 Earnings Call (auto-detected 2026-08-12)
 - **2026-08-15** · Mayne Pharma Group appoints Griffin D. Buchanan as CFO (auto-detected 2026-07-17)
 - **2026-08-15** · EMA CHMP meeting (approx.) (auto-detected 2026-07-24)
 - **2026-08-20** · CSPC PHARMA Financial Results (auto-detected 2026-08-14)
