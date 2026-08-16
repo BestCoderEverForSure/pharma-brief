@@ -27,8 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-08-15** · Mayne Pharma Group appoints Griffin D. Buchanan as CFO (auto-detected 2026-07-17)
-- **2026-08-15** · EMA CHMP meeting (approx.) (auto-detected 2026-07-24)
 - **2026-08-20** · CSPC PHARMA Financial Results (auto-detected 2026-08-14)
 - **2026-08-31** · AstraZeneca Pharma CFO Bhavana Agrawal resigns (auto-detected 2026-07-21)
 - **2026-09-14** · Teva Pharmaceutical event (auto-detected 2026-08-03)
@@ -47,6 +45,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-12-15** · FDA ruling on GRAS (auto-detected 2026-07-13)
 - **2026-12-15** · Adagio Medical expects FDA PMA approval for vCLAS (auto-detected 2026-08-14)
 - **2026-12-15** · CADL BLA Submission (auto-detected 2026-08-14)
+- **2026-12-15** · Axtria to scale AI engineering team to 1,000 (auto-detected 2026-08-16)
 - **2026-12-25** · EU Biotech Act deal (auto-detected 2026-06-26)
 - **2026-12-30** · Saol Therapeutics SL1009 (DCA) FDA PDUFA date (auto-detected 2026-07-29)
 - **2027-01-15** · India Pharma Expo (auto-detected 2026-06-15)
