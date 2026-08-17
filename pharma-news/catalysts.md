@@ -27,6 +27,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
+- **2026-08-19** · AstraZeneca Pharma Analyst/Investor Meeting (auto-detected 2026-08-17)
 - **2026-08-20** · CSPC PHARMA Financial Results (auto-detected 2026-08-14)
 - **2026-08-31** · AstraZeneca Pharma CFO Bhavana Agrawal resigns (auto-detected 2026-07-21)
 - **2026-09-14** · Teva Pharmaceutical event (auto-detected 2026-08-03)
@@ -46,6 +47,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-12-15** · Adagio Medical expects FDA PMA approval for vCLAS (auto-detected 2026-08-14)
 - **2026-12-15** · CADL BLA Submission (auto-detected 2026-08-14)
 - **2026-12-15** · Axtria to scale AI engineering team to 1,000 (auto-detected 2026-08-16)
+- **2026-12-15** · Quanterix FDA decision for Alzheimer’s blood test (auto-detected 2026-08-17)
 - **2026-12-25** · EU Biotech Act deal (auto-detected 2026-06-26)
 - **2026-12-30** · Saol Therapeutics SL1009 (DCA) FDA PDUFA date (auto-detected 2026-07-29)
 - **2027-01-15** · India Pharma Expo (auto-detected 2026-06-15)
@@ -53,5 +55,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2027-03-15** · Lilly Q1 2027 FDA application for retatrutide (auto-detected 2026-07-24)
 - **2027-04-15** · Immunome Varegacestat FDA Decision (auto-detected 2026-08-13)
 - **2027-08-15** · Australia's 'Biggest Week in Biotech 2027' (auto-detected 2026-06-18)
+- **2028-07-15** · FDA Food Traceability Rule Enforcement Begins (auto-detected 2026-08-17)
 - **2028-08-15** · Trump's 100% tariff on imported generic drugs takes effect (auto-detected 2026-07-23)
 - **2029-01-15** · Federal rule proposes closing "loophole" for IV-to-subcutaneous drugs (auto-detected 2026-06-15)
