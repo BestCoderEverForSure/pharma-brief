@@ -44,6 +44,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-10-15** · Ocular Therapeutix AXPAXLI NDA submission (auto-detected 2026-07-23)
 - **2026-11-01** · FDA review date for Agios' sickle cell drug (auto-detected 2026-07-07)
 - **2026-11-15** · FDA Delays iPLEDGE Modifications (auto-detected 2026-06-18)
+- **2026-11-15** · BIO-Europe 2026 (auto-detected 2026-08-19)
 - **2026-11-16** · Deepak Sapra appointed CEO of Gland Pharma (auto-detected 2026-08-14)
 - **2026-12-15** · FDA ruling on GRAS (auto-detected 2026-07-13)
 - **2026-12-15** · Adagio Medical expects FDA PMA approval for vCLAS (auto-detected 2026-08-14)
