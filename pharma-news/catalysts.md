@@ -27,10 +27,10 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-08-20** · CSPC PHARMA Financial Results (auto-detected 2026-08-14)
 - **2026-08-24** · NATCO Pharma Investor Meeting (auto-detected 2026-08-20)
 - **2026-08-24** · Symbiotech Pharmalab IPO opens (auto-detected 2026-08-20)
 - **2026-08-25** · Bacil Pharma board meeting to appoint directors (auto-detected 2026-08-18)
+- **2026-08-25** · RPG Life Sciences Investor Meeting (auto-detected 2026-08-21)
 - **2026-08-26** · NATCO Pharma Investor Meeting (auto-detected 2026-08-20)
 - **2026-08-31** · AstraZeneca Pharma CFO Bhavana Agrawal resigns (auto-detected 2026-07-21)
 - **2026-09-01** · Invesco Mutual Fund NFO closes (auto-detected 2026-08-20)
