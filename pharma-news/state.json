@@ -1,11 +1,6 @@
 {
-  "last_run": "2026-08-21T04:08:48Z",
+  "last_run": "2026-08-22T04:05:19Z",
   "history": [
-    {
-      "date": "2026-06-12",
-      "window": "last 24 hours (first run)",
-      "headline_count": 3
-    },
     {
       "date": "2026-06-12",
       "window": "last 24 hours (re-run with full feature set)",
@@ -300,6 +295,11 @@
       "date": "2026-08-21",
       "mode": "daily",
       "articles": 256
+    },
+    {
+      "date": "2026-08-22",
+      "mode": "review",
+      "articles": 127
     }
   ]
 }
