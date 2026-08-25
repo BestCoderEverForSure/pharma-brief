@@ -1,11 +1,6 @@
 {
-  "last_run": "2026-08-24T04:13:28Z",
+  "last_run": "2026-08-25T04:08:22Z",
   "history": [
-    {
-      "date": "2026-06-12",
-      "window": "last 24 hours (Claude run, linked headlines + glosses)",
-      "headline_count": 3
-    },
     {
       "date": "2026-06-29",
       "mode": "daily",
@@ -300,6 +295,11 @@
       "date": "2026-08-24",
       "mode": "daily",
       "articles": 169
+    },
+    {
+      "date": "2026-08-25",
+      "mode": "daily",
+      "articles": 275
     }
   ]
 }
