@@ -27,11 +27,11 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-08-26** · NATCO Pharma Investor Meeting (auto-detected 2026-08-20)
-- **2026-08-26** · Indian Pharma Post E-Conference (auto-detected 2026-08-24)
 - **2026-08-31** · AstraZeneca Pharma CFO Bhavana Agrawal resigns (auto-detected 2026-07-21)
 - **2026-09-01** · Invesco Mutual Fund NFO closes (auto-detected 2026-08-20)
 - **2026-09-01** · Aurobindo Pharma Investor Meeting (auto-detected 2026-08-26)
+- **2026-09-02** · AlzeCure Pharma to Present at The Pareto Securities 17th Annual Healthcare Conference (auto-detected 2026-08-27)
+- **2026-09-03** · Fermenta Biotech investor meeting (auto-detected 2026-08-27)
 - **2026-09-14** · Teva Pharmaceutical event (auto-detected 2026-08-03)
 - **2026-09-15** · UniQure to submit BLA for AMT-130 for Huntington's disease (auto-detected 2026-06-21)
 - **2026-09-15** · FDA public hearing on psychedelic therapies (auto-detected 2026-07-19)
@@ -39,7 +39,9 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-09-15** · Zidesamtinib (Nuvalent/GSK) PDUFA - ROS1+ NSCLC (auto-detected 2026-08-09)
 - **2026-09-15** · Nasus Pharma CFO Eyal Rubin to depart (auto-detected 2026-08-20)
 - **2026-09-15** · FSS Pharma-Bio Disclosure Briefings (auto-detected 2026-08-24)
+- **2026-09-15** · HLB Cholangiocarcinoma Drug Approval (auto-detected 2026-08-27)
 - **2026-09-23** · Navigating the GLP-1 Generic Drug Pathway event (auto-detected 2026-08-18)
+- **2026-09-29** · Emmessar Biotech 34th AGM (auto-detected 2026-08-27)
 - **2026-09-30** · Zydus Lifesciences extends Sterling Biotech API deal (auto-detected 2026-06-29)
 - **2026-09-30** · Praxis epilepsy drug verdict (auto-detected 2026-06-30)
 - **2026-09-30** · Scholar Rock Apitegromab BLA Approval Decision (auto-detected 2026-08-10)
