@@ -32,6 +32,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-09-01** · Aurobindo Pharma Investor Meeting (auto-detected 2026-08-26)
 - **2026-09-02** · AlzeCure Pharma to Present at The Pareto Securities 17th Annual Healthcare Conference (auto-detected 2026-08-27)
 - **2026-09-03** · Fermenta Biotech investor meeting (auto-detected 2026-08-27)
+- **2026-09-04** · Asston Pharma board to consider pay hikes for MD, CEO (auto-detected 2026-08-28)
 - **2026-09-14** · Teva Pharmaceutical event (auto-detected 2026-08-03)
 - **2026-09-15** · UniQure to submit BLA for AMT-130 for Huntington's disease (auto-detected 2026-06-21)
 - **2026-09-15** · FDA public hearing on psychedelic therapies (auto-detected 2026-07-19)
