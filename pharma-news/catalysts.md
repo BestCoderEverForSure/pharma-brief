@@ -42,6 +42,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-09-15** · FSS Pharma-Bio Disclosure Briefings (auto-detected 2026-08-24)
 - **2026-09-15** · HLB Cholangiocarcinoma Drug Approval (auto-detected 2026-08-27)
 - **2026-09-15** · EMA CHMP meeting - positive/negative opinions on EU marketing authorisations (auto-detected 2026-08-29)
+- **2026-09-15** · Ajanta Pharma investor meetings (auto-detected 2026-08-31)
 - **2026-09-23** · Navigating the GLP-1 Generic Drug Pathway event (auto-detected 2026-08-18)
 - **2026-09-29** · Emmessar Biotech 34th AGM (auto-detected 2026-08-27)
 - **2026-09-30** · Zydus Lifesciences extends Sterling Biotech API deal (auto-detected 2026-06-29)
