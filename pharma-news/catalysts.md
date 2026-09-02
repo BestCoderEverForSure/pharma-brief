@@ -27,8 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-09-01** · Invesco Mutual Fund NFO closes (auto-detected 2026-08-20)
-- **2026-09-01** · Aurobindo Pharma Investor Meeting (auto-detected 2026-08-26)
 - **2026-09-02** · AlzeCure Pharma to Present at The Pareto Securities 17th Annual Healthcare Conference (auto-detected 2026-08-27)
 - **2026-09-03** · Fermenta Biotech investor meeting (auto-detected 2026-08-27)
 - **2026-09-04** · Asston Pharma board to consider pay hikes for MD, CEO (auto-detected 2026-08-28)
@@ -63,12 +61,14 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-12-15** · Quanterix FDA decision for Alzheimer’s blood test (auto-detected 2026-08-17)
 - **2026-12-15** · 75th IPC in New Delhi (auto-detected 2026-08-18)
 - **2026-12-15** · Spruce ultra-rare disease drug Q4 filing (auto-detected 2026-08-25)
+- **2026-12-15** · Cinclus Pharma HEEALING1 study topline results (auto-detected 2026-09-02)
 - **2026-12-25** · EU Biotech Act deal (auto-detected 2026-06-26)
 - **2026-12-30** · Saol Therapeutics SL1009 (DCA) FDA PDUFA date (auto-detected 2026-07-29)
 - **2027-01-15** · India Pharma Expo (auto-detected 2026-06-15)
 - **2027-02-15** · Apnimed FDA decision (auto-detected 2026-07-28)
 - **2027-03-15** · Lilly Q1 2027 FDA application for retatrutide (auto-detected 2026-07-24)
 - **2027-03-15** · Orchid Pharma Jammu 7-ACA Plant Launch (auto-detected 2026-08-25)
+- **2027-03-15** · PMV Pharma rezatapopt NDA submission (auto-detected 2026-09-02)
 - **2027-04-15** · Immunome Varegacestat FDA Decision (auto-detected 2026-08-13)
 - **2027-08-15** · Australia's 'Biggest Week in Biotech 2027' (auto-detected 2026-06-18)
 - **2028-07-15** · FDA Food Traceability Rule Enforcement Begins (auto-detected 2026-08-17)
