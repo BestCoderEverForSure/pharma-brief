@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-09-02** · AlzeCure Pharma to Present at The Pareto Securities 17th Annual Healthcare Conference (auto-detected 2026-08-27)
 - **2026-09-03** · Fermenta Biotech investor meeting (auto-detected 2026-08-27)
 - **2026-09-04** · Asston Pharma board to consider pay hikes for MD, CEO (auto-detected 2026-08-28)
 - **2026-09-04** · Gland Pharma Analyst and Investor Meeting (auto-detected 2026-09-01)
@@ -65,6 +64,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-12-25** · EU Biotech Act deal (auto-detected 2026-06-26)
 - **2026-12-30** · Saol Therapeutics SL1009 (DCA) FDA PDUFA date (auto-detected 2026-07-29)
 - **2027-01-15** · India Pharma Expo (auto-detected 2026-06-15)
+- **2027-01-15** · UK plans to revoke Tavneos approval (auto-detected 2026-09-03)
 - **2027-02-15** · Apnimed FDA decision (auto-detected 2026-07-28)
 - **2027-03-15** · Lilly Q1 2027 FDA application for retatrutide (auto-detected 2026-07-24)
 - **2027-03-15** · Orchid Pharma Jammu 7-ACA Plant Launch (auto-detected 2026-08-25)
