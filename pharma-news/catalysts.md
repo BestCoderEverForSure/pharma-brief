@@ -27,8 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-09-04** · Asston Pharma board to consider pay hikes for MD, CEO (auto-detected 2026-08-28)
-- **2026-09-04** · Gland Pharma Analyst and Investor Meeting (auto-detected 2026-09-01)
 - **2026-09-07** · Gland Pharma Analyst and Investor Meeting (auto-detected 2026-09-01)
 - **2026-09-14** · Teva Pharmaceutical event (auto-detected 2026-08-03)
 - **2026-09-15** · UniQure to submit BLA for AMT-130 for Huntington's disease (auto-detected 2026-06-21)
