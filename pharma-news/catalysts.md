@@ -28,6 +28,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 
 ## Auto-detected (from recent briefs)
 - **2026-09-07** · Gland Pharma Analyst and Investor Meeting (auto-detected 2026-09-01)
+- **2026-09-10** · Sun Pharma Analyst and Investor Meeting (auto-detected 2026-09-06)
 - **2026-09-14** · Teva Pharmaceutical event (auto-detected 2026-08-03)
 - **2026-09-15** · UniQure to submit BLA for AMT-130 for Huntington's disease (auto-detected 2026-06-21)
 - **2026-09-15** · FDA public hearing on psychedelic therapies (auto-detected 2026-07-19)
@@ -38,6 +39,9 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-09-15** · HLB Cholangiocarcinoma Drug Approval (auto-detected 2026-08-27)
 - **2026-09-15** · EMA CHMP meeting - positive/negative opinions on EU marketing authorisations (auto-detected 2026-08-29)
 - **2026-09-15** · Ajanta Pharma investor meetings (auto-detected 2026-08-31)
+- **2026-09-15** · Poolbeg Pharma PLC - Key Conference Participation (auto-detected 2026-09-06)
+- **2026-09-16** · Sun Pharma Analyst and Investor Meeting (auto-detected 2026-09-06)
+- **2026-09-17** · Sun Pharma Analyst and Investor Meeting (auto-detected 2026-09-06)
 - **2026-09-23** · Navigating the GLP-1 Generic Drug Pathway event (auto-detected 2026-08-18)
 - **2026-09-29** · Emmessar Biotech 34th AGM (auto-detected 2026-08-27)
 - **2026-09-30** · Zydus Lifesciences extends Sterling Biotech API deal (auto-detected 2026-06-29)
