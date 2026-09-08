@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-09-07** · Gland Pharma Analyst and Investor Meeting (auto-detected 2026-09-01)
 - **2026-09-10** · Sun Pharma Analyst and Investor Meeting (auto-detected 2026-09-06)
 - **2026-09-14** · Teva Pharmaceutical event (auto-detected 2026-08-03)
 - **2026-09-15** · UniQure to submit BLA for AMT-130 for Huntington's disease (auto-detected 2026-06-21)
@@ -43,7 +42,9 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-09-16** · Sun Pharma Analyst and Investor Meeting (auto-detected 2026-09-06)
 - **2026-09-17** · Sun Pharma Analyst and Investor Meeting (auto-detected 2026-09-06)
 - **2026-09-23** · Navigating the GLP-1 Generic Drug Pathway event (auto-detected 2026-08-18)
+- **2026-09-28** · Capricor Therapeutics Lead Plaintiff Deadline (auto-detected 2026-09-08)
 - **2026-09-29** · Emmessar Biotech 34th AGM (auto-detected 2026-08-27)
+- **2026-09-29** · Parmax Pharma AGM (auto-detected 2026-09-08)
 - **2026-09-30** · Zydus Lifesciences extends Sterling Biotech API deal (auto-detected 2026-06-29)
 - **2026-09-30** · Praxis epilepsy drug verdict (auto-detected 2026-06-30)
 - **2026-09-30** · Scholar Rock Apitegromab BLA Approval Decision (auto-detected 2026-08-10)
