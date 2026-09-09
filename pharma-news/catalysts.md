@@ -68,6 +68,8 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2027-01-15** · India Pharma Expo (auto-detected 2026-06-15)
 - **2027-01-15** · UK plans to revoke Tavneos approval (auto-detected 2026-09-03)
 - **2027-02-15** · Apnimed FDA decision (auto-detected 2026-07-28)
+- **2027-02-28** · Apnimed Oxnimbi PDUFA date (auto-detected 2026-09-09)
+- **2027-03-10** · Intellia Therapeutics Lonvoguran Ziclumeran (Lonvo-z) PDUFA date for HAE (auto-detected 2026-09-09)
 - **2027-03-15** · Lilly Q1 2027 FDA application for retatrutide (auto-detected 2026-07-24)
 - **2027-03-15** · Orchid Pharma Jammu 7-ACA Plant Launch (auto-detected 2026-08-25)
 - **2027-03-15** · PMV Pharma rezatapopt NDA submission (auto-detected 2026-09-02)
