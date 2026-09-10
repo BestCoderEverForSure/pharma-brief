@@ -41,6 +41,8 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-09-15** · Poolbeg Pharma PLC - Key Conference Participation (auto-detected 2026-09-06)
 - **2026-09-16** · Sun Pharma Analyst and Investor Meeting (auto-detected 2026-09-06)
 - **2026-09-17** · Sun Pharma Analyst and Investor Meeting (auto-detected 2026-09-06)
+- **2026-09-17** · Innate Pharma Host Conference Call and Webcast for H1 2026 Financial Results and Business Update (auto-detected 2026-09-10)
+- **2026-09-22** · SynAct Pharma to Present at Investing in Life Science (auto-detected 2026-09-10)
 - **2026-09-23** · Navigating the GLP-1 Generic Drug Pathway event (auto-detected 2026-08-18)
 - **2026-09-28** · Capricor Therapeutics Lead Plaintiff Deadline (auto-detected 2026-09-08)
 - **2026-09-29** · Emmessar Biotech 34th AGM (auto-detected 2026-08-27)
