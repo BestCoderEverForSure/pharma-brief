@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-09-10** · Sun Pharma Analyst and Investor Meeting (auto-detected 2026-09-06)
 - **2026-09-14** · Teva Pharmaceutical event (auto-detected 2026-08-03)
 - **2026-09-15** · UniQure to submit BLA for AMT-130 for Huntington's disease (auto-detected 2026-06-21)
 - **2026-09-15** · FDA public hearing on psychedelic therapies (auto-detected 2026-07-19)
