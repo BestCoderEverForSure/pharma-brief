@@ -38,6 +38,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-09-15** · EMA CHMP meeting - positive/negative opinions on EU marketing authorisations (auto-detected 2026-08-29)
 - **2026-09-15** · Ajanta Pharma investor meetings (auto-detected 2026-08-31)
 - **2026-09-15** · Poolbeg Pharma PLC - Key Conference Participation (auto-detected 2026-09-06)
+- **2026-09-15** · Thailand GLP-1 injections prescription-only (auto-detected 2026-09-14)
 - **2026-09-16** · Sun Pharma Analyst and Investor Meeting (auto-detected 2026-09-06)
 - **2026-09-16** · Kane Biotech to Host Commercial Update Webcast (auto-detected 2026-09-13)
 - **2026-09-17** · Sun Pharma Analyst and Investor Meeting (auto-detected 2026-09-06)
