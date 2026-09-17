@@ -27,12 +27,12 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-09-16** · Sun Pharma Analyst and Investor Meeting (auto-detected 2026-09-06)
-- **2026-09-16** · Kane Biotech to Host Commercial Update Webcast (auto-detected 2026-09-13)
 - **2026-09-17** · Sun Pharma Analyst and Investor Meeting (auto-detected 2026-09-06)
 - **2026-09-17** · Innate Pharma Host Conference Call and Webcast for H1 2026 Financial Results and Business Update (auto-detected 2026-09-10)
 - **2026-09-22** · SynAct Pharma to Present at Investing in Life Science (auto-detected 2026-09-10)
 - **2026-09-23** · Navigating the GLP-1 Generic Drug Pathway event (auto-detected 2026-08-18)
+- **2026-09-23** · Concord Biotech analyst meet (auto-detected 2026-09-17)
+- **2026-09-24** · Vicore Pharma Presentation at Stifel 2026 Virtual Immunology and Inflammation Forum (auto-detected 2026-09-17)
 - **2026-09-28** · Capricor Therapeutics Lead Plaintiff Deadline (auto-detected 2026-09-08)
 - **2026-09-29** · Emmessar Biotech 34th AGM (auto-detected 2026-08-27)
 - **2026-09-29** · Parmax Pharma AGM (auto-detected 2026-09-08)
@@ -42,6 +42,8 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-09-30** · Goa Pharma Summit 2026 (auto-detected 2026-09-13)
 - **2026-10-01** · French clinical-stage biotech's UC drug FDA filing (auto-detected 2026-07-07)
 - **2026-10-15** · Ocular Therapeutix AXPAXLI NDA submission (auto-detected 2026-07-23)
+- **2026-10-19** · Working with Emotional Intelligence Training Course (auto-detected 2026-09-17)
+- **2026-10-24** · Joenja review date (auto-detected 2026-09-17)
 - **2026-11-01** · FDA review date for Agios' sickle cell drug (auto-detected 2026-07-07)
 - **2026-11-15** · FDA Delays iPLEDGE Modifications (auto-detected 2026-06-18)
 - **2026-11-15** · BIO-Europe 2026 (auto-detected 2026-08-19)
