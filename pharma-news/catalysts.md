@@ -40,6 +40,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-09-30** · Goa Pharma Summit 2026 (auto-detected 2026-09-13)
 - **2026-10-01** · French clinical-stage biotech's UC drug FDA filing (auto-detected 2026-07-07)
 - **2026-10-15** · Ocular Therapeutix AXPAXLI NDA submission (auto-detected 2026-07-23)
+- **2026-10-15** · India's CDSCO Digital Drug Regulatory System Rollout (auto-detected 2026-09-20)
 - **2026-10-19** · Working with Emotional Intelligence Training Course (auto-detected 2026-09-17)
 - **2026-10-24** · Joenja review date (auto-detected 2026-09-17)
 - **2026-11-01** · FDA review date for Agios' sickle cell drug (auto-detected 2026-07-07)
