@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-09-22** · SynAct Pharma to Present at Investing in Life Science (auto-detected 2026-09-10)
 - **2026-09-23** · Navigating the GLP-1 Generic Drug Pathway event (auto-detected 2026-08-18)
 - **2026-09-23** · Concord Biotech analyst meet (auto-detected 2026-09-17)
 - **2026-09-24** · Vicore Pharma Presentation at Stifel 2026 Virtual Immunology and Inflammation Forum (auto-detected 2026-09-17)
