@@ -27,8 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-09-24** · Vicore Pharma Presentation at Stifel 2026 Virtual Immunology and Inflammation Forum (auto-detected 2026-09-17)
-- **2026-09-24** · Aurobindo Pharma Analyst and Investor Meeting (auto-detected 2026-09-22)
 - **2026-09-28** · Capricor Therapeutics Lead Plaintiff Deadline (auto-detected 2026-09-08)
 - **2026-09-29** · Emmessar Biotech 34th AGM (auto-detected 2026-08-27)
 - **2026-09-29** · Parmax Pharma AGM (auto-detected 2026-09-08)
@@ -45,6 +43,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-10-19** · Working with Emotional Intelligence Training Course (auto-detected 2026-09-17)
 - **2026-10-23** · LTR Pharma Annual General Meeting (auto-detected 2026-09-22)
 - **2026-10-24** · Joenja review date (auto-detected 2026-09-17)
+- **2026-10-30** · FDA Advisory Committee to review SYD-101 for pediatric myopia (auto-detected 2026-09-25)
 - **2026-11-01** · FDA review date for Agios' sickle cell drug (auto-detected 2026-07-07)
 - **2026-11-03** · Teva Pharmaceutical Industries Q3 2026 Financial Results (auto-detected 2026-09-24)
 - **2026-11-15** · FDA Delays iPLEDGE Modifications (auto-detected 2026-06-18)
