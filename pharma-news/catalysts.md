@@ -36,6 +36,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-09-30** · Goa Pharma Summit 2026 (auto-detected 2026-09-13)
 - **2026-10-01** · French clinical-stage biotech's UC drug FDA filing (auto-detected 2026-07-07)
 - **2026-10-01** · Loophole for personal medication import closing (auto-detected 2026-09-24)
+- **2026-10-01** · UK Community pharmacist prescribing service starts (auto-detected 2026-09-27)
 - **2026-10-15** · Ocular Therapeutix AXPAXLI NDA submission (auto-detected 2026-07-23)
 - **2026-10-15** · India's CDSCO Digital Drug Regulatory System Rollout (auto-detected 2026-09-20)
 - **2026-10-15** · MaaT Pharma pre-IND meeting with FDA for MaaT034 (auto-detected 2026-09-22)
