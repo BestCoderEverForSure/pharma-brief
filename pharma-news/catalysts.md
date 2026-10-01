@@ -27,10 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-09-30** · Zydus Lifesciences extends Sterling Biotech API deal (auto-detected 2026-06-29)
-- **2026-09-30** · Praxis epilepsy drug verdict (auto-detected 2026-06-30)
-- **2026-09-30** · Scholar Rock Apitegromab BLA Approval Decision (auto-detected 2026-08-10)
-- **2026-09-30** · Goa Pharma Summit 2026 (auto-detected 2026-09-13)
 - **2026-10-01** · French clinical-stage biotech's UC drug FDA filing (auto-detected 2026-07-07)
 - **2026-10-01** · Loophole for personal medication import closing (auto-detected 2026-09-24)
 - **2026-10-01** · UK Community pharmacist prescribing service starts (auto-detected 2026-09-27)
@@ -47,6 +43,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-10-30** · FDA Advisory Committee to review SYD-101 for pediatric myopia (auto-detected 2026-09-25)
 - **2026-11-01** · FDA review date for Agios' sickle cell drug (auto-detected 2026-07-07)
 - **2026-11-03** · Teva Pharmaceutical Industries Q3 2026 Financial Results (auto-detected 2026-09-24)
+- **2026-11-14** · FDA Decision on Ivonescimab Plus Chemotherapy (auto-detected 2026-10-01)
 - **2026-11-15** · FDA Delays iPLEDGE Modifications (auto-detected 2026-06-18)
 - **2026-11-15** · BIO-Europe 2026 (auto-detected 2026-08-19)
 - **2026-11-15** · Capricor Deramiocel PDUFA date for DMD (auto-detected 2026-08-25)
