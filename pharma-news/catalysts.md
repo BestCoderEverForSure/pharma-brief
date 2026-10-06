@@ -70,6 +70,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2027-03-15** · Orchid Pharma Jammu 7-ACA Plant Launch (auto-detected 2026-08-25)
 - **2027-03-15** · PMV Pharma rezatapopt NDA submission (auto-detected 2026-09-02)
 - **2027-04-15** · Immunome Varegacestat FDA Decision (auto-detected 2026-08-13)
+- **2027-04-15** · Changfeng Pharmaceutical share lock-up extension (auto-detected 2026-10-06)
 - **2027-08-15** · Australia's 'Biggest Week in Biotech 2027' (auto-detected 2026-06-18)
 - **2028-07-15** · FDA Food Traceability Rule Enforcement Begins (auto-detected 2026-08-17)
 - **2028-08-15** · Trump's 100% tariff on imported generic drugs takes effect (auto-detected 2026-07-23)
