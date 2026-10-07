@@ -62,6 +62,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2027-01-15** · UK plans to revoke Tavneos approval (auto-detected 2026-09-03)
 - **2027-01-15** · Definium Therapeutics NDA submission for DT120 (auto-detected 2026-09-16)
 - **2027-01-15** · GSK Phase 1 trial for Chimagen TCE (auto-detected 2026-09-16)
+- **2027-01-15** · 60 Degrees Pharmaceuticals Babesiosis Study Readout (auto-detected 2026-10-07)
 - **2027-01-28** · Insmed ARIKAYCE sNDA PDUFA date (auto-detected 2026-09-22)
 - **2027-02-15** · Apnimed FDA decision (auto-detected 2026-07-28)
 - **2027-02-28** · Apnimed Oxnimbi PDUFA date (auto-detected 2026-09-09)
