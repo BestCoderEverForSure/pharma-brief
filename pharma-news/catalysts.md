@@ -28,6 +28,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 
 ## Auto-detected (from recent briefs)
 - **2026-10-12** · Sun Pharma board meeting to consider NCD issue (auto-detected 2026-10-08)
+- **2026-10-12** · India Supreme Court hearing on drug mark-ups (auto-detected 2026-10-11)
 - **2026-10-14** · AlzeCure Pharma presentation at Aktiespararna in Stockholm (auto-detected 2026-10-08)
 - **2026-10-15** · Ocular Therapeutix AXPAXLI NDA submission (auto-detected 2026-07-23)
 - **2026-10-15** · India's CDSCO Digital Drug Regulatory System Rollout (auto-detected 2026-09-20)
@@ -35,6 +36,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-10-15** · Aurobindo Pharma Trading Window Closure (auto-detected 2026-09-24)
 - **2026-10-15** · CPHI Milan 2026 (auto-detected 2026-09-30)
 - **2026-10-15** · GSK's HBV drug FDA agenda (auto-detected 2026-09-30)
+- **2026-10-15** · Royalty Pharma Q3 2026 earnings (auto-detected 2026-10-11)
 - **2026-10-19** · Working with Emotional Intelligence Training Course (auto-detected 2026-09-17)
 - **2026-10-23** · LTR Pharma Annual General Meeting (auto-detected 2026-09-22)
 - **2026-10-24** · Joenja review date (auto-detected 2026-09-17)
