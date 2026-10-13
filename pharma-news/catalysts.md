@@ -27,8 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-10-12** · Sun Pharma board meeting to consider NCD issue (auto-detected 2026-10-08)
-- **2026-10-12** · India Supreme Court hearing on drug mark-ups (auto-detected 2026-10-11)
 - **2026-10-14** · AlzeCure Pharma presentation at Aktiespararna in Stockholm (auto-detected 2026-10-08)
 - **2026-10-15** · Ocular Therapeutix AXPAXLI NDA submission (auto-detected 2026-07-23)
 - **2026-10-15** · India's CDSCO Digital Drug Regulatory System Rollout (auto-detected 2026-09-20)
@@ -37,6 +35,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-10-15** · CPHI Milan 2026 (auto-detected 2026-09-30)
 - **2026-10-15** · GSK's HBV drug FDA agenda (auto-detected 2026-09-30)
 - **2026-10-15** · Royalty Pharma Q3 2026 earnings (auto-detected 2026-10-11)
+- **2026-10-15** · Fermenta Biotech investor meeting in Dahej (auto-detected 2026-10-13)
 - **2026-10-19** · Working with Emotional Intelligence Training Course (auto-detected 2026-09-17)
 - **2026-10-23** · LTR Pharma Annual General Meeting (auto-detected 2026-09-22)
 - **2026-10-24** · Joenja review date (auto-detected 2026-09-17)
@@ -45,6 +44,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-10-30** · FDA Advisory Committee to review SYD-101 for pediatric myopia (auto-detected 2026-09-25)
 - **2026-11-01** · FDA review date for Agios' sickle cell drug (auto-detected 2026-07-07)
 - **2026-11-03** · Teva Pharmaceutical Industries Q3 2026 Financial Results (auto-detected 2026-09-24)
+- **2026-11-11** · Teva Pharmaceutical Industries R&D Day (auto-detected 2026-10-13)
 - **2026-11-14** · FDA Decision on Ivonescimab Plus Chemotherapy (auto-detected 2026-10-01)
 - **2026-11-15** · FDA Delays iPLEDGE Modifications (auto-detected 2026-06-18)
 - **2026-11-15** · BIO-Europe 2026 (auto-detected 2026-08-19)
@@ -78,6 +78,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2027-03-15** · FDA to complete safety review of mifepristone (auto-detected 2026-10-08)
 - **2027-04-15** · Immunome Varegacestat FDA Decision (auto-detected 2026-08-13)
 - **2027-04-15** · Changfeng Pharmaceutical share lock-up extension (auto-detected 2026-10-06)
+- **2027-07-15** · Roche FDA approval decision for eye drug (auto-detected 2026-10-13)
 - **2027-08-15** · Australia's 'Biggest Week in Biotech 2027' (auto-detected 2026-06-18)
 - **2028-07-15** · FDA Food Traceability Rule Enforcement Begins (auto-detected 2026-08-17)
 - **2028-08-15** · Trump's 100% tariff on imported generic drugs takes effect (auto-detected 2026-07-23)
