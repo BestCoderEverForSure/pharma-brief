@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-10-14** · AlzeCure Pharma presentation at Aktiespararna in Stockholm (auto-detected 2026-10-08)
 - **2026-10-15** · Ocular Therapeutix AXPAXLI NDA submission (auto-detected 2026-07-23)
 - **2026-10-15** · India's CDSCO Digital Drug Regulatory System Rollout (auto-detected 2026-09-20)
 - **2026-10-15** · MaaT Pharma pre-IND meeting with FDA for MaaT034 (auto-detected 2026-09-22)
@@ -63,6 +62,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-12-15** · FDA Single IRB Rule for Multisite Trials Set (auto-detected 2026-09-29)
 - **2026-12-25** · EU Biotech Act deal (auto-detected 2026-06-26)
 - **2026-12-30** · Saol Therapeutics SL1009 (DCA) FDA PDUFA date (auto-detected 2026-07-29)
+- **2027-01-12** · Trump administration rule on imported medicines (auto-detected 2026-10-15)
 - **2027-01-15** · India Pharma Expo (auto-detected 2026-06-15)
 - **2027-01-15** · UK plans to revoke Tavneos approval (auto-detected 2026-09-03)
 - **2027-01-15** · Definium Therapeutics NDA submission for DT120 (auto-detected 2026-09-16)
