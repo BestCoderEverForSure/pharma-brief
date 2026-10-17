@@ -1,11 +1,6 @@
 {
-  "last_run": "2026-10-16T08:24:00Z",
+  "last_run": "2026-10-17T07:58:20Z",
   "history": [
-    {
-      "date": "2026-08-14",
-      "mode": "daily",
-      "articles": 255
-    },
     {
       "date": "2026-08-15",
       "mode": "review",
@@ -300,6 +295,11 @@
       "date": "2026-10-16",
       "mode": "daily",
       "articles": 239
+    },
+    {
+      "date": "2026-10-17",
+      "mode": "review",
+      "articles": 80
     }
   ]
 }

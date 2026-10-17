@@ -29,6 +29,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 ## Auto-detected (from recent briefs)
 - **2026-10-19** · Working with Emotional Intelligence Training Course (auto-detected 2026-09-17)
 - **2026-10-20** · Orchid Pharma board meeting to evaluate fund raising (auto-detected 2026-10-16)
+- **2026-10-21** · EMA CHMP meeting (auto-detected 2026-10-17)
 - **2026-10-23** · LTR Pharma Annual General Meeting (auto-detected 2026-09-22)
 - **2026-10-24** · Joenja review date (auto-detected 2026-09-17)
 - **2026-10-28** · Pharma Manufacturing & Automation Excellence Awards 2026 (auto-detected 2026-09-29)
