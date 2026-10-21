@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-10-20** · Orchid Pharma board meeting to evaluate fund raising (auto-detected 2026-10-16)
 - **2026-10-21** · EMA CHMP meeting (auto-detected 2026-10-17)
 - **2026-10-22** · Alterity Therapeutics CEO appearance at Craig-Hallum Virtual Biotech Catalyst Conference (auto-detected 2026-10-19)
 - **2026-10-23** · LTR Pharma Annual General Meeting (auto-detected 2026-09-22)
@@ -40,6 +39,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-11-01** · FDA review date for Agios' sickle cell drug (auto-detected 2026-07-07)
 - **2026-11-03** · Teva Pharmaceutical Industries Q3 2026 Financial Results (auto-detected 2026-09-24)
 - **2026-11-09** · Gland Pharma vote (auto-detected 2026-10-20)
+- **2026-11-10** · Innate Pharma executives fireside chat (auto-detected 2026-10-21)
 - **2026-11-11** · Teva Pharmaceutical Industries R&D Day (auto-detected 2026-10-13)
 - **2026-11-14** · FDA Decision on Ivonescimab Plus Chemotherapy (auto-detected 2026-10-01)
 - **2026-11-15** · FDA Delays iPLEDGE Modifications (auto-detected 2026-06-18)
