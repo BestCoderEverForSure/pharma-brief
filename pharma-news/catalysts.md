@@ -27,13 +27,12 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-10-21** · EMA CHMP meeting (auto-detected 2026-10-17)
-- **2026-10-22** · Alterity Therapeutics CEO appearance at Craig-Hallum Virtual Biotech Catalyst Conference (auto-detected 2026-10-19)
 - **2026-10-23** · LTR Pharma Annual General Meeting (auto-detected 2026-09-22)
 - **2026-10-24** · Joenja review date (auto-detected 2026-09-17)
 - **2026-10-27** · Chugai Pharmaceutical results (auto-detected 2026-10-19)
 - **2026-10-28** · Pharma Manufacturing & Automation Excellence Awards 2026 (auto-detected 2026-09-29)
 - **2026-10-29** · West Pharmaceutical Services Q3 2026 earnings (auto-detected 2026-10-08)
+- **2026-10-29** · Korea's first GLP-1 obesity drug Eppe rollout (auto-detected 2026-10-23)
 - **2026-10-30** · FDA Advisory Committee to review SYD-101 for pediatric myopia (auto-detected 2026-09-25)
 - **2026-10-30** · FDA comments due on infant formula testing list (auto-detected 2026-10-16)
 - **2026-11-01** · FDA review date for Agios' sickle cell drug (auto-detected 2026-07-07)
@@ -48,6 +47,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-11-16** · Deepak Sapra appointed CEO of Gland Pharma (auto-detected 2026-08-14)
 - **2026-11-18** · West Pharmaceutical Services dividend payment (auto-detected 2026-10-20)
 - **2026-11-20** · Mayne Pharma Group AGM (auto-detected 2026-10-19)
+- **2026-11-24** · Star Combo Pharma Annual General Meeting (auto-detected 2026-10-23)
 - **2026-11-30** · Leo Pharma IPO (auto-detected 2026-09-30)
 - **2026-12-09** · BetterLife Pharma Annual General and Special Meeting (auto-detected 2026-09-30)
 - **2026-12-15** · FDA ruling on GRAS (auto-detected 2026-07-13)
