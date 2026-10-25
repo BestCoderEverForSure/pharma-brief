@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-10-24** · Joenja review date (auto-detected 2026-09-17)
 - **2026-10-27** · Chugai Pharmaceutical results (auto-detected 2026-10-19)
 - **2026-10-28** · Pharma Manufacturing & Automation Excellence Awards 2026 (auto-detected 2026-09-29)
 - **2026-10-29** · West Pharmaceutical Services Q3 2026 earnings (auto-detected 2026-10-08)
