@@ -27,15 +27,17 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-10-27** · Chugai Pharmaceutical results (auto-detected 2026-10-19)
 - **2026-10-28** · Pharma Manufacturing & Automation Excellence Awards 2026 (auto-detected 2026-09-29)
 - **2026-10-29** · West Pharmaceutical Services Q3 2026 earnings (auto-detected 2026-10-08)
 - **2026-10-29** · Korea's first GLP-1 obesity drug Eppe rollout (auto-detected 2026-10-23)
 - **2026-10-30** · FDA Advisory Committee to review SYD-101 for pediatric myopia (auto-detected 2026-09-25)
 - **2026-10-30** · FDA comments due on infant formula testing list (auto-detected 2026-10-16)
 - **2026-11-01** · FDA review date for Agios' sickle cell drug (auto-detected 2026-07-07)
+- **2026-11-02** · BioMarin Pharmaceutical (BMRN) Q3 2026 Results Call (auto-detected 2026-10-28)
 - **2026-11-03** · Teva Pharmaceutical Industries Q3 2026 Financial Results (auto-detected 2026-09-24)
+- **2026-11-04** · UroGen Pharma Q3 2026 Financial Results (auto-detected 2026-10-28)
 - **2026-11-09** · Gland Pharma vote (auto-detected 2026-10-20)
+- **2026-11-09** · Cancer drugs price cut (auto-detected 2026-10-28)
 - **2026-11-10** · Innate Pharma executives fireside chat (auto-detected 2026-10-21)
 - **2026-11-11** · Teva Pharmaceutical Industries R&D Day (auto-detected 2026-10-13)
 - **2026-11-14** · FDA Decision on Ivonescimab Plus Chemotherapy (auto-detected 2026-10-01)
