@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-10-28** · Pharma Manufacturing & Automation Excellence Awards 2026 (auto-detected 2026-09-29)
 - **2026-10-29** · West Pharmaceutical Services Q3 2026 earnings (auto-detected 2026-10-08)
 - **2026-10-29** · Korea's first GLP-1 obesity drug Eppe rollout (auto-detected 2026-10-23)
 - **2026-10-30** · FDA Advisory Committee to review SYD-101 for pediatric myopia (auto-detected 2026-09-25)
