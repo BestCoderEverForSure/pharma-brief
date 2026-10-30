@@ -27,8 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-10-29** · West Pharmaceutical Services Q3 2026 earnings (auto-detected 2026-10-08)
-- **2026-10-29** · Korea's first GLP-1 obesity drug Eppe rollout (auto-detected 2026-10-23)
 - **2026-10-30** · FDA Advisory Committee to review SYD-101 for pediatric myopia (auto-detected 2026-09-25)
 - **2026-10-30** · FDA comments due on infant formula testing list (auto-detected 2026-10-16)
 - **2026-11-01** · FDA review date for Agios' sickle cell drug (auto-detected 2026-07-07)
@@ -61,6 +59,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-12-15** · FDA decision for CagriSema (auto-detected 2026-10-26)
 - **2026-12-25** · EU Biotech Act deal (auto-detected 2026-06-26)
 - **2026-12-30** · Saol Therapeutics SL1009 (DCA) FDA PDUFA date (auto-detected 2026-07-29)
+- **2027-01-01** · PBM disclosure rule takes effect (auto-detected 2026-10-30)
 - **2027-01-12** · Trump administration rule on imported medicines (auto-detected 2026-10-15)
 - **2027-01-15** · India Pharma Expo (auto-detected 2026-06-15)
 - **2027-01-15** · UK plans to revoke Tavneos approval (auto-detected 2026-09-03)
