@@ -27,8 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-10-30** · FDA Advisory Committee to review SYD-101 for pediatric myopia (auto-detected 2026-09-25)
-- **2026-10-30** · FDA comments due on infant formula testing list (auto-detected 2026-10-16)
 - **2026-11-01** · FDA review date for Agios' sickle cell drug (auto-detected 2026-07-07)
 - **2026-11-02** · BioMarin Pharmaceutical (BMRN) Q3 2026 Results Call (auto-detected 2026-10-28)
 - **2026-11-03** · Teva Pharmaceutical Industries Q3 2026 Financial Results (auto-detected 2026-09-24)
