@@ -27,9 +27,9 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-11-02** · BioMarin Pharmaceutical (BMRN) Q3 2026 Results Call (auto-detected 2026-10-28)
 - **2026-11-03** · Teva Pharmaceutical Industries Q3 2026 Financial Results (auto-detected 2026-09-24)
 - **2026-11-04** · UroGen Pharma Q3 2026 Financial Results (auto-detected 2026-10-28)
+- **2026-11-06** · Indrayani Biotech board meeting (auto-detected 2026-11-03)
 - **2026-11-09** · Gland Pharma vote (auto-detected 2026-10-20)
 - **2026-11-09** · Cancer drugs price cut (auto-detected 2026-10-28)
 - **2026-11-10** · Innate Pharma executives fireside chat (auto-detected 2026-10-21)
@@ -75,6 +75,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2027-03-15** · FDA to complete safety review of mifepristone (auto-detected 2026-10-08)
 - **2027-04-15** · Immunome Varegacestat FDA Decision (auto-detected 2026-08-13)
 - **2027-04-15** · Changfeng Pharmaceutical share lock-up extension (auto-detected 2026-10-06)
+- **2027-05-01** · uniQure's AMT-130 gene therapy PDUFA date for Huntington's disease (auto-detected 2026-11-03)
 - **2027-07-15** · Roche FDA approval decision for eye drug (auto-detected 2026-10-13)
 - **2027-08-15** · Australia's 'Biggest Week in Biotech 2027' (auto-detected 2026-06-18)
 - **2028-07-15** · FDA Food Traceability Rule Enforcement Begins (auto-detected 2026-08-17)
