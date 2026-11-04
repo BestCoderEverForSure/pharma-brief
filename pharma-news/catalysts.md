@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-11-03** · Teva Pharmaceutical Industries Q3 2026 Financial Results (auto-detected 2026-09-24)
 - **2026-11-04** · UroGen Pharma Q3 2026 Financial Results (auto-detected 2026-10-28)
 - **2026-11-06** · Indrayani Biotech board meeting (auto-detected 2026-11-03)
 - **2026-11-09** · Gland Pharma vote (auto-detected 2026-10-20)
@@ -38,6 +37,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-11-15** · FDA Delays iPLEDGE Modifications (auto-detected 2026-06-18)
 - **2026-11-15** · BIO-Europe 2026 (auto-detected 2026-08-19)
 - **2026-11-15** · Capricor Deramiocel PDUFA date for DMD (auto-detected 2026-08-25)
+- **2026-11-15** · PolyPid FDA Decision (auto-detected 2026-11-04)
 - **2026-11-16** · Deepak Sapra appointed CEO of Gland Pharma (auto-detected 2026-08-14)
 - **2026-11-18** · West Pharmaceutical Services dividend payment (auto-detected 2026-10-20)
 - **2026-11-20** · Mayne Pharma Group AGM (auto-detected 2026-10-19)
@@ -65,6 +65,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2027-01-15** · GSK Phase 1 trial for Chimagen TCE (auto-detected 2026-09-16)
 - **2027-01-15** · 60 Degrees Pharmaceuticals Babesiosis Study Readout (auto-detected 2026-10-07)
 - **2027-01-15** · Takeda to seek Japan approval for gastric cancer drug (auto-detected 2026-10-26)
+- **2027-01-15** · Abbott SonicForce IVL FDA Approval (auto-detected 2026-11-04)
 - **2027-01-28** · Insmed ARIKAYCE sNDA PDUFA date (auto-detected 2026-09-22)
 - **2027-02-15** · Apnimed FDA decision (auto-detected 2026-07-28)
 - **2027-02-28** · Apnimed Oxnimbi PDUFA date (auto-detected 2026-09-09)
@@ -73,6 +74,8 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2027-03-15** · Orchid Pharma Jammu 7-ACA Plant Launch (auto-detected 2026-08-25)
 - **2027-03-15** · PMV Pharma rezatapopt NDA submission (auto-detected 2026-09-02)
 - **2027-03-15** · FDA to complete safety review of mifepristone (auto-detected 2026-10-08)
+- **2027-03-15** · Anaphylm FDA decision (auto-detected 2026-11-04)
+- **2027-04-09** · HLB Liver Cancer Drug FDA Decision (auto-detected 2026-11-04)
 - **2027-04-15** · Immunome Varegacestat FDA Decision (auto-detected 2026-08-13)
 - **2027-04-15** · Changfeng Pharmaceutical share lock-up extension (auto-detected 2026-10-06)
 - **2027-05-01** · uniQure's AMT-130 gene therapy PDUFA date for Huntington's disease (auto-detected 2026-11-03)
