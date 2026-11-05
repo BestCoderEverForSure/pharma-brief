@@ -27,8 +27,8 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-11-04** · UroGen Pharma Q3 2026 Financial Results (auto-detected 2026-10-28)
 - **2026-11-06** · Indrayani Biotech board meeting (auto-detected 2026-11-03)
+- **2026-11-07** · Maharashtra FDA services halted (auto-detected 2026-11-05)
 - **2026-11-09** · Gland Pharma vote (auto-detected 2026-10-20)
 - **2026-11-09** · Cancer drugs price cut (auto-detected 2026-10-28)
 - **2026-11-10** · Innate Pharma executives fireside chat (auto-detected 2026-10-21)
@@ -55,6 +55,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-12-15** · Cinclus Pharma HEEALING1 study topline results (auto-detected 2026-09-02)
 - **2026-12-15** · FDA Single IRB Rule for Multisite Trials Set (auto-detected 2026-09-29)
 - **2026-12-15** · FDA decision for CagriSema (auto-detected 2026-10-26)
+- **2026-12-15** · Government Sets December 2026 Deadline for Pharmaceutical Manufacturers to Adopt GS1 Standards (auto-detected 2026-11-05)
 - **2026-12-25** · EU Biotech Act deal (auto-detected 2026-06-26)
 - **2026-12-30** · Saol Therapeutics SL1009 (DCA) FDA PDUFA date (auto-detected 2026-07-29)
 - **2027-01-01** · PBM disclosure rule takes effect (auto-detected 2026-10-30)
