@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-11-06** · Indrayani Biotech board meeting (auto-detected 2026-11-03)
 - **2026-11-07** · Maharashtra FDA services halted (auto-detected 2026-11-05)
 - **2026-11-09** · Gland Pharma vote (auto-detected 2026-10-20)
 - **2026-11-09** · Cancer drugs price cut (auto-detected 2026-10-28)
