@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-11-07** · Maharashtra FDA services halted (auto-detected 2026-11-05)
 - **2026-11-09** · Gland Pharma vote (auto-detected 2026-10-20)
 - **2026-11-09** · Cancer drugs price cut (auto-detected 2026-10-28)
 - **2026-11-10** · Innate Pharma executives fireside chat (auto-detected 2026-10-21)
@@ -58,6 +57,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-12-25** · EU Biotech Act deal (auto-detected 2026-06-26)
 - **2026-12-30** · Saol Therapeutics SL1009 (DCA) FDA PDUFA date (auto-detected 2026-07-29)
 - **2027-01-01** · PBM disclosure rule takes effect (auto-detected 2026-10-30)
+- **2027-01-01** · Medicare 340B payment cuts and site-neutral payments expansion (auto-detected 2026-11-08)
 - **2027-01-12** · Trump administration rule on imported medicines (auto-detected 2026-10-15)
 - **2027-01-15** · India Pharma Expo (auto-detected 2026-06-15)
 - **2027-01-15** · UK plans to revoke Tavneos approval (auto-detected 2026-09-03)
@@ -85,5 +85,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2028-07-15** · FDA Food Traceability Rule Enforcement Begins (auto-detected 2026-08-17)
 - **2028-08-15** · Trump's 100% tariff on imported generic drugs takes effect (auto-detected 2026-07-23)
 - **2028-12-31** · Brukinsa access program ends (auto-detected 2026-08-20)
+- **2028-12-31** · Shelter Pharma plans second plant (auto-detected 2026-11-08)
 - **2029-01-01** · Medicare remote patient monitoring rule delayed (auto-detected 2026-11-06)
 - **2029-01-15** · Federal rule proposes closing "loophole" for IV-to-subcutaneous drugs (auto-detected 2026-06-15)
