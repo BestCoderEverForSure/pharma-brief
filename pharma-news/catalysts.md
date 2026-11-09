@@ -37,6 +37,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-11-15** · Capricor Deramiocel PDUFA date for DMD (auto-detected 2026-08-25)
 - **2026-11-15** · PolyPid FDA Decision (auto-detected 2026-11-04)
 - **2026-11-16** · Deepak Sapra appointed CEO of Gland Pharma (auto-detected 2026-08-14)
+- **2026-11-16** · Aurobindo Pharma investor meet (auto-detected 2026-11-09)
 - **2026-11-18** · West Pharmaceutical Services dividend payment (auto-detected 2026-10-20)
 - **2026-11-20** · Mayne Pharma Group AGM (auto-detected 2026-10-19)
 - **2026-11-24** · Star Combo Pharma Annual General Meeting (auto-detected 2026-10-23)
