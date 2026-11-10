@@ -27,8 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-11-09** · Gland Pharma vote (auto-detected 2026-10-20)
-- **2026-11-09** · Cancer drugs price cut (auto-detected 2026-10-28)
 - **2026-11-10** · Innate Pharma executives fireside chat (auto-detected 2026-10-21)
 - **2026-11-11** · Teva Pharmaceutical Industries R&D Day (auto-detected 2026-10-13)
 - **2026-11-14** · FDA Decision on Ivonescimab Plus Chemotherapy (auto-detected 2026-10-01)
@@ -41,6 +39,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-11-18** · West Pharmaceutical Services dividend payment (auto-detected 2026-10-20)
 - **2026-11-20** · Mayne Pharma Group AGM (auto-detected 2026-10-19)
 - **2026-11-24** · Star Combo Pharma Annual General Meeting (auto-detected 2026-10-23)
+- **2026-11-24** · Dicot Pharma presents at Aktiespararnas’ event Stora Aktiedagarna (auto-detected 2026-11-10)
 - **2026-11-30** · Leo Pharma IPO (auto-detected 2026-09-30)
 - **2026-12-01** · IIT Madras Pharmaceutical Industry Meet (auto-detected 2026-11-02)
 - **2026-12-09** · BetterLife Pharma Annual General and Special Meeting (auto-detected 2026-09-30)
