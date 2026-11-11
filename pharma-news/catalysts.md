@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-11-10** · Innate Pharma executives fireside chat (auto-detected 2026-10-21)
 - **2026-11-11** · Teva Pharmaceutical Industries R&D Day (auto-detected 2026-10-13)
 - **2026-11-14** · FDA Decision on Ivonescimab Plus Chemotherapy (auto-detected 2026-10-01)
 - **2026-11-15** · FDA Delays iPLEDGE Modifications (auto-detected 2026-06-18)
@@ -37,6 +36,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2026-11-16** · Deepak Sapra appointed CEO of Gland Pharma (auto-detected 2026-08-14)
 - **2026-11-16** · Aurobindo Pharma investor meet (auto-detected 2026-11-09)
 - **2026-11-18** · West Pharmaceutical Services dividend payment (auto-detected 2026-10-20)
+- **2026-11-18** · Innate Pharma IPH4502 event (auto-detected 2026-11-11)
 - **2026-11-20** · Mayne Pharma Group AGM (auto-detected 2026-10-19)
 - **2026-11-24** · Star Combo Pharma Annual General Meeting (auto-detected 2026-10-23)
 - **2026-11-24** · Dicot Pharma presents at Aktiespararnas’ event Stora Aktiedagarna (auto-detected 2026-11-10)
