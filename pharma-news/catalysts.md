@@ -27,7 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-11-11** · Teva Pharmaceutical Industries R&D Day (auto-detected 2026-10-13)
 - **2026-11-14** · FDA Decision on Ivonescimab Plus Chemotherapy (auto-detected 2026-10-01)
 - **2026-11-15** · FDA Delays iPLEDGE Modifications (auto-detected 2026-06-18)
 - **2026-11-15** · BIO-Europe 2026 (auto-detected 2026-08-19)
@@ -75,6 +74,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2027-03-15** · PMV Pharma rezatapopt NDA submission (auto-detected 2026-09-02)
 - **2027-03-15** · FDA to complete safety review of mifepristone (auto-detected 2026-10-08)
 - **2027-03-15** · Anaphylm FDA decision (auto-detected 2026-11-04)
+- **2027-03-15** · ExpreS2ion Biotech ES2B-C001 trial readout (auto-detected 2026-11-12)
 - **2027-04-09** · HLB Liver Cancer Drug FDA Decision (auto-detected 2026-11-04)
 - **2027-04-15** · Immunome Varegacestat FDA Decision (auto-detected 2026-08-13)
 - **2027-04-15** · Changfeng Pharmaceutical share lock-up extension (auto-detected 2026-10-06)
