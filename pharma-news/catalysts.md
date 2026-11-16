@@ -27,10 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-11-15** · FDA Delays iPLEDGE Modifications (auto-detected 2026-06-18)
-- **2026-11-15** · BIO-Europe 2026 (auto-detected 2026-08-19)
-- **2026-11-15** · Capricor Deramiocel PDUFA date for DMD (auto-detected 2026-08-25)
-- **2026-11-15** · PolyPid FDA Decision (auto-detected 2026-11-04)
 - **2026-11-16** · Deepak Sapra appointed CEO of Gland Pharma (auto-detected 2026-08-14)
 - **2026-11-16** · Aurobindo Pharma investor meet (auto-detected 2026-11-09)
 - **2026-11-18** · West Pharmaceutical Services dividend payment (auto-detected 2026-10-20)
