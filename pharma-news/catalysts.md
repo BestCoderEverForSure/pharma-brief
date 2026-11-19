@@ -27,8 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-11-18** · West Pharmaceutical Services dividend payment (auto-detected 2026-10-20)
-- **2026-11-18** · Innate Pharma IPH4502 event (auto-detected 2026-11-11)
 - **2026-11-20** · Mayne Pharma Group AGM (auto-detected 2026-10-19)
 - **2026-11-20** · Gland Pharma one-on-one meeting with ADIA (auto-detected 2026-11-17)
 - **2026-11-24** · Star Combo Pharma Annual General Meeting (auto-detected 2026-10-23)
