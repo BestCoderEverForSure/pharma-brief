@@ -27,8 +27,6 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-11-20** · Mayne Pharma Group AGM (auto-detected 2026-10-19)
-- **2026-11-20** · Gland Pharma one-on-one meeting with ADIA (auto-detected 2026-11-17)
 - **2026-11-24** · Star Combo Pharma Annual General Meeting (auto-detected 2026-10-23)
 - **2026-11-24** · Dicot Pharma presents at Aktiespararnas’ event Stora Aktiedagarna (auto-detected 2026-11-10)
 - **2026-11-30** · Leo Pharma IPO (auto-detected 2026-09-30)
