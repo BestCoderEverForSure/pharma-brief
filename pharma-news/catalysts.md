@@ -27,10 +27,9 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 > Tip: keep this trimmed to genuinely material, near-term catalysts. The digest will flag anything within 7 days automatically.
 
 ## Auto-detected (from recent briefs)
-- **2026-11-24** · Star Combo Pharma Annual General Meeting (auto-detected 2026-10-23)
-- **2026-11-24** · Dicot Pharma presents at Aktiespararnas’ event Stora Aktiedagarna (auto-detected 2026-11-10)
 - **2026-11-30** · Leo Pharma IPO (auto-detected 2026-09-30)
 - **2026-12-01** · IIT Madras Pharmaceutical Industry Meet (auto-detected 2026-11-02)
+- **2026-12-03** · AlzeCure Pharma presentation at ABGSC Investor Days (auto-detected 2026-11-25)
 - **2026-12-09** · BetterLife Pharma Annual General and Special Meeting (auto-detected 2026-09-30)
 - **2026-12-15** · FDA ruling on GRAS (auto-detected 2026-07-13)
 - **2026-12-15** · Adagio Medical expects FDA PMA approval for vCLAS (auto-detected 2026-08-14)
@@ -81,6 +80,7 @@ Known upcoming pharma catalysts. The digest reads this file AND refreshes/extend
 - **2027-06-15** · Candel pushes Prostate Cancer FDA Application Timeline (auto-detected 2026-11-13)
 - **2027-07-15** · Roche FDA approval decision for eye drug (auto-detected 2026-10-13)
 - **2027-07-15** · Active Biotech Phase II efficacy data (auto-detected 2026-11-06)
+- **2027-07-15** · Tumbleweed to fly pharma research in orbit (auto-detected 2026-11-25)
 - **2027-08-15** · Australia's 'Biggest Week in Biotech 2027' (auto-detected 2026-06-18)
 - **2027-12-31** · Evaxion Biotech financial runway ends (auto-detected 2026-11-20)
 - **2028-01-15** · BASF First Soybean Nematode Biotech Trait Debut (auto-detected 2026-11-17)
